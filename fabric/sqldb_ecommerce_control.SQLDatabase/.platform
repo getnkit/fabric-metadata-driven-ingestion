@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SQLDatabase",
+    "displayName": "sqldb_ecommerce_control"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2"
+  }
+}
