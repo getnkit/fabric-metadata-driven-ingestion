@@ -1,13 +1,13 @@
 /*
     03_seed_ingestion_metadata.sql
     Target: Microsoft Fabric SQL Database (sqldb_ecommerce_control)
-    Purpose: Seed the six initial source-object configurations and initialize
-             current watermark state for INCREMENTAL objects.
+    Purpose: Seed the initial ingestion configuration and initialize watermark state
+             for INCREMENTAL source objects.
 
     Re-run behavior:
-      - Existing config rows are updated to the expected project metadata.
+      - Existing config rows are updated.
       - Missing config rows are inserted.
-      - Existing watermark VALUES are NOT reset.
+      - Existing watermark values are preserved.
       - Missing watermark rows are initialized to 1900-01-01.
 */
 

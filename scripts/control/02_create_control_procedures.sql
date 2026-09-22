@@ -1,7 +1,8 @@
 /*
     02_create_control_procedures.sql
     Target: Microsoft Fabric SQL Database (sqldb_ecommerce_control)
-    Purpose: Finalize a child ingestion run atomically.
+    Purpose: Create the stored procedures used to finalize ingestion runs and update
+             watermark state atomically.
 
     Core guarantees:
       1) Exactly one final audit record is stored for each Fabric child pipeline RunId.

@@ -1,7 +1,8 @@
 /*
     02_generate_source_data.sql
-    Target: Azure SQL Database (mock operational source)
-    Purpose: Populate deterministic synthetic e-commerce data for ingestion testing.
+    Target: Azure SQL Database (sql_ecommerce_db)
+    Purpose: Populate the mock operational source tables with deterministic synthetic
+             data for ingestion testing.
 
     Approximate volume:
       crm.customers                 5,000
@@ -12,8 +13,9 @@
       sales.order_items             60,000 (3 items/order)
 
     Assumption:
-      updated_at is maintained by the source application and is the watermark
-      for all INCREMENTAL objects in this project.
+      - updated_at is maintained by the source application.
+      - updated_at is used as the watermark for all INCREMENTAL objects
+        in this project.
 */
 
 SET NOCOUNT ON;

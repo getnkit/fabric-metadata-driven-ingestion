@@ -1,11 +1,8 @@
 /*
     01_create_source_schema.sql
-    Target: Azure SQL Database (mock operational source)
-    Purpose: Create a small but realistic e-commerce OLTP source model.
-
-    WARNING:
-    - This script DROPS the project tables if they already exist.
-    - Run only against the mock/project database, never against a real system.
+    Target: Azure SQL Database (sql_ecommerce_db)
+    Purpose: Create the mock operational e-commerce source schemas and tables used
+             by the metadata-driven ingestion framework.
 */
 
 SET NOCOUNT ON;

@@ -1,10 +1,13 @@
 /*
     03_simulate_incremental_changes.sql
-    Target: Azure SQL Database (mock operational source)
-    Purpose: Create a small set of source changes AFTER an initial ingestion run.
+    Target: Azure SQL Database (sql_ecommerce_db)
+    Purpose: Generate controlled source-side inserts and updates for incremental
+             ingestion testing.
 
-    Use this script repeatedly during incremental testing.
-    Each execution creates a fresh timestamp using SYSUTCDATETIME().
+    Test usage:
+      - Run only after the initial REGULAR ingestion has completed.
+      - The script can be executed repeatedly.
+      - Each execution uses SYSUTCDATETIME() to create a new change timestamp.
 */
 
 SET NOCOUNT ON;

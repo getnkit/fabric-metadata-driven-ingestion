@@ -1,7 +1,8 @@
 /*
     01_create_control_schema.sql
     Target: Microsoft Fabric SQL Database (sqldb_ecommerce_control)
-    Purpose: Create metadata, current-state, and audit structures for the framework.
+    Purpose: Create the metadata, current-state, and audit structures used by the
+             metadata-driven ingestion framework.
 */
 
 SET NOCOUNT ON;

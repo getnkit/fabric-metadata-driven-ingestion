@@ -1,11 +1,19 @@
 # Fabric Metadata-Driven Ingestion — SQL Package
 
-## 1) Run on Azure SQL Database — mock operational source
+## 1) Run on Azure SQL Database — `sql_ecommerce_db`
 
 Run in this order:
 
 1. `scripts/source/01_create_source_schema.sql`
 2. `scripts/source/02_generate_source_data.sql`
+3. `scripts/security/01_grant_fabric_basic_source_read.sql`
+
+Before running the security script:
+
+- Replace `REPLACE_WITH_STRONG_PASSWORD` with a strong password before execution.
+- Do not commit the real password to Git.
+- The script creates the contained database user `fabric_ingestion_user`.
+- The user receives read-only access to the `crm`, `partner`, `catalog`, and `sales` schemas.
 
 Expected initial row counts:
 
@@ -16,7 +24,10 @@ Expected initial row counts:
 - `sales.orders` = 20,000
 - `sales.order_items` = 60,000
 
-Do **not** run `03_simulate_incremental_changes.sql` until after the first successful REGULAR ingestion and the immediate no-new-data test. It is used later to create fresh rows/updates beyond the committed watermark.
+Do **not** run `03_simulate_incremental_changes.sql` until after the first
+successful REGULAR ingestion and the immediate no-new-data test.
+
+It is used later to create fresh rows and updates beyond the committed watermark.
 
 ## 2) Run on Fabric SQL Database — `sqldb_ecommerce_control`
 
@@ -33,7 +44,21 @@ Expected metadata state after seeding:
 - `catalog.product_categories` is FULL, so it has no watermark row
 - All INCREMENTAL objects start at `1900-01-01T00:00:00.000`
 
-## 3) Important design assumptions
+## 3) Source authentication
+
+The current project uses Basic authentication for the Azure SQL source connection:
+
+- Connection: `cn_src_azsql`
+- Database user: `fabric_ingestion_user`
+- Access: read-only source schemas
+
+Basic authentication is used because the Fabric workspace and Azure SQL source
+are hosted in different Microsoft Entra tenants.
+
+The preferred production pattern is Fabric Workspace Identity when both services
+are hosted in the same Microsoft Entra tenant.
+
+## 4) Important design assumptions
 
 - All timestamps are treated as UTC.
 - Incremental extraction uses `LOW < updated_at <= HIGH`.
@@ -45,7 +70,7 @@ Expected metadata state after seeding:
 - Normal operational execution must enter through `pl_master_ingestion`, configured with pipeline concurrency = 1.
 - Optimistic watermark comparison remains the state-safety check during finalization.
 
-## 4) Landing path convention
+## 5) Landing path convention
 
 Incremental:
 
@@ -63,7 +88,7 @@ Example:
 
 `landing/catalog/product_categories/full/current/`
 
-## 5) Incremental-change simulator
+## 6) Incremental-change simulator
 
 After the initial ingestion tests, run:
 
