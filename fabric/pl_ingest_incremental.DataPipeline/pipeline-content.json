@@ -1,0 +1,813 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "FabricSqlDatabaseSource",
+            "sqlReaderQuery": {
+              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "FabricSqlDatabaseTable",
+            "schema": [],
+            "connectionSettings": {
+              "name": "sqldb_ecommerce_control",
+              "properties": {
+                "type": "FabricSqlDatabase",
+                "typeProperties": {
+                  "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "externalReferences": {
+                  "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lkp_ingestion_config",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "FabricSqlDatabaseSource",
+            "sqlReaderQuery": {
+              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'watermark_field, ',\n    'last_watermark_value, ',\n    'last_successful_batch_id, ',\n    'last_successful_pipeline_run_id ',\n    'FROM control.pipeline_watermarks ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "FabricSqlDatabaseTable",
+            "schema": [],
+            "connectionSettings": {
+              "name": "sqldb_ecommerce_control",
+              "properties": {
+                "type": "FabricSqlDatabase",
+                "typeProperties": {
+                  "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "externalReferences": {
+                  "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lkp_current_watermark",
+        "dependsOn": [
+          {
+            "activity": "lkp_ingestion_config",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(\n    int(activity('lkp_current_watermark').output.count),\n    1\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'No watermark state found for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "STATE_NOT_FOUND"
+              },
+              "name": "fail_state_not_found",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_state_found",
+        "dependsOn": [
+          {
+            "activity": "lkp_current_watermark",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    activity('lkp_current_watermark').output.value[0].watermark_field\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.value[0].watermark_field,\n    '.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "WATERMARK_FIELD_MISMATCH"
+              },
+              "name": "fail_watermark_field_mismatch",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_watermark_field_match",
+        "dependsOn": [
+          {
+            "activity": "if_state_found",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_lower_bound",
+          "value": {
+            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.value[0].last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_lower_bound",
+        "dependsOn": [
+          {
+            "activity": "if_watermark_field_match",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(\n    pipeline().parameters.p_run_type,\n    'REGULAR'\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [
+            {
+              "type": "Lookup",
+              "typeProperties": {
+                "source": {
+                  "type": "AzureSqlSource",
+                  "sqlReaderQuery": {
+                    "value": "@concat(\n    'SELECT MAX([',\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    ']) AS upper_bound ',\n    'FROM [',\n    activity('lkp_ingestion_config').output.value[0].source_schema,\n    '].[',\n    activity('lkp_ingestion_config').output.value[0].source_object,\n    '];'\n)",
+                    "type": "Expression"
+                  },
+                  "partitionOption": "None",
+                  "queryTimeout": "02:00:00"
+                },
+                "datasetSettings": {
+                  "type": "AzureSqlTable",
+                  "typeProperties": {
+                    "database": "sql_ecommerce_db"
+                  },
+                  "schema": [],
+                  "externalReferences": {
+                    "connection": "8fd436e8-81fc-405f-b36f-e26896f7b3f9"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 2,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "lkp_capture_upper_bound",
+              "dependsOn": []
+            },
+            {
+              "type": "SetVariable",
+              "typeProperties": {
+                "variableName": "v_upper_bound",
+                "value": {
+                  "value": "@coalesce(\n    activity('lkp_capture_upper_bound').output.firstRow.upper_bound,\n    variables('v_lower_bound')\n)",
+                  "type": "Expression"
+                }
+              },
+              "policy": {
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "set_upper_bound_regular",
+              "dependsOn": [
+                {
+                  "activity": "lkp_capture_upper_bound",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                "storedProcedureParameters": {
+                  "advance_watermark": {
+                    "value": "false",
+                    "type": "Boolean"
+                  },
+                  "batch_id": {
+                    "value": {
+                      "value": "p_batch_id",
+                      "type": "Expression"
+                    },
+                    "type": "Guid"
+                  },
+                  "end_time": {
+                    "value": {
+                      "value": "@utcNow()",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "error_code": {
+                    "value": "SOURCE_QUERY_FAILED",
+                    "type": "String"
+                  },
+                  "error_message": {
+                    "value": {
+                      "value": "@activity('lkp_capture_upper_bound').error.message",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "ingestion_config_id": {
+                    "value": {
+                      "value": "p_ingestion_config_id",
+                      "type": "Expression"
+                    },
+                    "type": "Int32"
+                  },
+                  "load_strategy": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_name": {
+                    "value": {
+                      "value": "@pipeline().Pipeline",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_run_id": {
+                    "value": {
+                      "value": "@pipeline().RunId",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "processing_lower_bound": {
+                    "value": {
+                      "value": "v_lower_bound",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "processing_upper_bound": {
+                    "value": null,
+                    "type": "DateTime"
+                  },
+                  "run_type": {
+                    "value": {
+                      "value": "p_run_type",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_object": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_row_count": {
+                    "value": null,
+                    "type": "Int64"
+                  },
+                  "source_schema": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_system": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "start_time": {
+                    "value": {
+                      "value": "p_start_time",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "status": {
+                    "value": "FAILED",
+                    "type": "String"
+                  },
+                  "target_path": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "target_row_count": {
+                    "value": null,
+                    "type": "Int64"
+                  },
+                  "watermark_field": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  }
+                }
+              },
+              "connectionSettings": {
+                "name": "sqldb_ecommerce_control",
+                "properties": {
+                  "type": "FabricSqlDatabase",
+                  "typeProperties": {
+                    "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                  },
+                  "externalReferences": {
+                    "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "sp_finalize_source_query_failed",
+              "dependsOn": [
+                {
+                  "activity": "lkp_capture_upper_bound",
+                  "dependencyConditions": [
+                    "Failed"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@activity('lkp_capture_upper_bound').error.message",
+                  "type": "Expression"
+                },
+                "errorCode": "SOURCE_QUERY_FAILED"
+              },
+              "name": "fail_source_query",
+              "dependsOn": [
+                {
+                  "activity": "sp_finalize_source_query_failed",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@activity('sp_finalize_source_query_failed').error.message",
+                  "type": "Expression"
+                },
+                "errorCode": "FINALIZATION_FAILED"
+              },
+              "name": "fail_source_query_finalization",
+              "dependsOn": [
+                {
+                  "activity": "sp_finalize_source_query_failed",
+                  "dependencyConditions": [
+                    "Failed"
+                  ]
+                }
+              ]
+            }
+          ],
+          "ifFalseActivities": [
+            {
+              "type": "SetVariable",
+              "typeProperties": {
+                "variableName": "v_upper_bound",
+                "value": {
+                  "value": "@pipeline().parameters.p_requested_upper_bound",
+                  "type": "Expression"
+                }
+              },
+              "policy": {
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "set_upper_bound_requested",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_regular_run",
+        "dependsOn": [
+          {
+            "activity": "set_lower_bound",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@or(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    greater(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. upper_bound must be greater than lower_bound.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "INVALID_PROCESSING_BOUNDARY"
+              },
+              "name": "fail_invalid_processing_boundary",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_valid_processing_boundary",
+        "dependsOn": [
+          {
+            "activity": "if_regular_run",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@and(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    not(\n        greater(\n            ticks(variables('v_upper_bound')),\n            ticks(variables('v_lower_bound'))\n        )\n    )\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                "storedProcedureParameters": {
+                  "advance_watermark": {
+                    "value": "false",
+                    "type": "Boolean"
+                  },
+                  "batch_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_batch_id",
+                      "type": "Expression"
+                    },
+                    "type": "Guid"
+                  },
+                  "end_time": {
+                    "value": {
+                      "value": "@utcNow()",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "error_code": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "error_message": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "ingestion_config_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_ingestion_config_id",
+                      "type": "Expression"
+                    },
+                    "type": "Int32"
+                  },
+                  "load_strategy": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_name": {
+                    "value": {
+                      "value": "@pipeline().Pipeline",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_run_id": {
+                    "value": {
+                      "value": "@pipeline().RunId",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "processing_lower_bound": {
+                    "value": {
+                      "value": "@variables('v_lower_bound')",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "processing_upper_bound": {
+                    "value": {
+                      "value": "@variables('v_upper_bound')",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "run_type": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_run_type",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_object": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_row_count": {
+                    "value": "0",
+                    "type": "Int64"
+                  },
+                  "source_schema": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_system": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "start_time": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_start_time",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "status": {
+                    "value": "SKIPPED",
+                    "type": "String"
+                  },
+                  "target_path": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "target_row_count": {
+                    "value": "0",
+                    "type": "Int64"
+                  },
+                  "watermark_field": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  }
+                }
+              },
+              "connectionSettings": {
+                "name": "sqldb_ecommerce_control",
+                "properties": {
+                  "type": "FabricSqlDatabase",
+                  "typeProperties": {
+                    "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                  },
+                  "externalReferences": {
+                    "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "sp_finalize_skipped",
+              "dependsOn": []
+            }
+          ],
+          "ifFalseActivities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "p_batch_id": {
+                    "value": "@pipeline().parameters.p_batch_id",
+                    "type": "Expression"
+                  },
+                  "p_ingestion_config_id": {
+                    "value": "@pipeline().parameters.p_ingestion_config_id",
+                    "type": "Expression"
+                  },
+                  "p_run_type": {
+                    "value": "@pipeline().parameters.p_run_type",
+                    "type": "Expression"
+                  },
+                  "p_lower_bound": {
+                    "value": "@variables('v_lower_bound')",
+                    "type": "Expression"
+                  },
+                  "p_upper_bound": {
+                    "value": "@variables('v_upper_bound')",
+                    "type": "Expression"
+                  },
+                  "p_start_time": {
+                    "value": "@pipeline().parameters.p_start_time",
+                    "type": "Expression"
+                  },
+                  "p_audit_pipeline_run_id": {
+                    "value": "@pipeline().RunId",
+                    "type": "Expression"
+                  },
+                  "p_audit_pipeline_name": {
+                    "value": "@pipeline().Pipeline",
+                    "type": "Expression"
+                  },
+                  "p_source_system": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                    "type": "Expression"
+                  },
+                  "p_source_schema": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                    "type": "Expression"
+                  },
+                  "p_source_object": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                    "type": "Expression"
+                  },
+                  "p_target_folder": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].target_folder",
+                    "type": "Expression"
+                  },
+                  "p_load_strategy": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                    "type": "Expression"
+                  },
+                  "p_watermark_field": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                    "type": "Expression"
+                  },
+                  "p_current_watermark": {
+                    "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "bf9b27e8-e6ce-85dc-4cd6-fd036a09a968",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "inv_process_incremental",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_no_new_data",
+        "dependsOn": [
+          {
+            "activity": "if_valid_processing_boundary",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_ingestion_config_id": {
+        "type": "int"
+      },
+      "p_parent_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_start_time": {
+        "type": "string"
+      },
+      "p_run_type": {
+        "type": "string"
+      },
+      "p_requested_lower_bound": {
+        "type": "string",
+        "defaultValue": "''"
+      },
+      "p_requested_upper_bound": {
+        "type": "string",
+        "defaultValue": "''"
+      }
+    },
+    "variables": {
+      "v_lower_bound": {
+        "type": "String"
+      },
+      "v_upper_bound": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_batch_id",
+          "value": {
+            "value": "@guid()",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_batch_id",
+        "dependsOn": []
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@or(\n    and(\n        equals(\n            toUpper(pipeline().parameters.p_run_type),\n            'REGULAR'\n        ),\n        greaterOrEquals(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    ),\n    and(\n        or(\n            equals(\n                toUpper(pipeline().parameters.p_run_type),\n                'RERUN'\n            ),\n            equals(\n                toUpper(pipeline().parameters.p_run_type),\n                'BACKFILL'\n            )\n        ),\n        greater(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    )\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'Invalid master request: run_type=',\n    pipeline().parameters.p_run_type,\n    ', config_id=',\n    string(pipeline().parameters.p_config_id),\n    '. REGULAR supports config_id >= 0; RERUN and BACKFILL require config_id > 0.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "INVALID_RUN_REQUEST"
+              },
+              "name": "fail_invalid_master_request",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_valid_master_request",
+        "dependsOn": [
+          {
+            "activity": "set_batch_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "FabricSqlDatabaseSource",
+            "sqlReaderQuery": {
+              "value": "@concat(\n    'SELECT ingestion_config_id ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ') ',\n    'ORDER BY ingestion_config_id;'\n)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "FabricSqlDatabaseTable",
+            "schema": [],
+            "connectionSettings": {
+              "name": "sqldb_ecommerce_control",
+              "properties": {
+                "type": "FabricSqlDatabase",
+                "typeProperties": {
+                  "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "externalReferences": {
+                  "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lkp_active_configs",
+        "dependsOn": [
+          {
+            "activity": "if_valid_master_request",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@greater(\n    int(activity('lkp_active_configs').output.count),\n    0\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@if(\n    equals(pipeline().parameters.p_config_id, 0),\n    'No active ingestion configurations were found.',\n    concat(\n        'No active ingestion configuration found for ingestion_config_id=',\n        string(pipeline().parameters.p_config_id),\n        '.'\n    )\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "CONFIG_NOT_FOUND"
+              },
+              "name": "fail_config_not_found",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_configs_found",
+        "dependsOn": [
+          {
+            "activity": "lkp_active_configs",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": false,
+          "batchCount": 3,
+          "items": {
+            "value": "@activity('lkp_active_configs').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "p_batch_id": {
+                    "value": "@variables('v_batch_id')",
+                    "type": "Expression"
+                  },
+                  "p_ingestion_config_id": {
+                    "value": "@item().ingestion_config_id",
+                    "type": "Expression"
+                  },
+                  "p_run_type": {
+                    "value": "@pipeline().parameters.p_run_type",
+                    "type": "Expression"
+                  },
+                  "p_requested_lower_bound": {
+                    "value": "@pipeline().parameters.p_lower_bound",
+                    "type": "Expression"
+                  },
+                  "p_requested_upper_bound": {
+                    "value": "@pipeline().parameters.p_upper_bound",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "f6fd3c6d-b1f0-847c-4fc5-924a2d95b546",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "inv_ingest_object",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "fe_ingestion_configs",
+        "dependsOn": [
+          {
+            "activity": "if_configs_found",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "p_run_type": {
+        "type": "string",
+        "defaultValue": "REGULAR"
+      },
+      "p_config_id": {
+        "type": "int",
+        "defaultValue": 0
+      },
+      "p_lower_bound": {
+        "type": "string"
+      },
+      "p_upper_bound": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "v_batch_id": {
+        "type": "String"
+      }
+    },
+    "concurrency": 1
+  }
+}

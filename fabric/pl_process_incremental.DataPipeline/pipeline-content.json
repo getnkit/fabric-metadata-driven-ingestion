@@ -1,0 +1,571 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_target_path",
+          "value": {
+            "value": "@concat(\n    pipeline().parameters.p_target_folder,\n    '/incremental/window=',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyyMMddTHHmmssfffZ'\n    ),\n    '_',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyyMMddTHHmmssfffZ'\n    ),\n    '/run=',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    '/'\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_target_path",
+        "dependsOn": []
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "AzureSqlSource",
+            "sqlReaderQuery": {
+              "value": "@concat(\n    'SELECT * FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE [',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126);'\n)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "datasetSettings": {
+              "type": "AzureSqlTable",
+              "typeProperties": {
+                "database": "sql_ecommerce_db"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "8fd436e8-81fc-405f-b36f-e26896f7b3f9"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "storeSettings": {
+              "type": "AzureBlobStorageWriteSettings"
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@variables('v_target_path')",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "name": "lh_ecommerce_bronze",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "70382e50-ac8f-9aee-44d7-a3364bb0a86c",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "cpy_incremental_to_landing",
+        "dependsOn": [
+          {
+            "activity": "set_target_path",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_advance_watermark",
+          "value": {
+            "value": "@or(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    and(\n        equals(\n            pipeline().parameters.p_run_type,\n            'RERUN'\n        ),\n        equals(\n            ticks(pipeline().parameters.p_current_watermark),\n            ticks(pipeline().parameters.p_lower_bound)\n        )\n    )\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_advance_watermark",
+        "dependsOn": [
+          {
+            "activity": "cpy_incremental_to_landing",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+          "storedProcedureParameters": {
+            "advance_watermark": {
+              "value": {
+                "value": "@variables('v_advance_watermark')",
+                "type": "Expression"
+              },
+              "type": "Boolean"
+            },
+            "batch_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_batch_id",
+                "type": "Expression"
+              },
+              "type": "Guid"
+            },
+            "end_time": {
+              "value": {
+                "value": "@utcNow()",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "error_code": {
+              "value": null,
+              "type": "String"
+            },
+            "error_message": {
+              "value": null,
+              "type": "String"
+            },
+            "ingestion_config_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_ingestion_config_id",
+                "type": "Expression"
+              },
+              "type": "Int32"
+            },
+            "load_strategy": {
+              "value": {
+                "value": "@pipeline().parameters.p_load_strategy",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_name": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "processing_lower_bound": {
+              "value": {
+                "value": "@pipeline().parameters.p_lower_bound",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "processing_upper_bound": {
+              "value": {
+                "value": "@pipeline().parameters.p_upper_bound",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "run_type": {
+              "value": {
+                "value": "@pipeline().parameters.p_run_type",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_object": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_object",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_row_count": {
+              "value": {
+                "value": "@activity('cpy_incremental_to_landing').output.rowsRead",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            },
+            "source_schema": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_system": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_system",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "start_time": {
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "status": {
+              "value": "SUCCESS",
+              "type": "String"
+            },
+            "target_path": {
+              "value": {
+                "value": "@variables('v_target_path')",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_row_count": {
+              "value": {
+                "value": "@activity('cpy_incremental_to_landing').output.rowsCopied",
+                "type": "Expression"
+              },
+              "type": "Int64"
+            },
+            "watermark_field": {
+              "value": {
+                "value": "@pipeline().parameters.p_watermark_field",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "connectionSettings": {
+          "name": "sqldb_ecommerce_control",
+          "properties": {
+            "type": "FabricSqlDatabase",
+            "typeProperties": {
+              "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+              "workspaceId": "00000000-0000-0000-0000-000000000000"
+            },
+            "externalReferences": {
+              "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "sp_finalize_incremental_success",
+        "dependsOn": [
+          {
+            "activity": "set_advance_watermark",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+          "storedProcedureParameters": {
+            "advance_watermark": {
+              "value": "false",
+              "type": "Boolean"
+            },
+            "batch_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_batch_id",
+                "type": "Expression"
+              },
+              "type": "Guid"
+            },
+            "end_time": {
+              "value": {
+                "value": "@utcNow()",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "error_code": {
+              "value": "COPY_FAILED",
+              "type": "String"
+            },
+            "error_message": {
+              "value": {
+                "value": "@activity('cpy_incremental_to_landing').error.message",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "ingestion_config_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_ingestion_config_id",
+                "type": "Expression"
+              },
+              "type": "Int32"
+            },
+            "load_strategy": {
+              "value": {
+                "value": "@pipeline().parameters.p_load_strategy",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_name": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "processing_lower_bound": {
+              "value": {
+                "value": "@pipeline().parameters.p_lower_bound",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "processing_upper_bound": {
+              "value": {
+                "value": "@pipeline().parameters.p_upper_bound",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "run_type": {
+              "value": {
+                "value": "@pipeline().parameters.p_run_type",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_object": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_object",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_row_count": {
+              "value": null,
+              "type": "Int64"
+            },
+            "source_schema": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_system": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_system",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "start_time": {
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "status": {
+              "value": "FAILED",
+              "type": "String"
+            },
+            "target_path": {
+              "value": {
+                "value": "@variables('v_target_path')",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_row_count": {
+              "value": null,
+              "type": "Int64"
+            },
+            "watermark_field": {
+              "value": {
+                "value": "@pipeline().parameters.p_watermark_field",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "connectionSettings": {
+          "name": "sqldb_ecommerce_control",
+          "properties": {
+            "type": "FabricSqlDatabase",
+            "typeProperties": {
+              "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+              "workspaceId": "00000000-0000-0000-0000-000000000000"
+            },
+            "externalReferences": {
+              "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "sp_finalize_incremental_copy_failed",
+        "dependsOn": [
+          {
+            "activity": "cpy_incremental_to_landing",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@activity('cpy_incremental_to_landing').error.message",
+            "type": "Expression"
+          },
+          "errorCode": "COPY_FAILED"
+        },
+        "name": "fail_incremental_copy",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_incremental_copy_failed",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@activity('sp_finalize_incremental_copy_failed').error.message",
+            "type": "Expression"
+          },
+          "errorCode": "FINALIZATION_FAILED"
+        },
+        "name": "fail_incremental_failure_finalization",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_incremental_copy_failed",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_ingestion_config_id": {
+        "type": "int"
+      },
+      "p_run_type": {
+        "type": "string"
+      },
+      "p_lower_bound": {
+        "type": "string"
+      },
+      "p_upper_bound": {
+        "type": "string"
+      },
+      "p_start_time": {
+        "type": "string"
+      },
+      "p_audit_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_audit_pipeline_name": {
+        "type": "string"
+      },
+      "p_source_system": {
+        "type": "string"
+      },
+      "p_source_schema": {
+        "type": "string"
+      },
+      "p_source_object": {
+        "type": "string"
+      },
+      "p_target_folder": {
+        "type": "string"
+      },
+      "p_load_strategy": {
+        "type": "string"
+      },
+      "p_watermark_field": {
+        "type": "string"
+      },
+      "p_current_watermark": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "v_target_path": {
+        "type": "String"
+      },
+      "v_advance_watermark": {
+        "type": "Boolean"
+      }
+    }
+  }
+}
