@@ -1,8 +1,8 @@
 /*
     04_add_brands_source.sql
     Target: Azure SQL Database (mock operational source)
-    Purpose: Add a new incremental source object after the baseline framework
-             is already built, for the M71 metadata-driven extensibility demo.
+    Purpose: Add a new incremental source object to demonstrate
+             metadata-driven source onboarding.
 
     Re-run behavior:
       - Creates catalog.brands only if it does not already exist.
