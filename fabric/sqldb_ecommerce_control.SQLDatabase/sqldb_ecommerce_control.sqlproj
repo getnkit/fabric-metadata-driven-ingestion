@@ -15,7 +15,7 @@
     <FileStreamDirectoryName></FileStreamDirectoryName>
     <IsQueryStoreOn>True</IsQueryStoreOn>
     <ModelCollation>1033, CI</ModelCollation>
-    <Name>sqldb_ecommerce_control-6e4a61a2-ba58-4e2e-bc73-692ee9814d95</Name>
+    <Name>sqldb_ecommerce_control</Name>
     <PageVerify>CHECKSUM</PageVerify>
     <ProjectGuid>{00000000-0000-0000-0000-000000000000}</ProjectGuid>
     <QueryStoreCaptureMode>AUTO</QueryStoreCaptureMode>

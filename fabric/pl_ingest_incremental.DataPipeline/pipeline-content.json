@@ -744,7 +744,10 @@
                     "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
                     "type": "Expression"
                   },
-                  "p_target_table": "@activity('lkp_ingestion_config').output.value[0].target_table"
+                  "p_target_table": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                    "type": "Expression"
+                  }
                 },
                 "waitOnCompletion": true,
                 "workspaceId": "00000000-0000-0000-0000-000000000000",
