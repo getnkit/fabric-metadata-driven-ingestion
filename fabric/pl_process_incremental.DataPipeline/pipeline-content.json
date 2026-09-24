@@ -549,6 +549,9 @@
       "p_target_folder": {
         "type": "string"
       },
+      "p_target_table": {
+        "type": "string"
+      },
       "p_load_strategy": {
         "type": "string"
       },

@@ -7,7 +7,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'target_table, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -743,7 +743,8 @@
                   "p_current_watermark": {
                     "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
                     "type": "Expression"
-                  }
+                  },
+                  "p_target_table": "@activity('lkp_ingestion_config').output.value[0].target_table"
                 },
                 "waitOnCompletion": true,
                 "workspaceId": "00000000-0000-0000-0000-000000000000",
