@@ -22,6 +22,7 @@ DECLARE @Seed TABLE
     source_schema    NVARCHAR(128) NOT NULL,
     source_object    NVARCHAR(128) NOT NULL,
     target_folder    NVARCHAR(500) NOT NULL,
+    target_table     NVARCHAR(128) NOT NULL,
     load_strategy    VARCHAR(20) NOT NULL,
     watermark_field  NVARCHAR(128) NULL,
     is_active        BIT NOT NULL
@@ -33,17 +34,18 @@ INSERT INTO @Seed
     source_schema,
     source_object,
     target_folder,
+    target_table,
     load_strategy,
     watermark_field,
     is_active
 )
 VALUES
-    ('ECOMMERCE_AZSQL', 'crm',     'customers',          'landing/crm/customers',                 'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE_AZSQL', 'partner', 'merchants',          'landing/partner/merchants',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE_AZSQL', 'catalog', 'product_categories', 'landing/catalog/product_categories',    'FULL',        NULL,         1),
-    ('ECOMMERCE_AZSQL', 'catalog', 'products',           'landing/catalog/products',              'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE_AZSQL', 'sales',   'orders',             'landing/sales/orders',                  'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE_AZSQL', 'sales',   'order_items',        'landing/sales/order_items',             'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE_AZSQL', 'crm',     'customers',          'landing/crm/customers',              'crm_customers',                'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE_AZSQL', 'partner', 'merchants',          'landing/partner/merchants',          'partner_merchants',            'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE_AZSQL', 'catalog', 'product_categories', 'landing/catalog/product_categories', 'catalog_product_categories',   'FULL',        NULL,         1),
+    ('ECOMMERCE_AZSQL', 'catalog', 'products',           'landing/catalog/products',           'catalog_products',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE_AZSQL', 'sales',   'orders',             'landing/sales/orders',               'sales_orders',                 'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE_AZSQL', 'sales',   'order_items',        'landing/sales/order_items',          'sales_order_items',            'INCREMENTAL', 'updated_at', 1);
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -52,6 +54,7 @@ BEGIN TRY
     UPDATE c
     SET
         c.target_folder = s.target_folder,
+        c.target_table = s.target_table,
         c.load_strategy = s.load_strategy,
         c.watermark_field = s.watermark_field,
         c.is_active = s.is_active,
@@ -69,6 +72,7 @@ BEGIN TRY
         source_schema,
         source_object,
         target_folder,
+        target_table,
         load_strategy,
         watermark_field,
         is_active
@@ -78,6 +82,7 @@ BEGIN TRY
         s.source_schema,
         s.source_object,
         s.target_folder,
+        s.target_table,
         s.load_strategy,
         s.watermark_field,
         s.is_active
@@ -126,6 +131,7 @@ SELECT
     source_schema,
     source_object,
     target_folder,
+    target_table,
     load_strategy,
     watermark_field,
     is_active,

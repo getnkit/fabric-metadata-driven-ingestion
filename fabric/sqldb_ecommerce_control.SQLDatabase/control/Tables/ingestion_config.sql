@@ -4,6 +4,7 @@ CREATE TABLE [control].[ingestion_config] (
     [source_schema]       NVARCHAR (128) NOT NULL,
     [source_object]       NVARCHAR (128) NOT NULL,
     [target_folder]       NVARCHAR (500) NOT NULL,
+    [target_table]        NVARCHAR (128) NOT NULL,
     [load_strategy]       VARCHAR (20)   NOT NULL,
     [watermark_field]     NVARCHAR (128) NULL,
     [is_active]           BIT            CONSTRAINT [DF_ingestion_config_is_active] DEFAULT ((1)) NOT NULL,
