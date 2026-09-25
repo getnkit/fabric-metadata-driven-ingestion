@@ -317,6 +317,10 @@
                       "p_requested_upper_bound": {
                         "value": "@pipeline().parameters.p_requested_upper_bound",
                         "type": "Expression"
+                      },
+                      "p_parent_pipeline_name": {
+                        "value": "@pipeline().Pipeline",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,

@@ -298,14 +298,14 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().Pipeline",
+                      "value": "@pipeline().parameters.p_parent_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().RunId",
+                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -568,14 +568,14 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().Pipeline",
+                      "value": "@pipeline().parameters.p_parent_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().RunId",
+                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -709,11 +709,11 @@
                     "type": "Expression"
                   },
                   "p_audit_pipeline_run_id": {
-                    "value": "@pipeline().RunId",
+                    "value": "@pipeline().parameters.p_parent_pipeline_run_id",
                     "type": "Expression"
                   },
                   "p_audit_pipeline_name": {
-                    "value": "@pipeline().Pipeline",
+                    "value": "@pipeline().parameters.p_parent_pipeline_name",
                     "type": "Expression"
                   },
                   "p_source_system": {
@@ -803,6 +803,9 @@
       "p_requested_upper_bound": {
         "type": "string",
         "defaultValue": "''"
+      },
+      "p_parent_pipeline_name": {
+        "type": "string"
       }
     },
     "variables": {
