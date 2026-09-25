@@ -4,9 +4,9 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_target_path",
+          "variableName": "v_ingestion_timestamp",
           "value": {
-            "value": "@concat(\n    pipeline().parameters.p_target_folder,\n    '/incremental/window=',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyyMMddTHHmmssfffZ'\n    ),\n    '_',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyyMMddTHHmmssfffZ'\n    ),\n    '/run=',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    '/'\n)",
+            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fff'\n)",
             "type": "Expression"
           }
         },
@@ -14,7 +14,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "set_target_path",
+        "name": "set_ingestion_timestamp",
         "dependsOn": []
       },
       {
@@ -23,7 +23,7 @@
           "source": {
             "type": "AzureSqlSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT * FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE [',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126);'\n)",
+              "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE [',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126);'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -41,25 +41,19 @@
             }
           },
           "sink": {
-            "type": "ParquetSink",
-            "formatSettings": {
-              "type": "ParquetWriteSettings",
-              "enableVertiParquet": true
-            },
-            "storeSettings": {
-              "type": "AzureBlobStorageWriteSettings"
-            },
+            "type": "LakehouseTableSink",
+            "tableActionOption": "Append",
+            "applyVOrder": false,
+            "enableTimestampNtz": false,
+            "partitionOption": "None",
             "datasetSettings": {
-              "type": "Parquet",
+              "type": "LakehouseTable",
               "typeProperties": {
-                "location": {
-                  "type": "LakehouseLocation",
-                  "folderPath": {
-                    "value": "@variables('v_target_path')",
-                    "type": "Expression"
-                  }
-                },
-                "compressionCodec": "snappy"
+                "schema": "dbo",
+                "table": {
+                  "value": "@pipeline().parameters.p_target_table",
+                  "type": "Expression"
+                }
               },
               "schema": [],
               "linkedService": {
@@ -69,7 +63,7 @@
                   "typeProperties": {
                     "artifactId": "70382e50-ac8f-9aee-44d7-a3364bb0a86c",
                     "workspaceId": "00000000-0000-0000-0000-000000000000",
-                    "rootFolder": "Files"
+                    "rootFolder": "Tables"
                   },
                   "annotations": []
                 }
@@ -97,7 +91,7 @@
         "name": "cpy_incremental_to_landing",
         "dependsOn": [
           {
-            "activity": "set_target_path",
+            "activity": "set_ingestion_timestamp",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -250,10 +244,7 @@
               "type": "String"
             },
             "target_path": {
-              "value": {
-                "value": "@variables('v_target_path')",
-                "type": "Expression"
-              },
+              "value": null,
               "type": "String"
             },
             "target_row_count": {
@@ -266,6 +257,13 @@
             "watermark_field": {
               "value": {
                 "value": "@pipeline().parameters.p_watermark_field",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_table": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_table",
                 "type": "Expression"
               },
               "type": "String"
@@ -423,10 +421,7 @@
               "type": "String"
             },
             "target_path": {
-              "value": {
-                "value": "@variables('v_target_path')",
-                "type": "Expression"
-              },
+              "value": null,
               "type": "String"
             },
             "target_row_count": {
@@ -436,6 +431,13 @@
             "watermark_field": {
               "value": {
                 "value": "@pipeline().parameters.p_watermark_field",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_table": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_table",
                 "type": "Expression"
               },
               "type": "String"
@@ -563,11 +565,11 @@
       }
     },
     "variables": {
-      "v_target_path": {
-        "type": "String"
-      },
       "v_advance_watermark": {
         "type": "Boolean"
+      },
+      "v_ingestion_timestamp": {
+        "type": "String"
       }
     }
   }
