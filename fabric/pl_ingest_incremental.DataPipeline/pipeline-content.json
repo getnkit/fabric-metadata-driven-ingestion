@@ -787,10 +787,6 @@
                     "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
                     "type": "Expression"
                   },
-                  "p_target_folder": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].target_folder",
-                    "type": "Expression"
-                  },
                   "p_load_strategy": {
                     "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
                     "type": "Expression"

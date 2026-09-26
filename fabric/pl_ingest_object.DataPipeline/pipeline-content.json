@@ -479,15 +479,6 @@
       },
       "v_run_type": {
         "type": "String"
-      },
-      "v_lower_bound": {
-        "type": "String"
-      },
-      "v_upper_bound": {
-        "type": "String"
-      },
-      "v_target_path": {
-        "type": "String"
       }
     }
   }
