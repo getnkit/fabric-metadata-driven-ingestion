@@ -7,7 +7,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'target_schema, ',\n    'target_table, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'c.ingestion_config_id, ',\n    'c.source_system, ',\n    'c.source_conn_ref, ',\n    'sc.connection_type AS source_connection_type, ',\n    'sc.connection_settings AS source_connection_settings, ',\n    'c.source_schema, ',\n    'c.source_object, ',\n    'c.target_folder, ',\n    'c.target_conn_ref, ',\n    'tc.connection_type AS target_connection_type, ',\n    'tc.connection_settings AS target_connection_settings, ',\n    'c.target_schema, ',\n    'c.target_table, ',\n    'c.load_strategy, ',\n    'c.watermark_field ',\n    'FROM control.ingestion_config c ',\n    'JOIN control.connection_settings sc ',\n    'ON sc.connection_ref = c.source_conn_ref ',\n    'JOIN control.connection_settings tc ',\n    'ON tc.connection_ref = c.target_conn_ref ',\n    'WHERE c.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
