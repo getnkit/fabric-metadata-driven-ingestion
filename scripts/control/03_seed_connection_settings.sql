@@ -12,16 +12,14 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @SourceConnectionId NVARCHAR(100) = NULL;
-DECLARE @TargetConnectionId NVARCHAR(100) = NULL;
 DECLARE @TargetWorkspaceId  NVARCHAR(100) = NULL;
 DECLARE @TargetItemId       NVARCHAR(100) = NULL;
 
 IF @SourceConnectionId IS NULL
-   OR @TargetConnectionId IS NULL
    OR @TargetWorkspaceId IS NULL
    OR @TargetItemId IS NULL
 BEGIN
-    THROW 51010, 'Set SourceConnectionId, TargetConnectionId, TargetWorkspaceId, and TargetItemId before running this seed.', 1;
+    THROW 51010, 'Set SourceConnectionId, TargetWorkspaceId, and TargetItemId before running this seed.', 1;
 END;
 
 DECLARE @Seed TABLE
@@ -51,9 +49,7 @@ VALUES
     'LH_ECOMMERCE_BRONZE',
     'LAKEHOUSE',
     CONCAT(
-        N'{"connectionId":"',
-        @TargetConnectionId,
-        N'","workspaceId":"',
+        N'{"workspaceId":"',
         @TargetWorkspaceId,
         N'","itemId":"',
         @TargetItemId,
