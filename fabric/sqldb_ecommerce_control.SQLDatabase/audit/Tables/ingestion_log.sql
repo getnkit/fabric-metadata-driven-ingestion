@@ -9,6 +9,7 @@ CREATE TABLE [audit].[ingestion_log] (
     [source_schema]          NVARCHAR (128)   NULL,
     [source_object]          NVARCHAR (128)   NULL,
     [target_path]            NVARCHAR (1000)  NULL,
+    [target_schema]          NVARCHAR (128)   NULL,
     [target_table]           NVARCHAR (128)   NULL,
     [load_strategy]          VARCHAR (20)     NULL,
     [watermark_field]        NVARCHAR (128)   NULL,

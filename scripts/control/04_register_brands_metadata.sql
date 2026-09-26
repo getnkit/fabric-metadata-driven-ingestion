@@ -22,6 +22,7 @@ BEGIN TRY
     UPDATE control.ingestion_config
     SET
         target_folder = 'landing/catalog/brands',
+        target_schema = 'dbo',
         target_table = 'catalog_brands',
         load_strategy = 'INCREMENTAL',
         watermark_field = 'updated_at',
@@ -46,6 +47,7 @@ BEGIN TRY
             source_schema,
             source_object,
             target_folder,
+            target_schema,
             target_table,
             load_strategy,
             watermark_field,
@@ -57,6 +59,7 @@ BEGIN TRY
             'catalog',
             'brands',
             'landing/catalog/brands',
+            'dbo',
             'catalog_brands',
             'INCREMENTAL',
             'updated_at',
@@ -100,6 +103,7 @@ SELECT
     source_schema,
     source_object,
     target_folder,
+    target_schema,
     target_table,
     load_strategy,
     watermark_field,
