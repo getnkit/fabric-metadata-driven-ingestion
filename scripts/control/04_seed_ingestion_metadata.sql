@@ -46,12 +46,12 @@ INSERT INTO @Seed
     is_active
 )
 VALUES
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          'landing/crm/customers',              'LH_ECOMMERCE_BRONZE', 'dbo', 'crm_customers',              'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'landing/partner/merchants',          'LH_ECOMMERCE_BRONZE', 'dbo', 'partner_merchants',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'landing/catalog/product_categories', 'LH_ECOMMERCE_BRONZE', 'dbo', 'catalog_product_categories', 'FULL',        NULL,         1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'landing/catalog/products',           'LH_ECOMMERCE_BRONZE', 'dbo', 'catalog_products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'landing/sales/orders',               'LH_ECOMMERCE_BRONZE', 'dbo', 'sales_orders',               'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'landing/sales/order_items',          'LH_ECOMMERCE_BRONZE', 'dbo', 'sales_order_items',          'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          'landing/crm/customers',              'LH_ECOMMERCE_BRONZE', 'crm', 'customers',              'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'landing/partner/merchants',          'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'landing/catalog/product_categories', 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'landing/catalog/products',           'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'landing/sales/orders',               'LH_ECOMMERCE_BRONZE', 'sales', 'orders',               'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'landing/sales/order_items',          'LH_ECOMMERCE_BRONZE', 'sales', 'order_items',          'INCREMENTAL', 'updated_at', 1);
 
 BEGIN TRY
     BEGIN TRANSACTION;
