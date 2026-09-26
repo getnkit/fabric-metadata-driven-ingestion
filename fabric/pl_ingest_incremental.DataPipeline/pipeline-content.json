@@ -395,6 +395,20 @@
                       "type": "Expression"
                     },
                     "type": "String"
+                  },
+                  "source_conn_ref": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_conn_ref": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   }
                 }
               },
