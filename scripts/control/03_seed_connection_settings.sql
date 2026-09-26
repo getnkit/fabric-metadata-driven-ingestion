@@ -1,0 +1,1 @@
+/* Seed logical connection settings for the ingestion framework. */
