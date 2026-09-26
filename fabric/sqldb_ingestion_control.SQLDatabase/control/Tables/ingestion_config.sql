@@ -1,9 +1,11 @@
 CREATE TABLE [control].[ingestion_config] (
     [ingestion_config_id] INT            IDENTITY (1, 1) NOT NULL,
     [source_system]       NVARCHAR (100) NOT NULL,
+    [source_conn_ref]     NVARCHAR (100) NOT NULL,
     [source_schema]       NVARCHAR (128) NOT NULL,
     [source_object]       NVARCHAR (128) NOT NULL,
     [target_folder]       NVARCHAR (500) NOT NULL,
+    [target_conn_ref]     NVARCHAR (100) NOT NULL,
     [target_schema]       NVARCHAR (128) NOT NULL,
     [target_table]        NVARCHAR (128) NOT NULL,
     [load_strategy]       VARCHAR (20)   NOT NULL,
@@ -14,7 +16,9 @@ CREATE TABLE [control].[ingestion_config] (
     CONSTRAINT [PK_ingestion_config] PRIMARY KEY CLUSTERED ([ingestion_config_id] ASC),
     CONSTRAINT [CK_ingestion_config_strategy] CHECK ([load_strategy]='INCREMENTAL' OR [load_strategy]='FULL'),
     CONSTRAINT [CK_ingestion_config_watermark] CHECK ([load_strategy]='FULL' AND [watermark_field] IS NULL OR [load_strategy]='INCREMENTAL' AND [watermark_field] IS NOT NULL),
-    CONSTRAINT [UQ_ingestion_config_source] UNIQUE NONCLUSTERED ([source_system] ASC, [source_schema] ASC, [source_object] ASC)
+    CONSTRAINT [UQ_ingestion_config_source] UNIQUE NONCLUSTERED ([source_system] ASC, [source_schema] ASC, [source_object] ASC),
+    CONSTRAINT [FK_ingestion_config_source_connection] FOREIGN KEY ([source_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref]),
+    CONSTRAINT [FK_ingestion_config_target_connection] FOREIGN KEY ([target_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref])
 );
 
 
