@@ -1,6 +1,6 @@
 /*
     01_create_control_schema.sql
-    Target: Microsoft Fabric SQL Database (sqldb_ecommerce_control)
+    Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
     Purpose: Create the metadata, current-state, and audit structures used by the
              metadata-driven ingestion framework.
 */
@@ -13,18 +13,37 @@ IF SCHEMA_ID('control') IS NULL EXEC('CREATE SCHEMA control');
 IF SCHEMA_ID('audit') IS NULL EXEC('CREATE SCHEMA audit');
 GO
 
-/* Drop view first because it depends on the control tables. */
 IF OBJECT_ID('control.v_pipeline_watermarks', 'V') IS NOT NULL
     DROP VIEW control.v_pipeline_watermarks;
 GO
 
-/* Drop in dependency order. */
 IF OBJECT_ID('audit.ingestion_log', 'U') IS NOT NULL
     DROP TABLE audit.ingestion_log;
 IF OBJECT_ID('control.pipeline_watermarks', 'U') IS NOT NULL
     DROP TABLE control.pipeline_watermarks;
 IF OBJECT_ID('control.ingestion_config', 'U') IS NOT NULL
     DROP TABLE control.ingestion_config;
+IF OBJECT_ID('control.connection_settings', 'U') IS NOT NULL
+    DROP TABLE control.connection_settings;
+GO
+
+CREATE TABLE control.connection_settings
+(
+    connection_ref       NVARCHAR(100) NOT NULL
+        CONSTRAINT PK_connection_settings PRIMARY KEY,
+
+    connection_type      VARCHAR(50) NOT NULL,
+    connection_settings  NVARCHAR(MAX) NOT NULL,
+
+    created_at           DATETIME2(3) NOT NULL
+        CONSTRAINT DF_connection_settings_created_at DEFAULT SYSUTCDATETIME(),
+
+    updated_at           DATETIME2(3) NOT NULL
+        CONSTRAINT DF_connection_settings_updated_at DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT CK_connection_settings_json
+        CHECK (ISJSON(connection_settings) = 1)
+);
 GO
 
 CREATE TABLE control.ingestion_config
@@ -33,10 +52,13 @@ CREATE TABLE control.ingestion_config
         CONSTRAINT PK_ingestion_config PRIMARY KEY,
 
     source_system        NVARCHAR(100) NOT NULL,
+    source_conn_ref      NVARCHAR(100) NOT NULL,
     source_schema        NVARCHAR(128) NOT NULL,
     source_object        NVARCHAR(128) NOT NULL,
 
     target_folder        NVARCHAR(500) NOT NULL,
+    target_conn_ref      NVARCHAR(100) NOT NULL,
+    target_schema        NVARCHAR(128) NOT NULL,
     target_table         NVARCHAR(128) NOT NULL,
 
     load_strategy        VARCHAR(20) NOT NULL,
@@ -63,7 +85,15 @@ CREATE TABLE control.ingestion_config
             (load_strategy = 'FULL' AND watermark_field IS NULL)
             OR
             (load_strategy = 'INCREMENTAL' AND watermark_field IS NOT NULL)
-        )
+        ),
+
+    CONSTRAINT FK_ingestion_config_source_connection
+        FOREIGN KEY (source_conn_ref)
+        REFERENCES control.connection_settings(connection_ref),
+
+    CONSTRAINT FK_ingestion_config_target_connection
+        FOREIGN KEY (target_conn_ref)
+        REFERENCES control.connection_settings(connection_ref)
 );
 GO
 
@@ -101,9 +131,12 @@ CREATE TABLE audit.ingestion_log
     run_type                  VARCHAR(20) NOT NULL,
 
     source_system             NVARCHAR(100) NULL,
+    source_conn_ref           NVARCHAR(100) NULL,
     source_schema             NVARCHAR(128) NULL,
     source_object             NVARCHAR(128) NULL,
+
     target_path               NVARCHAR(1000) NULL,
+    target_conn_ref           NVARCHAR(100) NULL,
     target_schema             NVARCHAR(128) NULL,
     target_table              NVARCHAR(128) NULL,
 
@@ -153,17 +186,14 @@ CREATE TABLE audit.ingestion_log
 );
 GO
 
--- Speeds up retrieval of all child runs within the same master batch.
 CREATE INDEX IX_ingestion_log_batch
     ON audit.ingestion_log(batch_id, ingestion_log_id);
 GO
 
--- Speeds up retrieval of the latest run history for a specific ingestion config.
 CREATE INDEX IX_ingestion_log_config_time
     ON audit.ingestion_log(ingestion_config_id, start_time DESC);
 GO
 
--- Speeds up retrieval of the latest runs by execution status for troubleshooting.
 CREATE INDEX IX_ingestion_log_status_time
     ON audit.ingestion_log(status, start_time DESC);
 GO

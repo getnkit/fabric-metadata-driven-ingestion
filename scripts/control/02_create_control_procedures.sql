@@ -1,6 +1,6 @@
 /*
     02_create_control_procedures.sql
-    Target: Microsoft Fabric SQL Database (sqldb_ecommerce_control)
+    Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
     Purpose: Create the stored procedures used to finalize ingestion runs and update
              watermark state atomically.
 
@@ -29,9 +29,13 @@ CREATE OR ALTER PROCEDURE control.usp_finalize_ingestion_run
     @run_type                   VARCHAR(20),
 
     @source_system              NVARCHAR(100) = NULL,
+    @source_conn_ref            NVARCHAR(100) = NULL,
     @source_schema              NVARCHAR(128) = NULL,
     @source_object              NVARCHAR(128) = NULL,
+
     @target_path                NVARCHAR(1000) = NULL,
+    @target_conn_ref            NVARCHAR(100) = NULL,
+    @target_schema              NVARCHAR(128) = NULL,
     @target_table               NVARCHAR(128) = NULL,
 
     @load_strategy              VARCHAR(20) = NULL,
@@ -64,26 +68,12 @@ BEGIN
     IF @DurationSeconds < 0
         THROW 51000, 'INVALID_AUDIT_TIME_RANGE: end_time is earlier than start_time.', 1;
 
-    /*
-        Prevent duplicate finalization for the same Fabric child pipeline run.
-
-        If this pipeline_run_id has already been finalized and committed,
-        do not update the watermark or insert another audit row again.
-        This makes a retry of the finalization step safe.
-    */
     SELECT @ExistingStatus = status
     FROM audit.ingestion_log
     WHERE pipeline_run_id = @pipeline_run_id;
 
     IF @ExistingStatus IS NOT NULL
     BEGIN
-        /*
-            Preserve the original terminal result of this pipeline run.
-
-            If this pipeline_run_id was already finalized as FAILED,
-            a later call with the same RunId must not change it to SUCCESS.
-            Recovery must happen in a new pipeline execution with a new RunId.
-        */
         IF @ExistingStatus = 'FAILED' AND @status = 'SUCCESS'
             THROW 51002, 'RUN_ALREADY_FINALIZED_AS_FAILED: this pipeline_run_id already has a FAILED audit record.', 1;
 
@@ -138,9 +128,12 @@ BEGIN
                     pipeline_name,
                     run_type,
                     source_system,
+                    source_conn_ref,
                     source_schema,
                     source_object,
                     target_path,
+                    target_conn_ref,
+                    target_schema,
                     target_table,
                     load_strategy,
                     watermark_field,
@@ -163,9 +156,12 @@ BEGIN
                     @pipeline_name,
                     @run_type,
                     @source_system,
+                    @source_conn_ref,
                     @source_schema,
                     @source_object,
                     @target_path,
+                    @target_conn_ref,
+                    @target_schema,
                     @target_table,
                     @load_strategy,
                     @watermark_field,
@@ -194,9 +190,12 @@ BEGIN
             pipeline_name,
             run_type,
             source_system,
+            source_conn_ref,
             source_schema,
             source_object,
             target_path,
+            target_conn_ref,
+            target_schema,
             target_table,
             load_strategy,
             watermark_field,
@@ -219,9 +218,12 @@ BEGIN
             @pipeline_name,
             @run_type,
             @source_system,
+            @source_conn_ref,
             @source_schema,
             @source_object,
             @target_path,
+            @target_conn_ref,
+            @target_schema,
             @target_table,
             @load_strategy,
             @watermark_field,
