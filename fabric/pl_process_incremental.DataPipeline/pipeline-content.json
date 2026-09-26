@@ -62,14 +62,17 @@
                 }
               },
               "schema": [],
-              "linkedService": {
-                "name": "fac4abab_c4bc_40a6_917e_4943445e7f30",
+              "connectionSettings": {
+                "name": "27beefec_36d1_42f1_99d0_afa84974a403",
                 "properties": {
                   "type": "Lakehouse",
                   "typeProperties": {
-                    "artifactId": "@json(\n    pipeline().parameters.p_target_connection_settings\n).itemId",
-                    "workspaceId": "@json(\n    pipeline().parameters.p_target_connection_settings\n).workspaceId",
+                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                    "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
                     "rootFolder": "Tables"
+                  },
+                  "externalReferences": {
+                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
                   },
                   "annotations": []
                 }
