@@ -56,7 +56,7 @@
                     "rootFolder": "Tables"
                   },
                   "externalReferences": {
-                    "connection": "60d8470f-4a73-46a3-b537-da67ac2e3fd1"
+                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
                   },
                   "annotations": []
                 }
