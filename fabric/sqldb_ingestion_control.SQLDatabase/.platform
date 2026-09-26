@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SQLDatabase",
+    "displayName": "sqldb_ingestion_control"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "50af6a71-1856-904b-4b47-b7169c67fb4e"
+  }
+}
