@@ -206,11 +206,14 @@
                 "datasetSettings": {
                   "type": "AzureSqlTable",
                   "typeProperties": {
-                    "database": "sql_ecommerce_db"
+                    "database": {
+                      "value": "@json(\n    activity('lkp_ingestion_config').output.value[0].source_connection_settings\n).database",
+                      "type": "Expression"
+                    }
                   },
                   "schema": [],
                   "externalReferences": {
-                    "connection": "8fd436e8-81fc-405f-b36f-e26896f7b3f9"
+                    "connection": "@json(\n    activity('lkp_ingestion_config').output.value[0].source_connection_settings\n).connectionId"
                   },
                   "annotations": []
                 }
@@ -679,6 +682,20 @@
                       "type": "Expression"
                     },
                     "type": "String"
+                  },
+                  "source_conn_ref": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_conn_ref": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   }
                 }
               },
@@ -778,6 +795,22 @@
                   },
                   "p_target_schema": {
                     "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                    "type": "Expression"
+                  },
+                  "p_source_conn_ref": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                    "type": "Expression"
+                  },
+                  "p_source_connection_settings": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                    "type": "Expression"
+                  },
+                  "p_target_conn_ref": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                    "type": "Expression"
+                  },
+                  "p_target_connection_settings": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
                     "type": "Expression"
                   }
                 },

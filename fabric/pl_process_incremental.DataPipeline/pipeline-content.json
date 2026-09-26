@@ -31,11 +31,14 @@
             "datasetSettings": {
               "type": "AzureSqlTable",
               "typeProperties": {
-                "database": "sql_ecommerce_db"
+                "database": {
+                  "value": "@json(\n    pipeline().parameters.p_source_connection_settings\n).database",
+                  "type": "Expression"
+                }
               },
               "schema": [],
               "externalReferences": {
-                "connection": "8fd436e8-81fc-405f-b36f-e26896f7b3f9"
+                "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
               },
               "annotations": []
             }
@@ -45,6 +48,7 @@
             "tableActionOption": "Append",
             "applyVOrder": false,
             "enableTimestampNtz": false,
+            "partitionOption": "None",
             "datasetSettings": {
               "type": "LakehouseTable",
               "typeProperties": {
@@ -59,12 +63,12 @@
               },
               "schema": [],
               "linkedService": {
-                "name": "lh_ecommerce_bronze",
+                "name": "fac4abab_c4bc_40a6_917e_4943445e7f30",
                 "properties": {
                   "type": "Lakehouse",
                   "typeProperties": {
-                    "artifactId": "70382e50-ac8f-9aee-44d7-a3364bb0a86c",
-                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "artifactId": "@json(\n    pipeline().parameters.p_target_connection_settings\n).itemId",
+                    "workspaceId": "@json(\n    pipeline().parameters.p_target_connection_settings\n).workspaceId",
                     "rootFolder": "Tables"
                   },
                   "annotations": []
@@ -276,6 +280,20 @@
                 "type": "Expression"
               },
               "type": "String"
+            },
+            "source_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
             }
           }
         },
@@ -455,7 +473,22 @@
               "value": {
                 "value": "@pipeline().parameters.p_target_table",
                 "type": "Expression"
-              }
+              },
+              "type": "String"
+            },
+            "source_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
             }
           }
         },
@@ -579,6 +612,18 @@
         "type": "string"
       },
       "p_current_watermark": {
+        "type": "string"
+      },
+      "p_source_conn_ref": {
+        "type": "string"
+      },
+      "p_source_connection_settings": {
+        "type": "string"
+      },
+      "p_target_conn_ref": {
+        "type": "string"
+      },
+      "p_target_connection_settings": {
         "type": "string"
       }
     },
