@@ -260,15 +260,15 @@
                 }
               },
               "connectionSettings": {
-                "name": "sqldb_ecommerce_control",
+                "name": "sqldb_ingestion_control",
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+                    "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+                    "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
                   },
                   "annotations": []
                 }
@@ -562,15 +562,15 @@
           }
         },
         "connectionSettings": {
-          "name": "sqldb_ecommerce_control",
+          "name": "sqldb_ingestion_control",
           "properties": {
             "type": "FabricSqlDatabase",
             "typeProperties": {
-              "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
               "workspaceId": "00000000-0000-0000-0000-000000000000"
             },
             "externalReferences": {
-              "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
             },
             "annotations": []
           }
@@ -723,15 +723,15 @@
           }
         },
         "connectionSettings": {
-          "name": "sqldb_ecommerce_control",
+          "name": "sqldb_ingestion_control",
           "properties": {
             "type": "FabricSqlDatabase",
             "typeProperties": {
-              "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
               "workspaceId": "00000000-0000-0000-0000-000000000000"
             },
             "externalReferences": {
-              "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
             },
             "annotations": []
           }
@@ -922,15 +922,15 @@
           }
         },
         "connectionSettings": {
-          "name": "sqldb_ecommerce_control",
+          "name": "sqldb_ingestion_control",
           "properties": {
             "type": "FabricSqlDatabase",
             "typeProperties": {
-              "artifactId": "e9814d95-692e-bc73-4e2e-ba586e4a61a2",
+              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
               "workspaceId": "00000000-0000-0000-0000-000000000000"
             },
             "externalReferences": {
-              "connection": "3c7ac7f2-4283-41e7-85bb-ba1f937947b6"
+              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
             },
             "annotations": []
           }
