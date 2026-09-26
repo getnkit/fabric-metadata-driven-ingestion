@@ -40,7 +40,7 @@ INSERT INTO @Seed
 VALUES
 (
     'AZSQL_ECOMMERCE',
-    'SQL_SERVER',
+    'AZURE_SQL',
     CONCAT(
         N'{"connectionId":"',
         @SourceConnectionId,
