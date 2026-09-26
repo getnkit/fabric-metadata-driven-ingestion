@@ -45,11 +45,13 @@
             "tableActionOption": "Append",
             "applyVOrder": false,
             "enableTimestampNtz": false,
-            "partitionOption": "None",
             "datasetSettings": {
               "type": "LakehouseTable",
               "typeProperties": {
-                "schema": "dbo",
+                "schema": {
+                  "value": "@pipeline().parameters.p_target_schema",
+                  "type": "Expression"
+                },
                 "table": {
                   "value": "@pipeline().parameters.p_target_table",
                   "type": "Expression"
@@ -261,6 +263,13 @@
               },
               "type": "String"
             },
+            "target_schema": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
             "target_table": {
               "value": {
                 "value": "@pipeline().parameters.p_target_table",
@@ -435,12 +444,18 @@
               },
               "type": "String"
             },
+            "target_schema": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
             "target_table": {
               "value": {
                 "value": "@pipeline().parameters.p_target_table",
                 "type": "Expression"
-              },
-              "type": "String"
+              }
             }
           }
         },
@@ -549,6 +564,9 @@
         "type": "string"
       },
       "p_target_folder": {
+        "type": "string"
+      },
+      "p_target_schema": {
         "type": "string"
       },
       "p_target_table": {

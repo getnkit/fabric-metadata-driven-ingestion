@@ -7,7 +7,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'target_table, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'source_system, ',\n    'source_schema, ',\n    'source_object, ',\n    'target_folder, ',\n    'target_schema, ',\n    'target_table, ',\n    'load_strategy, ',\n    'watermark_field ',\n    'FROM control.ingestion_config ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -378,6 +378,20 @@
                       "type": "Expression"
                     },
                     "type": "String"
+                  },
+                  "target_schema": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_table": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   }
                 }
               },
@@ -651,6 +665,20 @@
                       "type": "Expression"
                     },
                     "type": "String"
+                  },
+                  "target_schema": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_table": {
+                    "value": {
+                      "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   }
                 }
               },
@@ -746,6 +774,10 @@
                   },
                   "p_target_table": {
                     "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                    "type": "Expression"
+                  },
+                  "p_target_schema": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
                     "type": "Expression"
                   }
                 },
