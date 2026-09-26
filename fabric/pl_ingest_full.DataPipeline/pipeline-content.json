@@ -81,7 +81,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "cpy_full_to_bronze",
+        "name": "cpy_source_to_bronze",
         "dependsOn": [
           {
             "activity": "set_ingestion_timestamp",
@@ -174,7 +174,7 @@
             },
             "source_row_count": {
               "value": {
-                "value": "@activity('cpy_full_to_bronze').output.rowsRead",
+                "value": "@activity('cpy_source_to_bronze').output.rowsRead",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -210,7 +210,7 @@
             },
             "target_row_count": {
               "value": {
-                "value": "@activity('cpy_full_to_bronze').output.rowsCopied",
+                "value": "@activity('cpy_source_to_bronze').output.rowsCopied",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -273,7 +273,7 @@
         "name": "sp_finalize_full_success",
         "dependsOn": [
           {
-            "activity": "cpy_full_to_bronze",
+            "activity": "cpy_source_to_bronze",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -309,7 +309,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('cpy_full_to_bronze').error.message",
+                "value": "@activity('cpy_source_to_bronze').error.message",
                 "type": "Expression"
               },
               "type": "String"
@@ -459,7 +459,7 @@
         "name": "sp_finalize_full_copy_failed",
         "dependsOn": [
           {
-            "activity": "cpy_full_to_bronze",
+            "activity": "cpy_source_to_bronze",
             "dependencyConditions": [
               "Failed"
             ]
@@ -470,7 +470,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('cpy_full_to_bronze').error.message",
+            "value": "@activity('cpy_source_to_bronze').error.message",
             "type": "Expression"
           },
           "errorCode": "COPY_FAILED"
@@ -547,9 +547,6 @@
         "type": "string"
       },
       "p_source_object": {
-        "type": "string"
-      },
-      "p_target_folder": {
         "type": "string"
       },
       "p_load_strategy": {
