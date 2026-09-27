@@ -318,11 +318,11 @@
                       "value": "@variables('v_lower_bound')",
                       "type": "Expression"
                     },
-                    "type": "DateTime"
+                    "type": "String"
                   },
                   "processing_upper_bound": {
                     "value": null,
-                    "type": "DateTime"
+                    "type": "String"
                   },
                   "run_type": {
                     "value": {
@@ -616,14 +616,14 @@
                       "value": "@variables('v_lower_bound')",
                       "type": "Expression"
                     },
-                    "type": "DateTime"
+                    "type": "String"
                   },
                   "processing_upper_bound": {
                     "value": {
                       "value": "@variables('v_upper_bound')",
                       "type": "Expression"
                     },
-                    "type": "DateTime"
+                    "type": "String"
                   },
                   "run_type": {
                     "value": {
