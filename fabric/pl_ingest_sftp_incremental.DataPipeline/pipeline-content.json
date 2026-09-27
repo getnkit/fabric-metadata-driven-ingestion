@@ -111,6 +111,29 @@
         ]
       },
       {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_processing_upper_bound",
+          "value": {
+            "value": "@formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-ddTHH:mm:ss.fffZ')",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_processing_upper_bound",
+        "dependsOn": [
+          {
+            "activity": "if_supported_watermark",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
         "type": "GetMetadata",
         "typeProperties": {
           "datasetSettings": {
@@ -141,7 +164,7 @@
               "type": "Expression"
             },
             "modifiedDatetimeEnd": {
-              "value": "@pipeline().parameters.p_start_time",
+              "value": "@variables('v_processing_upper_bound')",
               "type": "Expression"
             }
           }
@@ -156,7 +179,7 @@
         "name": "gm_source_files",
         "dependsOn": [
           {
-            "activity": "if_supported_watermark",
+            "activity": "set_processing_upper_bound",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -353,7 +376,7 @@
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@pipeline().parameters.p_start_time",
+                      "value": "@variables('v_processing_upper_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -540,7 +563,7 @@
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@pipeline().parameters.p_start_time",
+                      "value": "@variables('v_processing_upper_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -737,7 +760,7 @@
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_start_time",
+                "value": "@variables('v_processing_upper_bound')",
                 "type": "Expression"
               },
               "type": "String"
@@ -967,7 +990,7 @@
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_start_time",
+                "value": "@variables('v_processing_upper_bound')",
                 "type": "Expression"
               },
               "type": "String"
@@ -1197,7 +1220,7 @@
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_start_time",
+                "value": "@variables('v_processing_upper_bound')",
                 "type": "Expression"
               },
               "type": "String"
@@ -1417,6 +1440,11 @@
       },
       "p_target_table": {
         "type": "string"
+      }
+    },
+    "variables": {
+      "v_processing_upper_bound": {
+        "type": "String"
       }
     }
   }
