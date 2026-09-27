@@ -22,7 +22,7 @@ DECLARE @Seed TABLE
     source_conn_ref  NVARCHAR(100) NOT NULL,
     source_schema    NVARCHAR(128) NOT NULL,
     source_object    NVARCHAR(128) NOT NULL,
-    target_folder    NVARCHAR(500) NOT NULL,
+    target_folder    NVARCHAR(500) NULL,
     target_conn_ref  NVARCHAR(100) NOT NULL,
     target_schema    NVARCHAR(128) NOT NULL,
     target_table     NVARCHAR(128) NOT NULL,
@@ -46,13 +46,13 @@ INSERT INTO @Seed
     is_active
 )
 VALUES
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          'landing/crm/customers',              'LH_ECOMMERCE_BRONZE', 'crm', 'customers',              'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'landing/partner/merchants',          'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'landing/catalog/product_categories', 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'landing/catalog/products',           'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'brands',             'landing/catalog/brands',             'LH_ECOMMERCE_BRONZE', 'catalog', 'brands',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'landing/sales/orders',               'LH_ECOMMERCE_BRONZE', 'sales', 'orders',               'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'landing/sales/order_items',          'LH_ECOMMERCE_BRONZE', 'sales', 'order_items',          'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          NULL,              'LH_ECOMMERCE_BRONZE', 'crm', 'customers',              'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          NULL,          'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           NULL,           'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'brands',             NULL,             'LH_ECOMMERCE_BRONZE', 'catalog', 'brands',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL,               'LH_ECOMMERCE_BRONZE', 'sales', 'orders',               'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL,          'LH_ECOMMERCE_BRONZE', 'sales', 'order_items',          'INCREMENTAL', 'updated_at', 1);
 
 BEGIN TRY
     BEGIN TRANSACTION;
