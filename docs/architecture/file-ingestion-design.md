@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted direction for M76.
+FILE/FULL is implemented and acceptance-tested. FILE/INCREMENTAL extends the same design with processed-file state.
 
 The personal project intentionally keeps FILE ingestion lean:
 
@@ -100,14 +100,16 @@ Using a stable name avoids a FULL run accidentally replaying every historical
 date-stamped snapshot in the source folder. Each run preserves the raw file in
 a batch-specific Landing subfolder before Bronze ingestion.
 
-Incremental FILE ingestion remains planned for a later milestone and will add
-file-processing state semantics rather than reusing relational watermarks.
+Incremental FILE ingestion uses file-processing state rather than relational
+watermarks. The first incremental feed is `inventory_movement`, where each
+uniquely named delivered file is immutable and is processed at most once during
+normal REGULAR execution.
 
 ## First physical adapter and source story
 
 The first physical FILE adapter is SFTP.
 
-The demo models an external external logistics vendor. The provider's
+The demo models an external logistics vendor. The provider's
 Warehouse Management System (WMS) publishes a complete inventory snapshot to its
 SFTP outbound area. Fabric consumes that file into the platform-owned OneLake
 Landing Zone before writing Bronze.
@@ -196,8 +198,7 @@ watermark_field    = NULL
 }
 ```
 
-The config is seeded with `is_active = 0` until the FILE route is implemented,
-so the existing all-active master run remains green during M76 development.
+The FILE/FULL config is active because its route has passed acceptance testing.
 
 ## SFTP account roles
 
@@ -212,3 +213,39 @@ fabric_sftp_user
 ```
 
 The account name `vendor_sftp_user` is therefore intentional in this scenario.
+
+
+## FILE incremental feed
+
+The first incremental FILE feed is:
+
+```text
+source_object      = inventory_movement
+source_path        = /outbound/inventory/movements/
+file_name_pattern  = inventory_movement_*.csv
+landing_path       = Files/landing/logistics_vendor/inventory_movement/
+target_table       = fulfillment.inventory_movements
+load_strategy      = INCREMENTAL
+watermark_field    = NULL
+```
+
+FILE incremental does not reuse `control.pipeline_watermarks`. Source files are
+enumerated from SFTP, filtered by `file_name_pattern`, and compared with
+`control.file_ingestion_state`. Only file names not already present in state
+are processed.
+
+Current pattern matching supports an exact file name or one `*` wildcard.
+The incremental producer contract requires file names to be unique within the
+feed and delivered files to be immutable.
+
+A successfully processed file records its source path, Landing path, batch ID,
+pipeline RunId, and processed timestamp in `control.file_ingestion_state`.
+
+Because Bronze and the SQL control database cannot participate in one distributed
+transaction, the state row is written only after Bronze succeeds and the state
+write is retried. This gives normal runs state-based skip behavior while keeping
+the remaining cross-store failure window explicit rather than claiming strict
+exactly-once semantics.
+
+FILE + INCREMENTAL initially supports `REGULAR` runs only. Replay semantics
+will be based on explicit file identity rather than relational LOW/HIGH bounds.
