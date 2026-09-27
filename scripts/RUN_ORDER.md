@@ -48,7 +48,7 @@ Expected metadata state after seeding:
 - `control.pipeline_watermarks` = 5 rows, all for DATABASE + INCREMENTAL configs
 - `catalog.product_categories` is FULL, so it has no watermark row
 - DATABASE incremental objects start at `1900-01-01T00:00:00.000`
-- FILE incremental uses `control.file_ingestion_state`; it has no relational watermark row
+- FILE incremental uses `control.pipeline_watermarks`; it has no relational watermark row
 
 ## 3) Source authentication
 
@@ -155,14 +155,15 @@ snapshots and preserves each raw delivery independently.
 For an existing live control database, run:
 
 ```text
-scripts/control/migrations/003_add_file_incremental_state.sql
-```
-
-Then rerun:
-
-```text
+scripts/control/migrations/003_generalize_pipeline_watermark.sql
+scripts/control/02_create_control_procedures.sql
 scripts/control/04_seed_ingestion_metadata.sql
 ```
+
+The migration changes `control.pipeline_watermarks.last_watermark_value` from
+DATETIME2 to STRING while preserving existing DATABASE watermark values in
+ISO-8601 format. The procedure refresh adds generic STRING lower/upper checkpoint
+parameters for FILE/API-style state.
 
 The first FILE incremental route is:
 
@@ -188,9 +189,11 @@ watermark_field    = NULL
 ```
 
 The current implementation supports `REGULAR` FILE incremental runs only.
-It enumerates SFTP child files, applies the metadata filename pattern, skips file
-names already stored in `control.file_ingestion_state`, and processes unseen
-files sequentially.
+It enumerates SFTP child files, applies the metadata filename pattern, and
+processes only filenames greater than the current
+`control.pipeline_watermarks.last_watermark_value`. Files are processed
+sequentially, and the watermark advances to the greatest successfully processed
+filename only after the whole run succeeds.
 
 Acceptance fixtures:
 
@@ -203,7 +206,10 @@ sample-data/sftp/outbound/inventory/movements/
 Recommended acceptance sequence:
 
 1. Upload only `inventory_movement_20260927_001.csv`.
-2. Run the FILE incremental config: expect 6 Bronze rows and one state row.
-3. Run again with no new file: expect `SKIPPED` and no new Bronze rows.
+2. Run the FILE incremental config: expect 6 Bronze rows and
+   `last_watermark_value = inventory_movement_20260927_001.csv`.
+3. Run again with no new file: expect `SKIPPED`, no new Bronze rows, and the
+   same watermark.
 4. Upload `inventory_movement_20260927_002.csv`.
-5. Run again: expect 6 additional Bronze rows and a second state row.
+5. Run again: expect 6 additional Bronze rows and
+   `last_watermark_value = inventory_movement_20260927_002.csv`.
