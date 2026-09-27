@@ -21,6 +21,8 @@ IF OBJECT_ID('audit.ingestion_log', 'U') IS NOT NULL
     DROP TABLE audit.ingestion_log;
 IF OBJECT_ID('control.pipeline_watermarks', 'U') IS NOT NULL
     DROP TABLE control.pipeline_watermarks;
+IF OBJECT_ID('control.file_ingestion_config', 'U') IS NOT NULL
+    DROP TABLE control.file_ingestion_config;
 IF OBJECT_ID('control.ingestion_config', 'U') IS NOT NULL
     DROP TABLE control.ingestion_config;
 IF OBJECT_ID('control.connection_settings', 'U') IS NOT NULL
@@ -56,7 +58,7 @@ CREATE TABLE control.ingestion_config
 
     source_system        NVARCHAR(100) NOT NULL,
     source_conn_ref      NVARCHAR(100) NOT NULL,
-    source_schema        NVARCHAR(128) NOT NULL,
+    source_schema        NVARCHAR(128) NULL,
     source_object        NVARCHAR(128) NOT NULL,
 
     ingestion_pattern    VARCHAR(20) NOT NULL,
@@ -84,6 +86,22 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT CK_ingestion_config_pattern
         CHECK (ingestion_pattern IN ('DATABASE','FILE','API')),
 
+    CONSTRAINT CK_ingestion_config_source_schema
+        CHECK
+        (
+            (ingestion_pattern = 'DATABASE' AND source_schema IS NOT NULL)
+            OR
+            (ingestion_pattern IN ('FILE','API'))
+        ),
+
+    CONSTRAINT CK_ingestion_config_target_folder
+        CHECK
+        (
+            (ingestion_pattern = 'FILE' AND target_folder IS NOT NULL)
+            OR
+            (ingestion_pattern IN ('DATABASE','API'))
+        ),
+
     CONSTRAINT CK_ingestion_config_strategy
         CHECK (load_strategy IN ('FULL','INCREMENTAL')),
 
@@ -102,6 +120,48 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT FK_ingestion_config_target_connection
         FOREIGN KEY (target_conn_ref)
         REFERENCES control.connection_settings(connection_ref)
+);
+GO
+
+CREATE TABLE control.file_ingestion_config
+(
+    ingestion_config_id  INT NOT NULL
+        CONSTRAINT PK_file_ingestion_config PRIMARY KEY,
+
+    source_folder        NVARCHAR(500) NOT NULL,
+    file_name_pattern    NVARCHAR(255) NOT NULL,
+    file_format          VARCHAR(20) NOT NULL,
+
+    delimiter            NVARCHAR(10) NULL,
+    has_header           BIT NULL,
+    encoding             VARCHAR(30) NULL,
+
+    expected_schema_json NVARCHAR(MAX) NOT NULL,
+    quarantine_folder    NVARCHAR(500) NOT NULL,
+
+    created_at           DATETIME2(3) NOT NULL
+        CONSTRAINT DF_file_ingestion_config_created_at DEFAULT SYSUTCDATETIME(),
+
+    updated_at           DATETIME2(3) NOT NULL
+        CONSTRAINT DF_file_ingestion_config_updated_at DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT FK_file_ingestion_config_ingestion_config
+        FOREIGN KEY (ingestion_config_id)
+        REFERENCES control.ingestion_config(ingestion_config_id),
+
+    CONSTRAINT CK_file_ingestion_config_format
+        CHECK (file_format IN ('CSV','JSON','PARQUET')),
+
+    CONSTRAINT CK_file_ingestion_config_schema_json
+        CHECK (ISJSON(expected_schema_json) = 1),
+
+    CONSTRAINT CK_file_ingestion_config_csv_options
+        CHECK
+        (
+            (file_format = 'CSV' AND delimiter IS NOT NULL AND has_header IS NOT NULL)
+            OR
+            (file_format IN ('JSON','PARQUET'))
+        )
 );
 GO
 
