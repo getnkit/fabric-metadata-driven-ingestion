@@ -40,8 +40,9 @@ Run in this order:
 
 Expected metadata state after seeding:
 
-- `control.ingestion_config` = 6 rows for `ECOMMERCE`
-- All current configs use `ingestion_pattern = DATABASE`
+- `control.ingestion_config` = 7 rows for `ECOMMERCE`
+- 6 DATABASE configs remain active
+- 1 FILE/FULL SFTP config (`customers_snapshot`) is seeded inactive until the FILE route is implemented
 - Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
 - `control.pipeline_watermarks` = 5 rows
 - `catalog.product_categories` is FULL, so it has no watermark row
@@ -51,9 +52,12 @@ Expected metadata state after seeding:
 
 The current project uses Basic authentication for the Azure SQL source connection:
 
-- Connection: `cn_azsql_ecommerce`
+- Azure SQL connection: `cn_azsql_ecommerce`
 - Database user: `fabric_ingestion_user`
 - Access: read-only source schemas
+- SFTP connection: `cn_sftp_ecommerce`
+- SFTP consumer user: `fabric_sftp_user`
+- SFTP producer/demo user: `vendor_sftp_user`
 
 Basic authentication is used because the Fabric workspace and Azure SQL source
 are hosted in different Microsoft Entra tenants.
@@ -93,6 +97,11 @@ current project scope.
 For an existing live control database created before M76, run
 `scripts/control/migrations/001_refine_ingestion_metadata.sql` instead of rerunning
 the destructive bootstrap schema script.
+
+After creating Fabric connection `cn_sftp_ecommerce`, run
+`scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID,
+then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register the first
+FILE/FULL config. The FILE config remains inactive until its route is implemented.
 
 ## 6) Incremental-change simulator
 
