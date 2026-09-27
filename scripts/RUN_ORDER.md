@@ -42,7 +42,7 @@ Expected metadata state after seeding:
 
 - `control.ingestion_config` = 6 rows for `ECOMMERCE`
 - All current configs use `ingestion_pattern = DATABASE`
-- Current DATABASE configs use `source_options = NULL`; pattern-specific options are added only when needed
+- Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
 - `control.pipeline_watermarks` = 5 rows
 - `catalog.product_categories` is FULL, so it has no watermark row
 - All INCREMENTAL objects start at `1900-01-01T00:00:00.000`
@@ -76,17 +76,23 @@ are hosted in the same Microsoft Entra tenant.
 ## 5) Current relational Bronze target convention
 
 The current DATABASE ingestion path writes relational sources directly to Bronze
-Lakehouse Delta tables. For these configs, `target_folder` is NULL and the target
-is resolved through `target_conn_ref`, `target_schema`, and `target_table`.
+Lakehouse Delta tables. For these configs, `source_path` and `landing_path` are
+NULL; the source is resolved through `source_schema` + `source_object`, while
+the Bronze target is resolved through `target_conn_ref`, `target_schema`, and
+`target_table`.
 
-FILE ingestion uses the same `control.ingestion_config` table. Pattern-specific
-source-reading metadata is stored in the optional JSON `source_options` column.
+FILE ingestion uses the same `control.ingestion_config` table:
+
+- `source_path` identifies where the source data is located.
+- `landing_path` identifies the platform-owned Landing Zone path.
+- `source_options` stores optional pattern-specific source-reading metadata as JSON.
+
 No separate `file_ingestion_config` table or Quarantine area is used in the
 current project scope.
 
 For an existing live control database created before M76, run
-`scripts/control/migrations/001_add_source_options.sql` instead of rerunning the
-destructive bootstrap schema script.
+`scripts/control/migrations/001_refine_ingestion_metadata.sql` instead of rerunning
+the destructive bootstrap schema script.
 
 ## 6) Incremental-change simulator
 
