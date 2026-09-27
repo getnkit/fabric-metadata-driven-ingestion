@@ -50,7 +50,7 @@ VALUES
     )
 ),
 (
-    'SFTP_3PL_WMS',
+    'SFTP_LOGISTICS_VENDOR',
     'SFTP',
     CONCAT(
         N'{"connectionId":"',
