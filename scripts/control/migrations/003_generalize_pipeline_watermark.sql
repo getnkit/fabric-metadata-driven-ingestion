@@ -93,10 +93,5 @@ JOIN control.ingestion_config c
 GO
 
 PRINT 'Pipeline watermark state generalized successfully.';
+PRINT 'Next: run scripts/control/02_create_control_procedures.sql to refresh the generic finalization procedure.';
 GO
-
-/*
-    Recreate control.usp_finalize_ingestion_run with generic watermark parameters.
-    The canonical definition is kept in scripts/control/02_create_control_procedures.sql.
-*/
-:r ../02_create_control_procedures.sql
