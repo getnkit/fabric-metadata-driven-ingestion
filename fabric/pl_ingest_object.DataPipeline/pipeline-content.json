@@ -451,7 +451,7 @@
             }
           ]
         },
-        "name": "sw_load_strategy",
+        "name": "sw_ingestion_route",
         "dependsOn": [
           {
             "activity": "if_valid_boundary_request",

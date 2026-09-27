@@ -16,9 +16,9 @@ CREATE TABLE [control].[ingestion_config] (
     CONSTRAINT [PK_ingestion_config] PRIMARY KEY CLUSTERED ([ingestion_config_id] ASC),
     CONSTRAINT [CK_ingestion_config_strategy] CHECK ([load_strategy]='INCREMENTAL' OR [load_strategy]='FULL'),
     CONSTRAINT [CK_ingestion_config_watermark] CHECK ([load_strategy]='FULL' AND [watermark_field] IS NULL OR [load_strategy]='INCREMENTAL' AND [watermark_field] IS NOT NULL),
-    CONSTRAINT [UQ_ingestion_config_source] UNIQUE NONCLUSTERED ([source_system] ASC, [source_schema] ASC, [source_object] ASC),
     CONSTRAINT [FK_ingestion_config_source_connection] FOREIGN KEY ([source_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref]),
-    CONSTRAINT [FK_ingestion_config_target_connection] FOREIGN KEY ([target_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref])
+    CONSTRAINT [FK_ingestion_config_target_connection] FOREIGN KEY ([target_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref]),
+    CONSTRAINT [UQ_ingestion_config_source] UNIQUE NONCLUSTERED ([source_system] ASC, [source_schema] ASC, [source_object] ASC)
 );
 
 
