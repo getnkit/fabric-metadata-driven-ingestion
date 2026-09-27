@@ -81,7 +81,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(activity('lkp_current_watermark').output.value[0].watermark_field, pipeline().parameters.p_watermark_field)",
+            "value": "@and(\n    equals(\n        activity('lkp_current_watermark').output.value[0].watermark_field,\n        pipeline().parameters.p_watermark_field\n    ),\n    equals(\n        toLower(pipeline().parameters.p_watermark_field),\n        'last_modified_time'\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -90,43 +90,20 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('Watermark field mismatch for ingestion_config_id=', string(pipeline().parameters.p_ingestion_config_id), '. Config watermark_field=', pipeline().parameters.p_watermark_field, ', state watermark_field=', activity('lkp_current_watermark').output.value[0].watermark_field, '.')",
+                  "value": "@concat('SFTP incremental requires watermark_field=last_modified_time. Config=', pipeline().parameters.p_watermark_field, ', state=', activity('lkp_current_watermark').output.value[0].watermark_field, '.')",
                   "type": "Expression"
                 },
-                "errorCode": "WATERMARK_FIELD_MISMATCH"
+                "errorCode": "UNSUPPORTED_FILE_WATERMARK"
               },
-              "name": "fail_watermark_field_mismatch",
+              "name": "fail_unsupported_watermark",
               "dependsOn": []
             }
           ]
         },
-        "name": "if_watermark_field_match",
+        "name": "if_supported_watermark",
         "dependsOn": [
           {
             "activity": "if_state_found",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "SetVariable",
-        "typeProperties": {
-          "variableName": "v_max_watermark",
-          "value": {
-            "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_max_watermark",
-        "dependsOn": [
-          {
-            "activity": "if_watermark_field_match",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -158,7 +135,15 @@
           ],
           "storeSettings": {
             "type": "SftpReadSettings",
-            "recursive": false
+            "recursive": false,
+            "modifiedDatetimeStart": {
+              "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+              "type": "Expression"
+            },
+            "modifiedDatetimeEnd": {
+              "value": "@pipeline().parameters.p_start_time",
+              "type": "Expression"
+            }
           }
         },
         "policy": {
@@ -171,7 +156,7 @@
         "name": "gm_source_files",
         "dependsOn": [
           {
-            "activity": "set_max_watermark",
+            "activity": "if_supported_watermark",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -186,7 +171,7 @@
             "type": "Expression"
           },
           "condition": {
-            "value": "@and(\n    equals(item().type, 'File'),\n    if(\n        contains(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'),\n        and(\n            startsWith(item().name, first(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'))),\n            endsWith(item().name, last(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*')))\n        ),\n        equals(item().name, @json(pipeline().parameters.p_source_options).file_name_pattern)\n    ),\n    greater(\n        item().name,\n        activity('lkp_current_watermark').output.value[0].last_watermark_value\n    )\n)",
+            "value": "@and(\n    equals(item().type, 'File'),\n    if(\n        contains(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'),\n        and(\n            startsWith(item().name, first(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'))),\n            endsWith(item().name, last(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*')))\n        ),\n        equals(item().name, @json(pipeline().parameters.p_source_options).file_name_pattern)\n    )\n)",
             "type": "Expression"
           }
         },
@@ -279,43 +264,6 @@
               },
               "name": "inv_process_file",
               "dependsOn": []
-            },
-            {
-              "type": "IfCondition",
-              "typeProperties": {
-                "expression": {
-                  "value": "@greater(item().name, variables('v_max_watermark'))",
-                  "type": "Expression"
-                },
-                "ifTrueActivities": [
-                  {
-                    "type": "SetVariable",
-                    "typeProperties": {
-                      "variableName": "v_max_watermark",
-                      "value": {
-                        "value": "@item().name",
-                        "type": "Expression"
-                      }
-                    },
-                    "policy": {
-                      "secureInput": false,
-                      "secureOutput": false
-                    },
-                    "name": "set_max_watermark_from_file",
-                    "dependsOn": []
-                  }
-                ],
-                "ifFalseActivities": []
-              },
-              "name": "if_new_max_watermark",
-              "dependsOn": [
-                {
-                  "activity": "inv_process_file",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -397,12 +345,18 @@
                     "type": "String"
                   },
                   "processing_lower_bound": {
-                    "value": null,
-                    "type": "DateTime"
+                    "value": {
+                      "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   },
                   "processing_upper_bound": {
-                    "value": null,
-                    "type": "DateTime"
+                    "value": {
+                      "value": "@pipeline().parameters.p_start_time",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   },
                   "run_type": {
                     "value": {
@@ -489,20 +443,6 @@
                       "type": "Expression"
                     },
                     "type": "String"
-                  },
-                  "watermark_lower_value": {
-                    "value": {
-                      "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                      "type": "Expression"
-                    },
-                    "type": "String"
-                  },
-                  "watermark_upper_value": {
-                    "value": {
-                      "value": "@variables('v_max_watermark')",
-                      "type": "Expression"
-                    },
-                    "type": "String"
                   }
                 }
               },
@@ -538,7 +478,7 @@
                 "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
                 "storedProcedureParameters": {
                   "advance_watermark": {
-                    "value": "false",
+                    "value": "true",
                     "type": "Boolean"
                   },
                   "batch_id": {
@@ -592,12 +532,18 @@
                     "type": "String"
                   },
                   "processing_lower_bound": {
-                    "value": null,
-                    "type": "DateTime"
+                    "value": {
+                      "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   },
                   "processing_upper_bound": {
-                    "value": null,
-                    "type": "DateTime"
+                    "value": {
+                      "value": "@pipeline().parameters.p_start_time",
+                      "type": "Expression"
+                    },
+                    "type": "String"
                   },
                   "run_type": {
                     "value": {
@@ -783,12 +729,18 @@
               "type": "String"
             },
             "processing_lower_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "processing_upper_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "run_type": {
               "value": {
@@ -1007,12 +959,18 @@
               "type": "String"
             },
             "processing_lower_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "processing_upper_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "run_type": {
               "value": {
@@ -1231,12 +1189,18 @@
               "type": "String"
             },
             "processing_lower_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "processing_upper_bound": {
-              "value": null,
-              "type": "DateTime"
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "String"
             },
             "run_type": {
               "value": {
@@ -1453,11 +1417,6 @@
       },
       "p_target_table": {
         "type": "string"
-      }
-    },
-    "variables": {
-      "v_max_watermark": {
-        "type": "String"
       }
     }
   }
