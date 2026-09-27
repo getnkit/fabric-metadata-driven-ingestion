@@ -72,7 +72,7 @@ VALUES
         'inventory_snapshots',
         'FULL',
         NULL,
-        0
+        1
     );
 
 BEGIN TRY
