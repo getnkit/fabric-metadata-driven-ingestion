@@ -321,11 +321,15 @@
                       "p_parent_pipeline_name": {
                         "value": "@pipeline().PipelineName",
                         "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
                     "workspaceId": "00000000-0000-0000-0000-000000000000",
-                    "pipelineId": "0ebee3c4-2194-9ce0-4038-19d061d94e14",
+                    "pipelineId": "d87e87f0-7648-4845-a687-96c54dbda1c1",
                     "operationType": "InvokeFabricPipeline"
                   },
                   "externalReferences": {
@@ -338,7 +342,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_incremental",
+                  "name": "inv_ingest_database_incremental",
                   "dependsOn": []
                 }
               ]
@@ -413,11 +417,15 @@
                       "p_target_table": {
                         "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
                         "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
                     "workspaceId": "00000000-0000-0000-0000-000000000000",
-                    "pipelineId": "dacea1ea-5209-a565-4ab1-0ffc3cdf0f5b",
+                    "pipelineId": "fa43cb48-2a1e-45bf-a842-232ba87edf4a",
                     "operationType": "InvokeFabricPipeline"
                   },
                   "externalReferences": {
@@ -430,7 +438,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_full",
+                  "name": "inv_ingest_database_full",
                   "dependsOn": []
                 }
               ]
