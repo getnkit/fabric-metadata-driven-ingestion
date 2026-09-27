@@ -22,6 +22,7 @@ DECLARE @Seed TABLE
     source_conn_ref  NVARCHAR(100) NOT NULL,
     source_schema    NVARCHAR(128) NOT NULL,
     source_object    NVARCHAR(128) NOT NULL,
+    ingestion_pattern VARCHAR(20) NOT NULL,
     target_folder    NVARCHAR(500) NULL,
     target_conn_ref  NVARCHAR(100) NOT NULL,
     target_schema    NVARCHAR(128) NOT NULL,
@@ -37,6 +38,7 @@ INSERT INTO @Seed
     source_conn_ref,
     source_schema,
     source_object,
+    ingestion_pattern,
     target_folder,
     target_conn_ref,
     target_schema,
@@ -46,13 +48,13 @@ INSERT INTO @Seed
     is_active
 )
 VALUES
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          NULL,              'LH_ECOMMERCE_BRONZE', 'crm', 'customers',              'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          NULL,          'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           NULL,           'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'brands',             NULL,             'LH_ECOMMERCE_BRONZE', 'catalog', 'brands',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL,               'LH_ECOMMERCE_BRONZE', 'sales', 'orders',               'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL,          'LH_ECOMMERCE_BRONZE', 'sales', 'order_items',          'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'crm',     'customers',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'brands',             'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'brands',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1);
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -66,6 +68,7 @@ BEGIN TRY
     UPDATE c
     SET
         c.source_conn_ref = s.source_conn_ref,
+        c.ingestion_pattern = s.ingestion_pattern,
         c.target_folder = s.target_folder,
         c.target_conn_ref = s.target_conn_ref,
         c.target_schema = s.target_schema,
@@ -86,6 +89,7 @@ BEGIN TRY
         source_conn_ref,
         source_schema,
         source_object,
+        ingestion_pattern,
         target_folder,
         target_conn_ref,
         target_schema,
@@ -99,6 +103,7 @@ BEGIN TRY
         s.source_conn_ref,
         s.source_schema,
         s.source_object,
+        s.ingestion_pattern,
         s.target_folder,
         s.target_conn_ref,
         s.target_schema,
@@ -149,6 +154,7 @@ SELECT
     source_conn_ref,
     source_schema,
     source_object,
+    ingestion_pattern,
     target_folder,
     target_conn_ref,
     target_schema,
