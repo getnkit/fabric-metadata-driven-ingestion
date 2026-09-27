@@ -100,10 +100,10 @@ Using a stable name avoids a FULL run accidentally replaying every historical
 date-stamped snapshot in the source folder. Each run preserves the raw file in
 a batch-specific Landing subfolder before Bronze ingestion.
 
-Incremental FILE ingestion uses file-processing state rather than relational
-watermarks. The first incremental feed is `inventory_movement`, where each
-uniquely named delivered file is immutable and is processed at most once during
-normal REGULAR execution.
+Incremental FILE ingestion reuses the framework-wide pipeline watermark state
+rather than introducing a FILE-specific state table. The first incremental feed
+is `inventory_movement`, whose sortable producer filenames act as the
+incremental checkpoint during normal REGULAR execution.
 
 ## First physical adapter and source story
 
