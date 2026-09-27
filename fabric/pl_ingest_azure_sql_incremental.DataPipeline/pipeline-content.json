@@ -262,7 +262,7 @@
                   },
                   "batch_id": {
                     "value": {
-                      "value": "p_batch_id",
+                      "value": "@pipeline().parameters.p_batch_id",
                       "type": "Expression"
                     },
                     "type": "Guid"
@@ -287,7 +287,7 @@
                   },
                   "ingestion_config_id": {
                     "value": {
-                      "value": "p_ingestion_config_id",
+                      "value": "@pipeline().parameters.p_ingestion_config_id",
                       "type": "Expression"
                     },
                     "type": "Int32"
@@ -315,7 +315,7 @@
                   },
                   "processing_lower_bound": {
                     "value": {
-                      "value": "v_lower_bound",
+                      "value": "@variables('v_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "DateTime"
@@ -326,7 +326,7 @@
                   },
                   "run_type": {
                     "value": {
-                      "value": "p_run_type",
+                      "value": "@pipeline().parameters.p_run_type",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -358,7 +358,7 @@
                   },
                   "start_time": {
                     "value": {
-                      "value": "p_start_time",
+                      "value": "@pipeline().parameters.p_start_time",
                       "type": "Expression"
                     },
                     "type": "DateTime"
