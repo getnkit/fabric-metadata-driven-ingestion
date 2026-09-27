@@ -7,7 +7,8 @@ Accepted direction for M76.
 The personal project intentionally keeps FILE ingestion lean:
 
 - one shared `control.ingestion_config`
-- pattern-specific source options stored in `source_options`
+- first-class `source_path` and `landing_path`
+- pattern-specific source-reading options stored in `source_options`
 - no `control.file_ingestion_config`
 - no Data Contract subsystem in the current scope
 - no Quarantine / Reject Area
@@ -22,13 +23,37 @@ The generic columns continue to own routing and execution metadata:
 - `source_conn_ref`
 - `source_schema`
 - `source_object`
+- `source_path`
 - `ingestion_pattern`
-- `target_folder`
+- `source_options`
+- `landing_path`
 - `target_conn_ref`
 - `target_schema`
 - `target_table`
 - `load_strategy`
 - `watermark_field`
+
+Path semantics:
+
+```text
+source_path
+= source location or identifier used to locate the delivered source data
+
+landing_path
+= platform-owned Landing Zone path used before Bronze when the ingestion pattern
+  requires a Landing step
+```
+
+For the current DATABASE path, both fields are NULL because the source is already
+identified by `source_schema` + `source_object` and the pipeline writes directly
+to Bronze.
+
+For FILE ingestion, both fields are first-class metadata:
+
+```text
+source_path  = incoming/customers/
+landing_path = Files/landing/customers/
+```
 
 `source_options` is an optional JSON object for pattern-specific source-reading
 options that do not belong in the generic relational schema.
@@ -38,7 +63,6 @@ Example FILE value:
 ```json
 {
   "file_format": "CSV",
-  "source_folder": "incoming/customers",
   "file_name_pattern": "customers_*.csv",
   "delimiter": ",",
   "has_header": true,
@@ -47,13 +71,13 @@ Example FILE value:
 ```
 
 Current DATABASE configs do not require source-specific options and therefore use
-`NULL`.
+`source_options = NULL`.
 
 ## FILE flow
 
 ```text
-Source file
-  -> Landing (Lakehouse Files)
+Source connection + source_path
+  -> Landing + landing_path
   -> FILE ingestion pipeline
   -> Bronze Delta table
 ```
