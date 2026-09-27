@@ -632,6 +632,10 @@
                       "p_source_connection_type": {
                         "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
                         "type": "Expression"
+                      },
+                      "p_watermark_field": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
