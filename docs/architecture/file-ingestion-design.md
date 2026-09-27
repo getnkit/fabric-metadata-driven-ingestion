@@ -102,8 +102,8 @@ a batch-specific Landing subfolder before Bronze ingestion.
 
 Incremental FILE ingestion reuses the framework-wide pipeline watermark state
 rather than introducing a FILE-specific state table. The first incremental feed
-is `inventory_movement`, whose sortable producer filenames act as the
-incremental checkpoint during normal REGULAR execution.
+is `inventory_movement` and uses the source file Last Modified timestamp as
+its checkpoint during normal REGULAR execution.
 
 ## First physical adapter and source story
 
@@ -225,34 +225,56 @@ file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
-watermark_field    = source_file_name
+watermark_field    = last_modified_time
 ```
 
 FILE incremental reuses `control.pipeline_watermarks`; there is no
 FILE-specific state table.
 
-The initial watermark value is the empty string. Matching source filenames are
-compared with the committed `last_watermark_value`, and only filenames greater
-than the current checkpoint are processed. After every candidate file succeeds,
-the watermark advances to the greatest filename processed by the run.
-
-The current fixture naming contract is fixed-width and sortable:
+The initial checkpoint is:
 
 ```text
-inventory_movement_20260927_001.csv
-inventory_movement_20260927_002.csv
-inventory_movement_20260928_001.csv
+1900-01-01T00:00:00.000Z
 ```
 
-The ordering therefore comes from the date + sequence encoded in the producer
-filename. The current implementation deliberately does not use SFTP modification
-time as its checkpoint.
+For each REGULAR run, the adapter uses:
 
-This scalar-watermark strategy assumes monotonic delivery: once a higher
-filename has been committed, the producer must not later deliver a lower
-filename. A source that cannot provide that guarantee would require a different
-policy such as a receipt manifest or explicit gap handling.
+```text
+LOW  = current last_watermark_value
+HIGH = ingestion run start time
+```
+
+and asks the SFTP connector to return child files in the Last Modified window:
+
+```text
+LOW <= LastModified < HIGH
+```
+
+The configured `file_name_pattern` is then applied to the returned child file
+names. Every matching file is copied to the batch-specific Landing folder and
+then appended to Bronze. If the scan completes successfully, the pipeline
+watermark advances to `HIGH`.
+
+A scan with no matching files is recorded as `SKIPPED` but can still advance
+the Last Modified checkpoint to `HIGH`; this avoids repeatedly rescanning the
+same empty time window.
+
+The source filename remains evidence and lineage metadata in Bronze
+(`_source_file_name`, `_source_file_path`) but is not used as the checkpoint.
+
+Fixture names therefore do not need sortable sequence suffixes. The current
+fixtures use delivery timestamps only to keep the example files unique:
+
+```text
+inventory_movement_20260927T081500Z.csv
+inventory_movement_20260927T131500Z.csv
+```
+
+This strategy assumes the SFTP server exposes a reliable UTC Last Modified value
+that reflects delivery/update time. A source that preserves stale timestamps
+during late delivery or requires strict per-file receipt tracking would need a
+different policy such as a manifest/receipt state model.
 
 FILE + INCREMENTAL initially supports `REGULAR` runs only. Replay semantics
-will be based on explicit file/checkpoint boundaries rather than relational
-datetime LOW/HIGH values.
+will be designed separately rather than reusing relational RERUN/BACKFILL
+datetime parameters implicitly.
