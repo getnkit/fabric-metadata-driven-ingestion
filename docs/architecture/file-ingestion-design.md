@@ -95,6 +95,11 @@ The first FILE/FULL fixture is deliberately modeled as a complete inventory
 snapshot so FULL semantics are natural: the delivered file represents the full
 inventory state for the snapshot time.
 
+The producer publishes a stable current-snapshot filename (`inventory_snapshot.csv`).
+Using a stable name avoids a FULL run accidentally replaying every historical
+date-stamped snapshot in the source folder. Each run preserves the raw file in
+a batch-specific Landing subfolder before Bronze ingestion.
+
 Incremental FILE ingestion remains planned for a later milestone and will add
 file-processing state semantics rather than reusing relational watermarks.
 
@@ -122,7 +127,11 @@ This separates ownership cleanly:
 = source/provider-owned delivery path
 
 Files/landing/logistics_vendor/inventory_snapshot/
-= platform-owned raw Landing path
+= platform-owned raw Landing base path
+
+Runtime example:
+Files/landing/logistics_vendor/inventory_snapshot/batch_id=<batch_id>/
+= immutable raw copy for one ingestion run
 ```
 
 The source inventory rows use the same SKU convention as the ECOMMERCE catalog
@@ -134,14 +143,14 @@ cross-source relationship without duplicating the Azure SQL source tables.
 Repository fixture:
 
 ```text
-sample-data/sftp/outbound/inventory/inventory_snapshot_20260927_001.csv
+sample-data/sftp/outbound/inventory/inventory_snapshot.csv
 ```
 
 Source SFTP path and file pattern:
 
 ```text
 source_path       = /outbound/inventory/
-file_name_pattern = inventory_snapshot_*.csv
+file_name_pattern = inventory_snapshot.csv
 ```
 
 Fixture columns:
@@ -178,7 +187,7 @@ watermark_field    = NULL
 ```json
 {
   "file_format": "CSV",
-  "file_name_pattern": "inventory_snapshot_*.csv",
+  "file_name_pattern": "inventory_snapshot.csv",
   "delimiter": ",",
   "has_header": true,
   "encoding": "UTF-8"
