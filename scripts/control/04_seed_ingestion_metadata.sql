@@ -11,7 +11,6 @@
       - Existing watermark values are preserved.
       - Missing DATABASE incremental watermark rows start at 1900-01-01.
       - Missing FILE incremental watermark rows start at the empty string.
-      - Existing watermark values are preserved.
 */
 
 SET NOCOUNT ON;
