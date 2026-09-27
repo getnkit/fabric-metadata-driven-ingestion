@@ -35,11 +35,13 @@ Run in this order:
 
 1. `scripts/control/01_create_control_schema.sql`
 2. `scripts/control/02_create_control_procedures.sql`
-3. `scripts/control/03_seed_ingestion_metadata.sql`
+3. `scripts/control/03_seed_connection_settings.sql`
+4. `scripts/control/04_seed_ingestion_metadata.sql`
 
 Expected metadata state after seeding:
 
-- `control.ingestion_config` = 6 rows for `ECOMMERCE_AZSQL`
+- `control.ingestion_config` = 6 rows for `ECOMMERCE`
+- All current configs use `ingestion_pattern = DATABASE`
 - `control.pipeline_watermarks` = 5 rows
 - `catalog.product_categories` is FULL, so it has no watermark row
 - All INCREMENTAL objects start at `1900-01-01T00:00:00.000`
@@ -70,23 +72,14 @@ are hosted in the same Microsoft Entra tenant.
 - Normal operational execution must enter through `pl_master_ingestion`, configured with pipeline concurrency = 1.
 - Optimistic watermark comparison remains the state-safety check during finalization.
 
-## 5) Landing path convention
+## 5) Current relational Bronze target convention
 
-Incremental:
+The current DATABASE ingestion path writes relational sources directly to Bronze
+Lakehouse Delta tables. For these configs, `target_folder` is NULL and the target
+is resolved through `target_conn_ref`, `target_schema`, and `target_table`.
 
-`<target_folder>/incremental/window=<LOW>_<HIGH>/`
-
-Example:
-
-`landing/sales/orders/incremental/window=20260915T010000000Z_20260915T020000000Z/`
-
-Full:
-
-`<target_folder>/full/current/`
-
-Example:
-
-`landing/catalog/product_categories/full/current/`
+File/SFTP landing-path conventions will be defined when file-based ingestion is
+implemented.
 
 ## 6) Incremental-change simulator
 
