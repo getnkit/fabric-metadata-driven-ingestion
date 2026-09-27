@@ -59,14 +59,14 @@ VALUES
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1),
     (
-        '3PL_WMS',
-        'SFTP_3PL_WMS',
+        'LOGISTICS_VENDOR',
+        'SFTP_LOGISTICS_VENDOR',
         NULL,
         'inventory_snapshot',
         '/outbound/inventory/',
         'FILE',
         N'{"file_format":"CSV","file_name_pattern":"inventory_snapshot_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
-        'Files/landing/3pl_wms/inventory_snapshot/',
+        'Files/landing/logistics_vendor/inventory_snapshot/',
         'LH_ECOMMERCE_BRONZE',
         'fulfillment',
         'inventory_snapshots',
@@ -200,7 +200,7 @@ SELECT
     created_at,
     updated_at
 FROM control.ingestion_config
-WHERE source_system IN ('ECOMMERCE','3PL_WMS')
+WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR')
 ORDER BY ingestion_config_id;
 
 SELECT *
