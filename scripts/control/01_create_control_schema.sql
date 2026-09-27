@@ -59,7 +59,7 @@ CREATE TABLE control.ingestion_config
     source_schema        NVARCHAR(128) NOT NULL,
     source_object        NVARCHAR(128) NOT NULL,
 
-    target_folder        NVARCHAR(500) NOT NULL,
+    target_folder        NVARCHAR(500) NULL,
     target_conn_ref      NVARCHAR(100) NOT NULL,
     target_schema        NVARCHAR(128) NOT NULL,
     target_table         NVARCHAR(128) NOT NULL,
