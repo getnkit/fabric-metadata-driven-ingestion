@@ -197,14 +197,14 @@
                 "value": "@pipeline().parameters.p_lower_bound",
                 "type": "Expression"
               },
-              "type": "DateTime"
+              "type": "String"
             },
             "processing_upper_bound": {
               "value": {
                 "value": "@pipeline().parameters.p_upper_bound",
                 "type": "Expression"
               },
-              "type": "DateTime"
+              "type": "String"
             },
             "run_type": {
               "value": {
@@ -398,14 +398,14 @@
                 "value": "@pipeline().parameters.p_lower_bound",
                 "type": "Expression"
               },
-              "type": "DateTime"
+              "type": "String"
             },
             "processing_upper_bound": {
               "value": {
                 "value": "@pipeline().parameters.p_upper_bound",
                 "type": "Expression"
               },
-              "type": "DateTime"
+              "type": "String"
             },
             "run_type": {
               "value": {
