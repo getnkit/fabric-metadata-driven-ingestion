@@ -19,8 +19,6 @@ GO
 
 IF OBJECT_ID('audit.ingestion_log', 'U') IS NOT NULL
     DROP TABLE audit.ingestion_log;
-IF OBJECT_ID('control.file_ingestion_state', 'U') IS NOT NULL
-    DROP TABLE control.file_ingestion_state;
 IF OBJECT_ID('control.pipeline_watermarks', 'U') IS NOT NULL
     DROP TABLE control.pipeline_watermarks;
 IF OBJECT_ID('control.ingestion_config', 'U') IS NOT NULL
@@ -123,22 +121,7 @@ CREATE TABLE control.ingestion_config
         (
             (load_strategy = 'FULL' AND watermark_field IS NULL)
             OR
-            (
-                load_strategy = 'INCREMENTAL'
-                AND ingestion_pattern = 'DATABASE'
-                AND watermark_field IS NOT NULL
-            )
-            OR
-            (
-                load_strategy = 'INCREMENTAL'
-                AND ingestion_pattern = 'FILE'
-                AND watermark_field IS NULL
-            )
-            OR
-            (
-                load_strategy = 'INCREMENTAL'
-                AND ingestion_pattern = 'API'
-            )
+            (load_strategy = 'INCREMENTAL' AND watermark_field IS NOT NULL)
         ),
 
     CONSTRAINT FK_ingestion_config_source_connection
@@ -157,7 +140,7 @@ CREATE TABLE control.pipeline_watermarks
         CONSTRAINT PK_pipeline_watermarks PRIMARY KEY,
 
     watermark_field                   NVARCHAR(128) NOT NULL,
-    last_watermark_value              DATETIME2(3) NOT NULL,
+    last_watermark_value              NVARCHAR(1000) NOT NULL,
 
     last_successful_batch_id          UNIQUEIDENTIFIER NULL,
     last_successful_pipeline_run_id   NVARCHAR(100) NULL,
@@ -169,34 +152,6 @@ CREATE TABLE control.pipeline_watermarks
         FOREIGN KEY (ingestion_config_id)
         REFERENCES control.ingestion_config(ingestion_config_id)
 );
-GO
-
-CREATE TABLE control.file_ingestion_state
-(
-    file_ingestion_state_id          BIGINT IDENTITY(1,1) NOT NULL
-        CONSTRAINT PK_file_ingestion_state PRIMARY KEY,
-
-    ingestion_config_id              INT NOT NULL,
-    source_file_name                 NVARCHAR(512) NOT NULL,
-    source_file_path                 NVARCHAR(1500) NOT NULL,
-    landing_file_path                NVARCHAR(1500) NOT NULL,
-
-    processed_batch_id               UNIQUEIDENTIFIER NOT NULL,
-    processed_pipeline_run_id        NVARCHAR(100) NOT NULL,
-    processed_at                     DATETIME2(3) NOT NULL
-        CONSTRAINT DF_file_ingestion_state_processed_at DEFAULT SYSUTCDATETIME(),
-
-    CONSTRAINT UQ_file_ingestion_state_file
-        UNIQUE (ingestion_config_id, source_file_name),
-
-    CONSTRAINT FK_file_ingestion_state_config
-        FOREIGN KEY (ingestion_config_id)
-        REFERENCES control.ingestion_config(ingestion_config_id)
-);
-GO
-
-CREATE INDEX IX_file_ingestion_state_processed_at
-    ON control.file_ingestion_state(ingestion_config_id, processed_at DESC);
 GO
 
 CREATE TABLE audit.ingestion_log
