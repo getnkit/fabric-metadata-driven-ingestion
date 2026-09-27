@@ -279,12 +279,12 @@
         "type": "Switch",
         "typeProperties": {
           "on": {
-            "value": "@concat(\n    toUpper(activity('lkp_ingestion_config').output.value[0].source_connection_type),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n)",
+            "value": "@concat(\n    toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n)",
             "type": "Expression"
           },
           "cases": [
             {
-              "value": "AZURE_SQL|LAKEHOUSE|INCREMENTAL",
+              "value": "DATABASE|LAKEHOUSE|INCREMENTAL",
               "activities": [
                 {
                   "type": "InvokePipeline",
@@ -344,7 +344,7 @@
               ]
             },
             {
-              "value": "AZURE_SQL|LAKEHOUSE|FULL",
+              "value": "DATABASE|LAKEHOUSE|FULL",
               "activities": [
                 {
                   "type": "InvokePipeline",
@@ -441,7 +441,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Unsupported ingestion route: source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                  "value": "@concat(\n    'Unsupported ingestion route: ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "UNSUPPORTED_INGESTION_ROUTE"
