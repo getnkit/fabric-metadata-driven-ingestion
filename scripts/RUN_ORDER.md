@@ -45,7 +45,7 @@ Expected metadata state after seeding:
 - FILE/FULL `LOGISTICS_VENDOR.inventory_snapshot` is active
 - FILE/INCREMENTAL `LOGISTICS_VENDOR.inventory_movement` is active after the incremental route is synced
 - Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
-- `control.pipeline_watermarks` = 5 rows, all for DATABASE + INCREMENTAL configs
+- `control.pipeline_watermarks` = 6 rows: 5 DATABASE incremental + 1 FILE incremental
 - `catalog.product_categories` is FULL, so it has no watermark row
 - DATABASE incremental objects start at `1900-01-01T00:00:00.000`
 - FILE incremental uses `control.pipeline_watermarks`; it has no relational watermark row
@@ -185,7 +185,7 @@ file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
-watermark_field    = NULL
+watermark_field    = source_file_name
 ```
 
 The current implementation supports `REGULAR` FILE incremental runs only.
