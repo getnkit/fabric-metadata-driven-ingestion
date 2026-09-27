@@ -6,7 +6,7 @@ CREATE TABLE [control].[connection_settings] (
     [updated_at]          DATETIME2 (3)  CONSTRAINT [DF_connection_settings_updated_at] DEFAULT (sysutcdatetime()) NOT NULL,
     CONSTRAINT [PK_connection_settings] PRIMARY KEY CLUSTERED ([connection_ref] ASC),
     CONSTRAINT [CK_connection_settings_json] CHECK (isjson([connection_settings])=(1)),
-    CONSTRAINT [CK_connection_settings_type] CHECK ([connection_type]='LAKEHOUSE' OR [connection_type]='AZURE_SQL')
+    CONSTRAINT [CK_connection_settings_type] CHECK ([connection_type]='LAKEHOUSE' OR [connection_type]='SFTP' OR [connection_type]='AZURE_SQL')
 );
 
 
