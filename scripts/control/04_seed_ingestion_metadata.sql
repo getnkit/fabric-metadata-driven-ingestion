@@ -17,7 +17,7 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
-DECLARE @InitialFileWatermark NVARCHAR(1000) = '';
+DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000Z';
 
 DECLARE @Seed TABLE
 (
@@ -90,7 +90,7 @@ VALUES
         'fulfillment',
         'inventory_movements',
         'INCREMENTAL',
-        'source_file_name',
+        'last_modified_time',
         1
     );
 
@@ -172,6 +172,22 @@ BEGIN TRY
           )
           AND c.source_object = s.source_object
     );
+
+    /* Align an existing FILE incremental state row with the final Last Modified strategy. */
+    UPDATE w
+    SET
+        w.watermark_field = c.watermark_field,
+        w.last_watermark_value = @InitialFileWatermark,
+        w.last_successful_batch_id = NULL,
+        w.last_successful_pipeline_run_id = NULL,
+        w.watermark_updated_at = SYSUTCDATETIME()
+    FROM control.pipeline_watermarks w
+    JOIN control.ingestion_config c
+      ON c.ingestion_config_id = w.ingestion_config_id
+    WHERE c.source_system = 'LOGISTICS_VENDOR'
+      AND c.source_object = 'inventory_movement'
+      AND c.load_strategy = 'INCREMENTAL'
+      AND w.watermark_field <> c.watermark_field;
 
     INSERT INTO control.pipeline_watermarks
     (
