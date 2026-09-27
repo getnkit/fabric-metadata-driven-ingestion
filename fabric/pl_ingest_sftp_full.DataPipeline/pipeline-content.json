@@ -636,7 +636,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_sftp_to_landing_copy_failed",
+        "name": "sp_finalize_landing_copy_failed",
         "dependsOn": [
           {
             "activity": "cpy_sftp_to_landing",
@@ -655,10 +655,10 @@
           },
           "errorCode": "COPY_FAILED"
         },
-        "name": "fail_sftp_to_landing_copy",
+        "name": "fail_landing_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_sftp_to_landing_copy_failed",
+            "activity": "sp_finalize_landing_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -669,15 +669,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_sftp_to_landing_copy_failed').error.message",
+            "value": "@activity('sp_finalize_landing_copy_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_sftp_to_landing_copy_finalization",
+        "name": "fail_landing_copy_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_sftp_to_landing_copy_failed",
+            "activity": "sp_finalize_landing_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -860,7 +860,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_landing_to_bronze_copy_failed",
+        "name": "sp_finalize_bronze_copy_failed",
         "dependsOn": [
           {
             "activity": "cpy_landing_to_bronze",
@@ -879,10 +879,10 @@
           },
           "errorCode": "COPY_FAILED"
         },
-        "name": "fail_landing_to_bronze_copy",
+        "name": "fail_bronze_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_to_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -893,15 +893,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_landing_to_bronze_copy_failed').error.message",
+            "value": "@activity('sp_finalize_bronze_copy_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_landing_to_bronze_copy_finalization",
+        "name": "fail_bronze_copy_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_to_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
