@@ -52,7 +52,6 @@ VALUES
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'brands',             'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'brands',             'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'DATABASE', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1);
 
