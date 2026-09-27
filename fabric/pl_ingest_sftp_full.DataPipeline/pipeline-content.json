@@ -22,7 +22,7 @@
         "typeProperties": {
           "variableName": "v_landing_batch_path",
           "value": {
-            "value": "@concat(replace(pipeline().parameters.p_landing_path, 'Files/', ''), 'batch_id=', pipeline().parameters.p_batch_id, '/')",
+            "value": "@concat(replace(pipeline().parameters.p_landing_path, 'Files/', ''), 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
             "type": "Expression"
           }
         },
