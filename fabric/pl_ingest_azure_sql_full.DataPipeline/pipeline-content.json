@@ -152,11 +152,11 @@
             },
             "processing_lower_bound": {
               "value": null,
-              "type": "DateTime"
+              "type": "String"
             },
             "processing_upper_bound": {
               "value": null,
-              "type": "DateTime"
+              "type": "String"
             },
             "run_type": {
               "value": {
@@ -344,11 +344,11 @@
             },
             "processing_lower_bound": {
               "value": null,
-              "type": "DateTime"
+              "type": "String"
             },
             "processing_upper_bound": {
               "value": null,
-              "type": "DateTime"
+              "type": "String"
             },
             "run_type": {
               "value": {
