@@ -4,7 +4,7 @@
     Purpose: Enable the SFTP connection type and register the Fabric SFTP connection.
 
     Before running:
-      - Set @SftpConnectionId to the Connection ID of Fabric connection cn_sftp_ecommerce.
+      - Set @SftpConnectionId to the Connection ID of Fabric connection cn_sftp_3pl_wms.
 */
 
 SET NOCOUNT ON;
@@ -14,7 +14,7 @@ DECLARE @SftpConnectionId NVARCHAR(100) = NULL;
 
 IF @SftpConnectionId IS NULL
 BEGIN
-    THROW 51020, 'Set SftpConnectionId to the Fabric connection ID for cn_sftp_ecommerce before running this migration.', 1;
+    THROW 51020, 'Set SftpConnectionId to the Fabric connection ID for cn_sftp_3pl_wms before running this migration.', 1;
 END;
 
 BEGIN TRY
@@ -40,7 +40,7 @@ BEGIN TRY
     (
         SELECT 1
         FROM control.connection_settings
-        WHERE connection_ref = 'SFTP_ECOMMERCE'
+        WHERE connection_ref = 'SFTP_3PL_WMS'
     )
     BEGIN
         UPDATE control.connection_settings
@@ -52,7 +52,7 @@ BEGIN TRY
                 N'"}'
             ),
             updated_at = SYSUTCDATETIME()
-        WHERE connection_ref = 'SFTP_ECOMMERCE';
+        WHERE connection_ref = 'SFTP_3PL_WMS';
     END
     ELSE
     BEGIN
@@ -64,7 +64,7 @@ BEGIN TRY
         )
         VALUES
         (
-            'SFTP_ECOMMERCE',
+            'SFTP_3PL_WMS',
             'SFTP',
             CONCAT(
                 N'{"connectionId":"',
@@ -88,5 +88,5 @@ SELECT
     created_at,
     updated_at
 FROM control.connection_settings
-WHERE connection_ref = 'SFTP_ECOMMERCE';
+WHERE connection_ref = 'SFTP_3PL_WMS';
 GO
