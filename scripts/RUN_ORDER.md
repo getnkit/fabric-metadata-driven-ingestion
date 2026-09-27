@@ -40,13 +40,15 @@ Run in this order:
 
 Expected metadata state after seeding:
 
-- `control.ingestion_config` = 7 rows total: 6 `ECOMMERCE` DATABASE configs + 1 `LOGISTICS_VENDOR` FILE config
+- `control.ingestion_config` = 8 rows total: 6 `ECOMMERCE` DATABASE configs + 2 `LOGISTICS_VENDOR` FILE configs
 - 6 DATABASE configs remain active
-- 1 FILE/FULL SFTP config (`LOGISTICS_VENDOR.inventory_snapshot`) is active after the FILE route is synced
+- FILE/FULL `LOGISTICS_VENDOR.inventory_snapshot` is active
+- FILE/INCREMENTAL `LOGISTICS_VENDOR.inventory_movement` is active after the incremental route is synced
 - Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
-- `control.pipeline_watermarks` = 5 rows
+- `control.pipeline_watermarks` = 5 rows, all for DATABASE + INCREMENTAL configs
 - `catalog.product_categories` is FULL, so it has no watermark row
-- All INCREMENTAL objects start at `1900-01-01T00:00:00.000`
+- DATABASE incremental objects start at `1900-01-01T00:00:00.000`
+- FILE incremental uses `control.file_ingestion_state`; it has no relational watermark row
 
 ## 3) Source authentication
 
@@ -146,3 +148,62 @@ Files/landing/logistics_vendor/inventory_snapshot/ingestion_date=YYYY-MM-DD/batc
 
 This prevents one FULL run from re-reading a directory of historical dated
 snapshots and preserves each raw delivery independently.
+
+
+## 8) FILE incremental implementation
+
+For an existing live control database, run:
+
+```text
+scripts/control/migrations/003_add_file_incremental_state.sql
+```
+
+Then rerun:
+
+```text
+scripts/control/04_seed_ingestion_metadata.sql
+```
+
+The first FILE incremental route is:
+
+```text
+pl_ingest_object
+  -> FILE|LAKEHOUSE|INCREMENTAL
+  -> pl_ingest_file_incremental
+  -> SFTP
+  -> pl_ingest_sftp_incremental
+  -> pl_process_sftp_file_incremental
+```
+
+The incremental feed is:
+
+```text
+source_object      = inventory_movement
+source_path        = /outbound/inventory/movements/
+file_name_pattern  = inventory_movement_*.csv
+landing_path       = Files/landing/logistics_vendor/inventory_movement/
+target_table       = fulfillment.inventory_movements
+load_strategy      = INCREMENTAL
+watermark_field    = NULL
+```
+
+The current implementation supports `REGULAR` FILE incremental runs only.
+It enumerates SFTP child files, applies the metadata filename pattern, skips file
+names already stored in `control.file_ingestion_state`, and processes unseen
+files sequentially.
+
+Acceptance fixtures:
+
+```text
+sample-data/sftp/outbound/inventory/movements/
+  inventory_movement_20260927_001.csv
+  inventory_movement_20260927_002.csv
+```
+
+Recommended acceptance sequence:
+
+1. Upload only `inventory_movement_20260927_001.csv`.
+2. Run the FILE incremental config: expect 6 Bronze rows and one state row.
+3. Run again with no new file: expect `SKIPPED` and no new Bronze rows.
+4. Upload `inventory_movement_20260927_002.csv`.
+5. Run again: expect 6 additional Bronze rows and a second state row.
