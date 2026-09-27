@@ -42,6 +42,7 @@ Expected metadata state after seeding:
 
 - `control.ingestion_config` = 6 rows for `ECOMMERCE`
 - All current configs use `ingestion_pattern = DATABASE`
+- Current DATABASE configs use `source_options = NULL`; pattern-specific options are added only when needed
 - `control.pipeline_watermarks` = 5 rows
 - `catalog.product_categories` is FULL, so it has no watermark row
 - All INCREMENTAL objects start at `1900-01-01T00:00:00.000`
@@ -78,8 +79,14 @@ The current DATABASE ingestion path writes relational sources directly to Bronze
 Lakehouse Delta tables. For these configs, `target_folder` is NULL and the target
 is resolved through `target_conn_ref`, `target_schema`, and `target_table`.
 
-File/SFTP landing-path conventions will be defined when file-based ingestion is
-implemented.
+FILE ingestion uses the same `control.ingestion_config` table. Pattern-specific
+source-reading metadata is stored in the optional JSON `source_options` column.
+No separate `file_ingestion_config` table or Quarantine area is used in the
+current project scope.
+
+For an existing live control database created before M76, run
+`scripts/control/migrations/001_add_source_options.sql` instead of rerunning the
+destructive bootstrap schema script.
 
 ## 6) Incremental-change simulator
 
