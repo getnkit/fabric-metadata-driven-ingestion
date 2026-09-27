@@ -252,3 +252,69 @@ GO
 
 PRINT 'control.usp_finalize_ingestion_run created successfully.';
 GO
+
+CREATE OR ALTER PROCEDURE control.usp_mark_file_processed
+    @ingestion_config_id        INT,
+    @source_file_name           NVARCHAR(512),
+    @source_file_path           NVARCHAR(1500),
+    @landing_file_path          NVARCHAR(1500),
+    @processed_batch_id         UNIQUEIDENTIFIER,
+    @processed_pipeline_run_id  NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM control.file_ingestion_state
+        WHERE ingestion_config_id = @ingestion_config_id
+          AND source_file_name = @source_file_name
+    )
+        RETURN 0;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM control.file_ingestion_state WITH (UPDLOCK, HOLDLOCK)
+            WHERE ingestion_config_id = @ingestion_config_id
+              AND source_file_name = @source_file_name
+        )
+        BEGIN
+            INSERT INTO control.file_ingestion_state
+            (
+                ingestion_config_id,
+                source_file_name,
+                source_file_path,
+                landing_file_path,
+                processed_batch_id,
+                processed_pipeline_run_id
+            )
+            VALUES
+            (
+                @ingestion_config_id,
+                @source_file_name,
+                @source_file_path,
+                @landing_file_path,
+                @processed_batch_id,
+                @processed_pipeline_run_id
+            );
+        END;
+
+        COMMIT TRANSACTION;
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
+PRINT 'control.usp_mark_file_processed created successfully.';
+GO
