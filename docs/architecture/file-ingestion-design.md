@@ -111,3 +111,33 @@ FILE + FULL + CSV
 Additional file formats, SFTP, API ingestion, schema-contract governance, and
 incremental file state may be added later without changing the top-level
 `ingestion_pattern` routing model.
+
+
+## First physical adapter
+
+The first physical FILE source adapter is SFTP.
+
+The demo models an external producer/vendor that publishes files to its outbound
+delivery area:
+
+```text
+External producer/vendor
+  -> SFTP /outbound/customers/
+  -> Fabric Data Factory
+  -> OneLake Landing
+  -> Bronze Delta table
+```
+
+The SFTP directory is producer-owned delivery space; it is not the platform
+Landing Zone. The platform-owned copy begins at `landing_path`.
+
+Initial M76 fixture:
+
+```text
+source_path       = /outbound/customers/
+file_name_pattern = customers_*.csv
+```
+
+The repository fixture is stored under
+`sample-data/sftp/outbound/customers/` so the demo can be reproduced without
+depending on the operational SFTP server contents.
