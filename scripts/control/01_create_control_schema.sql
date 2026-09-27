@@ -180,8 +180,8 @@ CREATE TABLE audit.ingestion_log
     load_strategy             VARCHAR(20) NULL,
     watermark_field           NVARCHAR(128) NULL,
 
-    processing_lower_bound    DATETIME2(3) NULL,
-    processing_upper_bound    DATETIME2(3) NULL,
+    processing_lower_bound    NVARCHAR(1000) NULL,
+    processing_upper_bound    NVARCHAR(1000) NULL,
 
     source_row_count          BIGINT NULL,
     target_row_count          BIGINT NULL,
