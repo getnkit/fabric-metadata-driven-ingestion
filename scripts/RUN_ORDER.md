@@ -51,7 +51,7 @@ Expected metadata state after seeding:
 
 The current project uses Basic authentication for the Azure SQL source connection:
 
-- Connection: `cn_src_azsql`
+- Connection: `cn_azsql_ecommerce`
 - Database user: `fabric_ingestion_user`
 - Access: read-only source schemas
 
