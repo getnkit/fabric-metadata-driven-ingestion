@@ -1,14 +1,16 @@
 /*
     04_seed_ingestion_metadata.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
-    Purpose: Seed the initial ingestion configuration and initialize watermark state
-             for INCREMENTAL source objects.
+    Purpose: Seed ingestion configuration and initialize relational watermark state
+             for DATABASE + INCREMENTAL source objects. FILE + INCREMENTAL uses
+             control.file_ingestion_state instead of relational watermarks.
 
     Re-run behavior:
       - Existing config rows are updated.
       - Missing config rows are inserted.
       - Existing watermark values are preserved.
-      - Missing watermark rows are initialized to 1900-01-01.
+      - Missing DATABASE incremental watermark rows are initialized to 1900-01-01.
+      - FILE incremental processed-file state is preserved and is not seeded here.
 */
 
 SET NOCOUNT ON;
