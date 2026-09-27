@@ -162,8 +162,10 @@ scripts/control/04_seed_ingestion_metadata.sql
 
 The migration changes `control.pipeline_watermarks.last_watermark_value` from
 DATETIME2 to STRING while preserving existing DATABASE watermark values in
-ISO-8601 format. The procedure refresh adds generic STRING lower/upper checkpoint
-parameters for FILE/API-style state.
+ISO-8601 format. It also changes audit `processing_lower_bound` and
+`processing_upper_bound` to STRING. The same two boundary fields are used by
+DATABASE, FILE, and future API adapters; there is no second
+`watermark_lower_value` / `watermark_upper_value` pair.
 
 The first FILE incremental route is:
 
@@ -185,31 +187,32 @@ file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
-watermark_field    = source_file_name
+watermark_field    = last_modified_time
 ```
 
 The current implementation supports `REGULAR` FILE incremental runs only.
-It enumerates SFTP child files, applies the metadata filename pattern, and
-processes only filenames greater than the current
-`control.pipeline_watermarks.last_watermark_value`. Files are processed
-sequentially, and the watermark advances to the greatest successfully processed
-filename only after the whole run succeeds.
+It asks the SFTP connector for child files in the native Last Modified window
+`[current watermark, run start time)`, applies the metadata filename pattern,
+and processes matching files sequentially. After a successful scan, the
+checkpoint advances to the run start time.
 
 Acceptance fixtures:
 
 ```text
 sample-data/sftp/outbound/inventory/movements/
-  inventory_movement_20260927_001.csv
-  inventory_movement_20260927_002.csv
+  inventory_movement_20260927T081500Z.csv
+  inventory_movement_20260927T131500Z.csv
 ```
 
 Recommended acceptance sequence:
 
-1. Upload only `inventory_movement_20260927_001.csv`.
-2. Run the FILE incremental config: expect 6 Bronze rows and
-   `last_watermark_value = inventory_movement_20260927_001.csv`.
+1. Upload only `inventory_movement_20260927T081500Z.csv`.
+2. Run the FILE incremental config: expect 6 Bronze rows and a
+   `last_watermark_value` equal to that run's captured upper time.
 3. Run again with no new file: expect `SKIPPED`, no new Bronze rows, and the
-   same watermark.
-4. Upload `inventory_movement_20260927_002.csv`.
-5. Run again: expect 6 additional Bronze rows and
-   `last_watermark_value = inventory_movement_20260927_002.csv`.
+   checkpoint to advance to the second scan's upper time.
+4. Upload `inventory_movement_20260927T131500Z.csv`.
+5. Run again: expect 6 additional Bronze rows and another forward movement of
+   `last_watermark_value`.
+
+The actual watermark is a UTC timestamp from the ingestion run, not a filename.
