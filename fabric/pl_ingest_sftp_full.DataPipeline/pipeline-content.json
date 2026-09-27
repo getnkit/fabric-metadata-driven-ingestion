@@ -97,7 +97,7 @@
                   "typeProperties": {
                     "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
                     "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                    "rootFolder": "Tables"
+                    "rootFolder": "Files"
                   },
                   "externalReferences": {
                     "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
@@ -196,7 +196,7 @@
                   "typeProperties": {
                     "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
                     "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                    "rootFolder": "Tables"
+                    "rootFolder": "Files"
                   },
                   "externalReferences": {
                     "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
