@@ -22,9 +22,10 @@ DECLARE @Seed TABLE
     source_conn_ref  NVARCHAR(100) NOT NULL,
     source_schema    NVARCHAR(128) NULL,
     source_object    NVARCHAR(128) NOT NULL,
+    source_path      NVARCHAR(1000) NULL,
     ingestion_pattern VARCHAR(20) NOT NULL,
     source_options     NVARCHAR(MAX) NULL,
-    target_folder    NVARCHAR(500) NULL,
+    landing_path    NVARCHAR(500) NULL,
     target_conn_ref  NVARCHAR(100) NOT NULL,
     target_schema    NVARCHAR(128) NOT NULL,
     target_table     NVARCHAR(128) NOT NULL,
@@ -39,9 +40,10 @@ INSERT INTO @Seed
     source_conn_ref,
     source_schema,
     source_object,
+    source_path,
     ingestion_pattern,
     source_options,
-    target_folder,
+    landing_path,
     target_conn_ref,
     target_schema,
     target_table,
@@ -50,12 +52,12 @@ INSERT INTO @Seed
     is_active
 )
 VALUES
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'crm',     'customers',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'crm',     'customers',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1);
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -69,9 +71,10 @@ BEGIN TRY
     UPDATE c
     SET
         c.source_conn_ref = s.source_conn_ref,
+        c.source_path = s.source_path,
         c.ingestion_pattern = s.ingestion_pattern,
         c.source_options = s.source_options,
-        c.target_folder = s.target_folder,
+        c.landing_path = s.landing_path,
         c.target_conn_ref = s.target_conn_ref,
         c.target_schema = s.target_schema,
         c.target_table = s.target_table,
@@ -93,7 +96,7 @@ BEGIN TRY
         source_object,
         ingestion_pattern,
         source_options,
-        target_folder,
+        landing_path,
         target_conn_ref,
         target_schema,
         target_table,
@@ -106,9 +109,10 @@ BEGIN TRY
         s.source_conn_ref,
         s.source_schema,
         s.source_object,
+        s.source_path,
         s.ingestion_pattern,
         s.source_options,
-        s.target_folder,
+        s.landing_path,
         s.target_conn_ref,
         s.target_schema,
         s.target_table,
@@ -158,9 +162,10 @@ SELECT
     source_conn_ref,
     source_schema,
     source_object,
+    source_path,
     ingestion_pattern,
     source_options,
-    target_folder,
+    landing_path,
     target_conn_ref,
     target_schema,
     target_table,
