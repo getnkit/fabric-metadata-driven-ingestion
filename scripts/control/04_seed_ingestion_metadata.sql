@@ -73,6 +73,22 @@ VALUES
         'FULL',
         NULL,
         1
+    ),
+    (
+        'LOGISTICS_VENDOR',
+        'SFTP_LOGISTICS_VENDOR',
+        NULL,
+        'inventory_movement',
+        '/outbound/inventory/movements/',
+        'FILE',
+        N'{"file_format":"CSV","file_name_pattern":"inventory_movement_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
+        'Files/landing/logistics_vendor/inventory_movement/',
+        'LH_ECOMMERCE_BRONZE',
+        'fulfillment',
+        'inventory_movements',
+        'INCREMENTAL',
+        NULL,
+        1
     );
 
 BEGIN TRY
