@@ -72,7 +72,7 @@ VALUES
         'customer_snapshots',
         'FULL',
         NULL,
-        1
+        0
     );
 
 BEGIN TRY
@@ -101,7 +101,11 @@ BEGIN TRY
     FROM control.ingestion_config c
     JOIN @Seed s
       ON s.source_system = c.source_system
-     AND s.source_schema = c.source_schema
+     AND
+     (
+         s.source_schema = c.source_schema
+         OR (s.source_schema IS NULL AND c.source_schema IS NULL)
+     )
      AND s.source_object = c.source_object;
 
     INSERT INTO control.ingestion_config
@@ -142,7 +146,11 @@ BEGIN TRY
         SELECT 1
         FROM control.ingestion_config c
         WHERE c.source_system = s.source_system
-          AND c.source_schema = s.source_schema
+          AND
+          (
+              c.source_schema = s.source_schema
+              OR (c.source_schema IS NULL AND s.source_schema IS NULL)
+          )
           AND c.source_object = s.source_object
     );
 
