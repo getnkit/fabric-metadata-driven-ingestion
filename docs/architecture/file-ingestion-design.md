@@ -141,3 +141,38 @@ file_name_pattern = customers_*.csv
 The repository fixture is stored under
 `sample-data/sftp/outbound/customers/` so the demo can be reproduced without
 depending on the operational SFTP server contents.
+
+
+## Initial FILE configuration
+
+The first FILE configuration is a FULL customer snapshot delivered over SFTP:
+
+```text
+source_system      = ECOMMERCE
+source_conn_ref    = SFTP_ECOMMERCE
+source_schema      = NULL
+source_object      = customers_snapshot
+source_path        = /outbound/customers/
+ingestion_pattern  = FILE
+landing_path       = Files/landing/ecommerce/customers/
+target_conn_ref    = LH_ECOMMERCE_BRONZE
+target_schema      = crm
+target_table       = customer_snapshots
+load_strategy      = FULL
+watermark_field    = NULL
+```
+
+`source_options`:
+
+```json
+{
+  "file_format": "CSV",
+  "file_name_pattern": "customers_*.csv",
+  "delimiter": ",",
+  "has_header": true,
+  "encoding": "UTF-8"
+}
+```
+
+The config is seeded with `is_active = 0` until the FILE route is implemented,
+so the existing all-active master run remains green during M76 development.
