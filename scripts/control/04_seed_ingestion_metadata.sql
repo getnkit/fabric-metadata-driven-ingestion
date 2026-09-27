@@ -65,7 +65,7 @@ VALUES
         'inventory_snapshot',
         '/outbound/inventory/',
         'FILE',
-        N'{"file_format":"CSV","file_name_pattern":"inventory_snapshot_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
+        N'{"file_format":"CSV","file_name_pattern":"inventory_snapshot.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
         'Files/landing/logistics_vendor/inventory_snapshot/',
         'LH_ECOMMERCE_BRONZE',
         'fulfillment',
