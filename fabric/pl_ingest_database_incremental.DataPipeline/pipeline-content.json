@@ -1,0 +1,122 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@toUpper(pipeline().parameters.p_source_connection_type)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "AZURE_SQL",
+              "activities": [
+                {
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@pipeline().parameters.p_batch_id",
+                        "type": "Expression"
+                      },
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_parent_pipeline_run_id": {
+                        "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@pipeline().parameters.p_start_time",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@pipeline().parameters.p_run_type",
+                        "type": "Expression"
+                      },
+                      "p_requested_lower_bound": {
+                        "value": "@pipeline().parameters.p_requested_lower_bound",
+                        "type": "Expression"
+                      },
+                      "p_requested_upper_bound": {
+                        "value": "@pipeline().parameters.p_requested_upper_bound",
+                        "type": "Expression"
+                      },
+                      "p_parent_pipeline_name": {
+                        "value": "@pipeline().parameters.p_parent_pipeline_name",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "0ebee3c4-2194-9ce0-4038-19d061d94e14",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_azure_sql_incremental",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat('Unsupported DATABASE source connection type: ', pipeline().parameters.p_source_connection_type, '.')",
+                  "type": "Expression"
+                },
+                "errorCode": "UNSUPPORTED_DATABASE_CONNECTION_TYPE"
+              },
+              "name": "fail_unsupported_database_connection",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "sw_database_connection_type",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_ingestion_config_id": {
+        "type": "int"
+      },
+      "p_parent_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_start_time": {
+        "type": "string"
+      },
+      "p_run_type": {
+        "type": "string"
+      },
+      "p_requested_lower_bound": {
+        "type": "string"
+      },
+      "p_requested_upper_bound": {
+        "type": "string"
+      },
+      "p_parent_pipeline_name": {
+        "type": "string"
+      },
+      "p_source_connection_type": {
+        "type": "string"
+      }
+    }
+  }
+}
