@@ -102,16 +102,16 @@ file-processing state semantics rather than reusing relational watermarks.
 
 The first physical FILE adapter is SFTP.
 
-The demo models an external third-party logistics (3PL) provider. The provider's
+The demo models an external external logistics vendor. The provider's
 Warehouse Management System (WMS) publishes a complete inventory snapshot to its
 SFTP outbound area. Fabric consumes that file into the platform-owned OneLake
 Landing Zone before writing Bronze.
 
 ```text
-External 3PL WMS
+External logistics vendor
   -> SFTP /outbound/inventory/
   -> Fabric Data Factory
-  -> Files/landing/3pl_wms/inventory_snapshot/
+  -> Files/landing/logistics_vendor/inventory_snapshot/
   -> Bronze fulfillment.inventory_snapshots
 ```
 
@@ -121,7 +121,7 @@ This separates ownership cleanly:
 /outbound/inventory/
 = source/provider-owned delivery path
 
-Files/landing/3pl_wms/inventory_snapshot/
+Files/landing/logistics_vendor/inventory_snapshot/
 = platform-owned raw Landing path
 ```
 
@@ -159,13 +159,13 @@ snapshot_at
 ## Initial FILE configuration
 
 ```text
-source_system      = 3PL_WMS
-source_conn_ref    = SFTP_3PL_WMS
+source_system      = LOGISTICS_VENDOR
+source_conn_ref    = SFTP_LOGISTICS_VENDOR
 source_schema      = NULL
 source_object      = inventory_snapshot
 source_path        = /outbound/inventory/
 ingestion_pattern  = FILE
-landing_path       = Files/landing/3pl_wms/inventory_snapshot/
+landing_path       = Files/landing/logistics_vendor/inventory_snapshot/
 target_conn_ref    = LH_ECOMMERCE_BRONZE
 target_schema      = fulfillment
 target_table       = inventory_snapshots
@@ -194,7 +194,7 @@ The demo uses two SFTP identities to preserve the producer/consumer boundary:
 
 ```text
 vendor_sftp_user
-= producer-side account used to simulate the external 3PL WMS delivering files
+= producer-side account used to simulate the external logistics vendor delivering files
 
 fabric_sftp_user
 = read-only consumer account used by Fabric Data Factory
