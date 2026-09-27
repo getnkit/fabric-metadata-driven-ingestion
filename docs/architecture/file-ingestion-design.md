@@ -37,7 +37,7 @@ Path semantics:
 
 ```text
 source_path
-= source location or identifier used to locate the delivered source data
+= source-owned location used to locate delivered source data
 
 landing_path
 = platform-owned Landing Zone path used before Bronze when the ingestion pattern
@@ -48,27 +48,10 @@ For the current DATABASE path, both fields are NULL because the source is alread
 identified by `source_schema` + `source_object` and the pipeline writes directly
 to Bronze.
 
-For FILE ingestion, both fields are first-class metadata:
-
-```text
-source_path  = incoming/customers/
-landing_path = Files/landing/customers/
-```
+For FILE ingestion, both fields are first-class metadata.
 
 `source_options` is an optional JSON object for pattern-specific source-reading
 options that do not belong in the generic relational schema.
-
-Example FILE value:
-
-```json
-{
-  "file_format": "CSV",
-  "file_name_pattern": "customers_*.csv",
-  "delimiter": ",",
-  "has_header": true,
-  "encoding": "UTF-8"
-}
-```
 
 Current DATABASE configs do not require source-specific options and therefore use
 `source_options = NULL`.
@@ -108,56 +91,84 @@ FILE + FULL + CSV
   -> Bronze
 ```
 
-Additional file formats, SFTP, API ingestion, schema-contract governance, and
-incremental file state may be added later without changing the top-level
-`ingestion_pattern` routing model.
+The first FILE/FULL fixture is deliberately modeled as a complete inventory
+snapshot so FULL semantics are natural: the delivered file represents the full
+inventory state for the snapshot time.
 
+Incremental FILE ingestion remains planned for a later milestone and will add
+file-processing state semantics rather than reusing relational watermarks.
 
-## First physical adapter
+## First physical adapter and source story
 
-The first physical FILE source adapter is SFTP.
+The first physical FILE adapter is SFTP.
 
-The demo models an external producer/vendor that publishes files to its outbound
-delivery area:
+The demo models an external third-party logistics (3PL) provider. The provider's
+Warehouse Management System (WMS) publishes a complete inventory snapshot to its
+SFTP outbound area. Fabric consumes that file into the platform-owned OneLake
+Landing Zone before writing Bronze.
 
 ```text
-External producer/vendor
-  -> SFTP /outbound/customers/
+External 3PL WMS
+  -> SFTP /outbound/inventory/
   -> Fabric Data Factory
-  -> OneLake Landing
-  -> Bronze Delta table
+  -> Files/landing/3pl_wms/inventory_snapshot/
+  -> Bronze fulfillment.inventory_snapshots
 ```
 
-The SFTP directory is producer-owned delivery space; it is not the platform
-Landing Zone. The platform-owned copy begins at `landing_path`.
-
-Initial M76 fixture:
+This separates ownership cleanly:
 
 ```text
-source_path       = /outbound/customers/
-file_name_pattern = customers_*.csv
+/outbound/inventory/
+= source/provider-owned delivery path
+
+Files/landing/3pl_wms/inventory_snapshot/
+= platform-owned raw Landing path
 ```
 
-The repository fixture is stored under
-`sample-data/sftp/outbound/customers/` so the demo can be reproduced without
-depending on the operational SFTP server contents.
+The source inventory rows use the same SKU convention as the ECOMMERCE catalog
+(`SKU000001`, `SKU000002`, and so on), which gives the demo a realistic
+cross-source relationship without duplicating the Azure SQL source tables.
 
+## Initial FILE fixture
+
+Repository fixture:
+
+```text
+sample-data/sftp/outbound/inventory/inventory_snapshot_20260927_001.csv
+```
+
+Source SFTP path and file pattern:
+
+```text
+source_path       = /outbound/inventory/
+file_name_pattern = inventory_snapshot_*.csv
+```
+
+Fixture columns:
+
+```text
+warehouse_code
+sku
+on_hand_qty
+reserved_qty
+available_qty
+inventory_status
+snapshot_at
+```
 
 ## Initial FILE configuration
 
-The first FILE configuration is a FULL customer snapshot delivered over SFTP:
-
 ```text
-source_system      = ECOMMERCE
-source_conn_ref    = SFTP_ECOMMERCE
+source_system      = 3PL_WMS
+source_conn_ref    = SFTP_3PL_WMS
 source_schema      = NULL
-source_object      = customers_snapshot
-source_path        = /outbound/customers/
+source_object      = inventory_snapshot
+source_path        = /outbound/inventory/
 ingestion_pattern  = FILE
-landing_path       = Files/landing/ecommerce/customers/
+landing_path       = Files/landing/3pl_wms/inventory_snapshot/
 target_conn_ref    = LH_ECOMMERCE_BRONZE
-target_schema      = crm
-target_table       = customer_snapshots
+target_schema      = fulfillment
+target_table       = inventory_snapshots
 load_strategy      = FULL
 watermark_field    = NULL
 ```
@@ -167,7 +178,7 @@ watermark_field    = NULL
 ```json
 {
   "file_format": "CSV",
-  "file_name_pattern": "customers_*.csv",
+  "file_name_pattern": "inventory_snapshot_*.csv",
   "delimiter": ",",
   "has_header": true,
   "encoding": "UTF-8"
@@ -176,3 +187,17 @@ watermark_field    = NULL
 
 The config is seeded with `is_active = 0` until the FILE route is implemented,
 so the existing all-active master run remains green during M76 development.
+
+## SFTP account roles
+
+The demo uses two SFTP identities to preserve the producer/consumer boundary:
+
+```text
+vendor_sftp_user
+= producer-side account used to simulate the external 3PL WMS delivering files
+
+fabric_sftp_user
+= read-only consumer account used by Fabric Data Factory
+```
+
+The account name `vendor_sftp_user` is therefore intentional in this scenario.
