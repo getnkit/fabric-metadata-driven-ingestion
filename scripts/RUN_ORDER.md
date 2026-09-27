@@ -48,7 +48,7 @@ Expected metadata state after seeding:
 - `control.pipeline_watermarks` = 6 rows: 5 DATABASE incremental + 1 FILE incremental
 - `catalog.product_categories` is FULL, so it has no watermark row
 - DATABASE incremental objects start at `1900-01-01T00:00:00.000`
-- FILE incremental uses `control.pipeline_watermarks`; it has no relational watermark row
+- FILE incremental uses the same `control.pipeline_watermarks` table with `watermark_field = last_modified_time` and initial checkpoint `1900-01-01T00:00:00.000Z`
 
 ## 3) Source authentication
 
