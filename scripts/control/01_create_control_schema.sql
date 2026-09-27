@@ -59,6 +59,8 @@ CREATE TABLE control.ingestion_config
     source_schema        NVARCHAR(128) NOT NULL,
     source_object        NVARCHAR(128) NOT NULL,
 
+    ingestion_pattern    VARCHAR(20) NOT NULL,
+
     target_folder        NVARCHAR(500) NULL,
     target_conn_ref      NVARCHAR(100) NOT NULL,
     target_schema        NVARCHAR(128) NOT NULL,
@@ -78,6 +80,9 @@ CREATE TABLE control.ingestion_config
 
     CONSTRAINT UQ_ingestion_config_source
         UNIQUE (source_system, source_schema, source_object),
+
+    CONSTRAINT CK_ingestion_config_pattern
+        CHECK (ingestion_pattern IN ('DATABASE','FILE','API')),
 
     CONSTRAINT CK_ingestion_config_strategy
         CHECK (load_strategy IN ('FULL','INCREMENTAL')),
