@@ -6,7 +6,7 @@
         "typeProperties": {
           "variableName": "v_ingestion_timestamp",
           "value": {
-            "value": "@formatDateTime(utcNow(), 'yyyy-MM-ddTHH:mm:ss.fff')",
+            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fff'\n)",
             "type": "Expression"
           }
         },
@@ -20,9 +20,9 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_landing_batch_path",
+          "variableName": "v_landing_relative_path",
           "value": {
-            "value": "@concat(replace(pipeline().parameters.p_landing_path, 'Files/', ''), 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
             "type": "Expression"
           }
         },
@@ -30,7 +30,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "set_landing_batch_path",
+        "name": "set_landing_relative_path",
         "dependsOn": [
           {
             "activity": "set_ingestion_timestamp",
@@ -84,7 +84,7 @@
                 "location": {
                   "type": "LakehouseLocation",
                   "folderPath": {
-                    "value": "@variables('v_landing_batch_path')",
+                    "value": "@variables('v_landing_relative_path')",
                     "type": "Expression"
                   }
                 }
@@ -120,7 +120,7 @@
         "name": "cpy_sftp_to_landing",
         "dependsOn": [
           {
-            "activity": "set_landing_batch_path",
+            "activity": "set_landing_relative_path",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -169,7 +169,7 @@
                 "location": {
                   "type": "LakehouseLocation",
                   "folderPath": {
-                    "value": "@variables('v_landing_batch_path')",
+                    "value": "@variables('v_landing_relative_path')",
                     "type": "Expression"
                   }
                 },
@@ -484,7 +484,7 @@
               "type": "DateTime"
             },
             "error_code": {
-              "value": "LANDING_COPY_FAILED",
+              "value": "COPY_FAILED",
               "type": "String"
             },
             "error_message": {
@@ -636,7 +636,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_landing_copy_failed",
+        "name": "sp_finalize_sftp_to_landing_copy_failed",
         "dependsOn": [
           {
             "activity": "cpy_sftp_to_landing",
@@ -653,12 +653,12 @@
             "value": "@activity('cpy_sftp_to_landing').error.message",
             "type": "Expression"
           },
-          "errorCode": "LANDING_COPY_FAILED"
+          "errorCode": "COPY_FAILED"
         },
-        "name": "fail_landing_copy",
+        "name": "fail_sftp_to_landing_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_copy_failed",
+            "activity": "sp_finalize_sftp_to_landing_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -669,15 +669,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_landing_copy_failed').error.message",
+            "value": "@activity('sp_finalize_sftp_to_landing_copy_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_landing_failure_finalization",
+        "name": "fail_sftp_to_landing_failure_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_copy_failed",
+            "activity": "sp_finalize_sftp_to_landing_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -708,7 +708,7 @@
               "type": "DateTime"
             },
             "error_code": {
-              "value": "BRONZE_COPY_FAILED",
+              "value": "COPY_FAILED",
               "type": "String"
             },
             "error_message": {
@@ -860,7 +860,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_bronze_copy_failed",
+        "name": "sp_finalize_landing_to_bronze_copy_failed",
         "dependsOn": [
           {
             "activity": "cpy_landing_to_bronze",
@@ -877,12 +877,12 @@
             "value": "@activity('cpy_landing_to_bronze').error.message",
             "type": "Expression"
           },
-          "errorCode": "BRONZE_COPY_FAILED"
+          "errorCode": "COPY_FAILED"
         },
-        "name": "fail_bronze_copy",
+        "name": "fail_landing_to_bronze_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_copy_failed",
+            "activity": "sp_finalize_landing_to_bronze_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -893,15 +893,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_bronze_copy_failed').error.message",
+            "value": "@activity('sp_finalize_landing_to_bronze_copy_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_bronze_failure_finalization",
+        "name": "fail_landing_to_bronze_failure_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_copy_failed",
+            "activity": "sp_finalize_landing_to_bronze_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -969,7 +969,7 @@
       "v_ingestion_timestamp": {
         "type": "String"
       },
-      "v_landing_batch_path": {
+      "v_landing_relative_path": {
         "type": "String"
       }
     }
