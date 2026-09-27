@@ -130,8 +130,10 @@ Files/landing/logistics_vendor/inventory_snapshot/
 = platform-owned raw Landing base path
 
 Runtime example:
-Files/landing/logistics_vendor/inventory_snapshot/batch_id=<batch_id>/
-= immutable raw copy for one ingestion run
+Files/landing/logistics_vendor/inventory_snapshot/
+  ingestion_date=YYYY-MM-DD/
+    batch_id=<batch_id>/
+= human-browsable date organization plus immutable raw copy for one ingestion run
 ```
 
 The source inventory rows use the same SKU convention as the ECOMMERCE catalog
