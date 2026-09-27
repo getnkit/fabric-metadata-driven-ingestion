@@ -141,7 +141,7 @@ The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
 
 ```text
-Files/landing/logistics_vendor/inventory_snapshot/batch_id=<batch_id>/
+Files/landing/logistics_vendor/inventory_snapshot/ingestion_date=YYYY-MM-DD/batch_id=<batch_id>/
 ```
 
 This prevents one FULL run from re-reading a directory of historical dated
