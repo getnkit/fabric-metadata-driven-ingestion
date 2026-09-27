@@ -57,7 +57,23 @@ VALUES
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1);
+    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1),
+    (
+        'ECOMMERCE',
+        'SFTP_ECOMMERCE',
+        NULL,
+        'customers_snapshot',
+        '/outbound/customers/',
+        'FILE',
+        N'{"file_format":"CSV","file_name_pattern":"customers_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
+        'Files/landing/ecommerce/customers/',
+        'LH_ECOMMERCE_BRONZE',
+        'crm',
+        'customer_snapshots',
+        'FULL',
+        NULL,
+        1
+    );
 
 BEGIN TRY
     BEGIN TRANSACTION;
