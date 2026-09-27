@@ -456,7 +456,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_source_to_bronze_copy_failed",
+        "name": "sp_finalize_bronze_copy_failed",
         "dependsOn": [
           {
             "activity": "cpy_source_to_bronze",
@@ -475,10 +475,10 @@
           },
           "errorCode": "COPY_FAILED"
         },
-        "name": "fail_source_to_bronze_copy",
+        "name": "fail_bronze_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_source_to_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -489,15 +489,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_source_to_bronze_copy_failed').error.message",
+            "value": "@activity('sp_finalize_bronze_copy_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_source_to_bronze_copy_finalization",
+        "name": "fail_bronze_copy_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_source_to_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
