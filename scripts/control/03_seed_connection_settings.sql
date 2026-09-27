@@ -12,16 +12,18 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @SourceConnectionId NVARCHAR(100) = NULL;
+DECLARE @SftpConnectionId   NVARCHAR(100) = NULL;
 DECLARE @TargetConnectionId NVARCHAR(100) = NULL;
 DECLARE @TargetWorkspaceId  NVARCHAR(100) = NULL;
 DECLARE @TargetItemId       NVARCHAR(100) = NULL;
 
 IF @SourceConnectionId IS NULL
+   OR @SftpConnectionId IS NULL
    OR @TargetConnectionId IS NULL
    OR @TargetWorkspaceId IS NULL
    OR @TargetItemId IS NULL
 BEGIN
-    THROW 51010, 'Set SourceConnectionId, TargetConnectionId, TargetWorkspaceId, and TargetItemId before running this seed.', 1;
+    THROW 51010, 'Set SourceConnectionId, SftpConnectionId, TargetConnectionId, TargetWorkspaceId, and TargetItemId before running this seed.', 1;
 END;
 
 DECLARE @Seed TABLE
@@ -45,6 +47,15 @@ VALUES
         N'{"connectionId":"',
         @SourceConnectionId,
         N'","database":"sql_ecommerce_db"}'
+    )
+),
+(
+    'SFTP_ECOMMERCE',
+    'SFTP',
+    CONCAT(
+        N'{"connectionId":"',
+        @SftpConnectionId,
+        N'"}'
     )
 ),
 (
