@@ -20,7 +20,7 @@ DECLARE @Seed TABLE
 (
     source_system    NVARCHAR(100) NOT NULL,
     source_conn_ref  NVARCHAR(100) NOT NULL,
-    source_schema    NVARCHAR(128) NOT NULL,
+    source_schema    NVARCHAR(128) NULL,
     source_object    NVARCHAR(128) NOT NULL,
     ingestion_pattern VARCHAR(20) NOT NULL,
     source_options     NVARCHAR(MAX) NULL,
