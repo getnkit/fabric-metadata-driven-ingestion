@@ -73,6 +73,7 @@ IF OBJECT_ID('control.usp_mark_file_processed', 'P') IS NOT NULL
 
 IF OBJECT_ID('control.file_ingestion_state', 'U') IS NOT NULL
     DROP TABLE control.file_ingestion_state;
+GO
 
 CREATE VIEW control.v_pipeline_watermarks
 AS
