@@ -42,7 +42,7 @@ Expected metadata state after seeding:
 
 - `control.ingestion_config` = 7 rows total: 6 `ECOMMERCE` DATABASE configs + 1 `LOGISTICS_VENDOR` FILE config
 - 6 DATABASE configs remain active
-- 1 FILE/FULL SFTP config (`LOGISTICS_VENDOR.inventory_snapshot`) is seeded inactive until the FILE route is implemented
+- 1 FILE/FULL SFTP config (`LOGISTICS_VENDOR.inventory_snapshot`) is active after the FILE route is synced
 - Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
 - `control.pipeline_watermarks` = 5 rows
 - `catalog.product_categories` is FULL, so it has no watermark row
@@ -100,8 +100,8 @@ the destructive bootstrap schema script.
 
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
 `scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID,
-then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register the first
-FILE/FULL config. The FILE config remains inactive until its route is implemented.
+then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh the first
+FILE/FULL config. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
 
 ## 6) Incremental-change simulator
 
@@ -118,3 +118,31 @@ It performs:
 - three new order-item inserts
 
 All changes use the same fresh `SYSUTCDATETIME()` timestamp, making the next incremental window easy to validate.
+
+## 7) FILE FULL implementation
+
+The first FILE route is:
+
+```text
+pl_ingest_object
+  -> FILE|LAKEHOUSE|FULL
+  -> pl_ingest_file_full
+  -> SFTP
+  -> pl_ingest_sftp_full
+```
+
+The SFTP child performs two copies:
+
+1. SFTP Binary -> Lakehouse Files Landing, preserving the raw file.
+2. Landing CSV -> Bronze Delta table, appending the standard technical columns
+   `_batch_id`, `_pipeline_run_id`, and `_ingestion_timestamp`.
+
+The current FULL feed uses the stable producer filename
+`inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
+
+```text
+Files/landing/logistics_vendor/inventory_snapshot/batch_id=<batch_id>/
+```
+
+This prevents one FULL run from re-reading a directory of historical dated
+snapshots and preserves each raw delivery independently.
