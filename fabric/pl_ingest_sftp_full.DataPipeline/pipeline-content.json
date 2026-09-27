@@ -450,7 +450,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_file_full_success",
+        "name": "sp_finalize_success",
         "dependsOn": [
           {
             "activity": "cpy_landing_to_bronze",
@@ -674,7 +674,7 @@
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_sftp_to_landing_failure_finalization",
+        "name": "fail_sftp_to_landing_copy_finalization",
         "dependsOn": [
           {
             "activity": "sp_finalize_sftp_to_landing_copy_failed",
@@ -898,7 +898,7 @@
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_landing_to_bronze_failure_finalization",
+        "name": "fail_landing_to_bronze_copy_finalization",
         "dependsOn": [
           {
             "activity": "sp_finalize_landing_to_bronze_copy_failed",
