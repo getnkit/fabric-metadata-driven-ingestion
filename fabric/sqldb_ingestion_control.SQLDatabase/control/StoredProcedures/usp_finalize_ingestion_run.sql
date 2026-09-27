@@ -1,5 +1,4 @@
-
-CREATE   PROCEDURE control.usp_finalize_ingestion_run
+CREATE PROCEDURE control.usp_finalize_ingestion_run
     @ingestion_config_id        INT = NULL,
     @batch_id                   UNIQUEIDENTIFIER,
     @pipeline_run_id            NVARCHAR(100),
@@ -21,6 +20,9 @@ CREATE   PROCEDURE control.usp_finalize_ingestion_run
     @processing_lower_bound     DATETIME2(3) = NULL,
     @processing_upper_bound     DATETIME2(3) = NULL,
 
+    @watermark_lower_value      NVARCHAR(1000) = NULL,
+    @watermark_upper_value      NVARCHAR(1000) = NULL,
+
     @source_row_count           BIGINT = NULL,
     @target_row_count           BIGINT = NULL,
 
@@ -40,8 +42,20 @@ BEGIN
     DECLARE @ExistingStatus VARCHAR(20);
     DECLARE @DurationSeconds INT;
     DECLARE @ConflictMessage NVARCHAR(4000);
+    DECLARE @ExpectedWatermark NVARCHAR(1000);
+    DECLARE @NewWatermark NVARCHAR(1000);
 
     SET @DurationSeconds = DATEDIFF(SECOND, @start_time, @end_time);
+
+    SET @ExpectedWatermark = COALESCE(
+        @watermark_lower_value,
+        CONVERT(NVARCHAR(40), @processing_lower_bound, 126)
+    );
+
+    SET @NewWatermark = COALESCE(
+        @watermark_upper_value,
+        CONVERT(NVARCHAR(40), @processing_upper_bound, 126)
+    );
 
     IF @DurationSeconds < 0
         THROW 51000, 'INVALID_AUDIT_TIME_RANGE: end_time is earlier than start_time.', 1;
@@ -65,12 +79,17 @@ BEGIN
 
         IF @ingestion_config_id IS NULL
            OR @watermark_field IS NULL
-           OR @processing_lower_bound IS NULL
-           OR @processing_upper_bound IS NULL
-            THROW 51004, 'INVALID_WATERMARK_ADVANCE: config, watermark field, LOW, and HIGH are required.', 1;
+           OR @ExpectedWatermark IS NULL
+           OR @NewWatermark IS NULL
+            THROW 51004, 'INVALID_WATERMARK_ADVANCE: config, watermark field, current value, and new value are required.', 1;
 
-        IF @processing_upper_bound <= @processing_lower_bound
+        IF @processing_lower_bound IS NOT NULL
+           AND @processing_upper_bound IS NOT NULL
+           AND @processing_upper_bound <= @processing_lower_bound
             THROW 51005, 'INVALID_WATERMARK_ADVANCE: HIGH must be greater than LOW.', 1;
+
+        IF @NewWatermark = @ExpectedWatermark
+            THROW 51005, 'INVALID_WATERMARK_ADVANCE: new watermark must differ from current watermark.', 1;
     END;
 
     BEGIN TRY
@@ -80,19 +99,19 @@ BEGIN
         BEGIN
             UPDATE control.pipeline_watermarks
             SET
-                last_watermark_value = @processing_upper_bound,
+                last_watermark_value = @NewWatermark,
                 last_successful_batch_id = @batch_id,
                 last_successful_pipeline_run_id = @pipeline_run_id,
                 watermark_updated_at = SYSUTCDATETIME()
             WHERE ingestion_config_id = @ingestion_config_id
               AND watermark_field = @watermark_field
-              AND last_watermark_value = @processing_lower_bound;
+              AND last_watermark_value = @ExpectedWatermark;
 
             IF @@ROWCOUNT <> 1
             BEGIN
                 SET @ConflictMessage = CONCAT(
                     'Expected current watermark ',
-                    CONVERT(NVARCHAR(40), @processing_lower_bound, 126),
+                    @ExpectedWatermark,
                     ' for ingestion_config_id=',
                     CONVERT(NVARCHAR(20), @ingestion_config_id),
                     ', but the current state no longer matches.'
@@ -228,4 +247,3 @@ BEGIN
 END;
 
 GO
-
