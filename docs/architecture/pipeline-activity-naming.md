@@ -10,7 +10,11 @@ This project therefore uses a concise project convention.
 |---|---|
 | Copy | `cpy_` |
 | Lookup | `lkp_` |
+| Get Metadata | `gm_` |
+| Filter | `flt_` |
+| ForEach | `fe_` |
 | Set Variable | `set_` |
+| Append Variable | `append_` |
 | If Condition | `if_` |
 | Switch | `sw_` |
 | Invoke Pipeline | `inv_` |
