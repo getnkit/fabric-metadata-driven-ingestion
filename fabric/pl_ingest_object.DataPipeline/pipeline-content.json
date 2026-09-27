@@ -319,7 +319,7 @@
                         "type": "Expression"
                       },
                       "p_parent_pipeline_name": {
-                        "value": "@pipeline().Pipeline",
+                        "value": "@pipeline().PipelineName",
                         "type": "Expression"
                       }
                     },
@@ -371,7 +371,7 @@
                         "type": "Expression"
                       },
                       "p_audit_pipeline_name": {
-                        "value": "@pipeline().Pipeline",
+                        "value": "@pipeline().PipelineName",
                         "type": "Expression"
                       },
                       "p_source_system": {
