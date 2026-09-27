@@ -2,7 +2,7 @@
 
 ## Status
 
-FILE/FULL is implemented and acceptance-tested. FILE/INCREMENTAL extends the same design with processed-file state.
+FILE/FULL is implemented and acceptance-tested. FILE/INCREMENTAL extends the same design by reusing the framework-wide pipeline watermark state.
 
 The personal project intentionally keeps FILE ingestion lean:
 
@@ -214,7 +214,6 @@ fabric_sftp_user
 
 The account name `vendor_sftp_user` is therefore intentional in this scenario.
 
-
 ## FILE incremental feed
 
 The first incremental FILE feed is:
@@ -226,26 +225,34 @@ file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
-watermark_field    = NULL
+watermark_field    = source_file_name
 ```
 
-FILE incremental does not reuse `control.pipeline_watermarks`. Source files are
-enumerated from SFTP, filtered by `file_name_pattern`, and compared with
-`control.file_ingestion_state`. Only file names not already present in state
-are processed.
+FILE incremental reuses `control.pipeline_watermarks`; there is no
+FILE-specific state table.
 
-Current pattern matching supports an exact file name or one `*` wildcard.
-The incremental producer contract requires file names to be unique within the
-feed and delivered files to be immutable.
+The initial watermark value is the empty string. Matching source filenames are
+compared with the committed `last_watermark_value`, and only filenames greater
+than the current checkpoint are processed. After every candidate file succeeds,
+the watermark advances to the greatest filename processed by the run.
 
-A successfully processed file records its source path, Landing path, batch ID,
-pipeline RunId, and processed timestamp in `control.file_ingestion_state`.
+The current fixture naming contract is fixed-width and sortable:
 
-Because Bronze and the SQL control database cannot participate in one distributed
-transaction, the state row is written only after Bronze succeeds and the state
-write is retried. This gives normal runs state-based skip behavior while keeping
-the remaining cross-store failure window explicit rather than claiming strict
-exactly-once semantics.
+```text
+inventory_movement_20260927_001.csv
+inventory_movement_20260927_002.csv
+inventory_movement_20260928_001.csv
+```
+
+The ordering therefore comes from the date + sequence encoded in the producer
+filename. The current implementation deliberately does not use SFTP modification
+time as its checkpoint.
+
+This scalar-watermark strategy assumes monotonic delivery: once a higher
+filename has been committed, the producer must not later deliver a lower
+filename. A source that cannot provide that guarantee would require a different
+policy such as a receipt manifest or explicit gap handling.
 
 FILE + INCREMENTAL initially supports `REGULAR` runs only. Replay semantics
-will be based on explicit file identity rather than relational LOW/HIGH bounds.
+will be based on explicit file/checkpoint boundaries rather than relational
+datetime LOW/HIGH values.
