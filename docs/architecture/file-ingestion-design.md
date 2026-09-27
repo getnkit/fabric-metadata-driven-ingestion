@@ -1,94 +1,89 @@
 # File Ingestion Design
 
-## Goal
+## Status
 
-Implement a real FILE ingestion path without forcing file-specific metadata into
-the generic ingestion table.
+Accepted direction for M76.
 
-The first implementation is self-contained and uses Lakehouse Files as the source
-drop zone. SFTP or ADLS can be added later as physical source adapters without
-changing the FILE routing contract.
+The personal project intentionally keeps FILE ingestion lean:
 
-## Logical flow
+- one shared `control.ingestion_config`
+- pattern-specific source options stored in `source_options`
+- no `control.file_ingestion_config`
+- no Data Contract subsystem in the current scope
+- no Quarantine / Reject Area
 
-```text
-pl_master_ingestion
-  -> pl_ingest_object
-      -> FILE|LAKEHOUSE|FULL
-          -> pl_ingest_file_full
-              -> source connector adapter
-              -> copy original file to Landing
-              -> structural contract validation
-                  -> valid   -> append to Bronze Delta table
-                  -> invalid -> quarantine original landed file
-              -> audit/finalization
+## Metadata model
+
+`control.ingestion_config` remains the single ingestion configuration table.
+
+The generic columns continue to own routing and execution metadata:
+
+- `source_system`
+- `source_conn_ref`
+- `source_schema`
+- `source_object`
+- `ingestion_pattern`
+- `target_folder`
+- `target_conn_ref`
+- `target_schema`
+- `target_table`
+- `load_strategy`
+- `watermark_field`
+
+`source_options` is an optional JSON object for pattern-specific source-reading
+options that do not belong in the generic relational schema.
+
+Example FILE value:
+
+```json
+{
+  "file_format": "CSV",
+  "source_folder": "incoming/customers",
+  "file_name_pattern": "customers_*.csv",
+  "delimiter": ",",
+  "has_header": true,
+  "encoding": "UTF-8"
+}
 ```
 
-For file ingestion, Landing is retained because the original delivered file is an
-operational checkpoint and evidence artifact. Database ingestion continues to
-write directly to Bronze.
+Current DATABASE configs do not require source-specific options and therefore use
+`NULL`.
 
-## Generic metadata
+## FILE flow
 
-`control.ingestion_config` remains the common object-level configuration.
+```text
+Source file
+  -> Landing (Lakehouse Files)
+  -> FILE ingestion pipeline
+  -> Bronze Delta table
+```
 
-For FILE configs:
+Landing is retained for FILE ingestion because the delivered file is itself the
+raw ingestion artifact and can be reused for troubleshooting or reprocessing.
 
-- `ingestion_pattern = FILE`
-- `source_schema` may be NULL
-- `source_object` is the logical data object, not the physical filename
-- `target_folder` is the Lakehouse Files Landing folder
-- `target_schema` / `target_table` identify the Bronze Delta table
-- the first implementation uses `load_strategy = FULL`
-- `watermark_field` is NULL
-
-## File-specific metadata
-
-`control.file_ingestion_config` stores fields that apply only to FILE ingestion:
-
-- source folder
-- filename/pattern
-- file format
-- CSV parsing options when applicable
-- expected structural schema
-- quarantine folder
-
-This keeps DATABASE and future API configs free from irrelevant file columns.
-
-## Validation boundary
-
-Pre-Bronze validation is structural only. It verifies that the delivered file can
-be interpreted according to the configured file contract, for example:
-
-- supported file format
-- parseability
-- required columns / expected structure
-- CSV header/delimiter expectations when applicable
-
-Business data-quality rules remain a Bronze-to-Silver responsibility.
+DATABASE ingestion remains direct-to-Bronze.
 
 ## Failure behavior
 
-A structurally invalid file is not loaded into Bronze. The landed file is moved or
-copied to the configured quarantine location and the ingestion run is finalized
-as failed with a diagnostic error.
+The current project does not implement Quarantine.
 
-A successful file load appends to Bronze and records the landed path in
-`audit.ingestion_log.target_path`.
+If a file cannot be found, opened, or parsed according to `source_options`, the
+ingestion run fails and records the error in the normal ingestion audit path. A
+file already copied to Landing remains there for inspection/reprocessing.
 
-## Extensibility
+Business data-quality and a governed Data Contract model are intentionally outside
+the current M76 scope.
 
-The FILE pipeline owns file-processing semantics; physical source adapters own
-only source-access behavior.
+## Scope of M76
 
-Future examples:
+The first implementation proves one metadata-driven CSV path:
 
 ```text
-pl_ingest_file_full
-  -> LAKEHOUSE_FILES
-  -> SFTP
-  -> ADLS_GEN2
+FILE + FULL + CSV
+  -> Landing
+  -> Bronze
 ```
 
-Adding an SFTP adapter must not change the Landing -> validation -> Bronze
-contract.
+Additional file formats, SFTP, API ingestion, schema-contract governance, and
+incremental file state may be added later without changing the top-level
+`ingestion_pattern` routing model.
