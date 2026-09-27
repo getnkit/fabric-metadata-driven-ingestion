@@ -59,17 +59,17 @@ VALUES
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
     ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1),
     (
-        'ECOMMERCE',
-        'SFTP_ECOMMERCE',
+        '3PL_WMS',
+        'SFTP_3PL_WMS',
         NULL,
-        'customers_snapshot',
-        '/outbound/customers/',
+        'inventory_snapshot',
+        '/outbound/inventory/',
         'FILE',
-        N'{"file_format":"CSV","file_name_pattern":"customers_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
-        'Files/landing/ecommerce/customers/',
+        N'{"file_format":"CSV","file_name_pattern":"inventory_snapshot_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8"}',
+        'Files/landing/3pl_wms/inventory_snapshot/',
         'LH_ECOMMERCE_BRONZE',
-        'crm',
-        'customer_snapshots',
+        'fulfillment',
+        'inventory_snapshots',
         'FULL',
         NULL,
         0
@@ -200,7 +200,7 @@ SELECT
     created_at,
     updated_at
 FROM control.ingestion_config
-WHERE source_system = 'ECOMMERCE'
+WHERE source_system IN ('ECOMMERCE','3PL_WMS')
 ORDER BY ingestion_config_id;
 
 SELECT *
