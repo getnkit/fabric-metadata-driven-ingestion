@@ -1,0 +1,192 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@toUpper(pipeline().parameters.p_source_connection_type)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "SFTP",
+              "activities": [
+                {
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@pipeline().parameters.p_batch_id",
+                        "type": "Expression"
+                      },
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@pipeline().parameters.p_run_type",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@pipeline().parameters.p_start_time",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_run_id": {
+                        "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_name": {
+                        "value": "@pipeline().parameters.p_audit_pipeline_name",
+                        "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@pipeline().parameters.p_source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@pipeline().parameters.p_source_object",
+                        "type": "Expression"
+                      },
+                      "p_source_path": {
+                        "value": "@pipeline().parameters.p_source_path",
+                        "type": "Expression"
+                      },
+                      "p_source_options": {
+                        "value": "@pipeline().parameters.p_source_options",
+                        "type": "Expression"
+                      },
+                      "p_landing_path": {
+                        "value": "@pipeline().parameters.p_landing_path",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@pipeline().parameters.p_load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@pipeline().parameters.p_source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@pipeline().parameters.p_source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@pipeline().parameters.p_target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@pipeline().parameters.p_target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@pipeline().parameters.p_target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@pipeline().parameters.p_target_table",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "e4b29d9f-528b-421e-9d83-88c07d2e76c2",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_sftp_incremental",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat('Unsupported FILE source connection type: ', pipeline().parameters.p_source_connection_type, '.')",
+                  "type": "Expression"
+                },
+                "errorCode": "UNSUPPORTED_FILE_CONNECTION_TYPE"
+              },
+              "name": "fail_unsupported_file_connection",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "sw_file_connection_type",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_ingestion_config_id": {
+        "type": "int"
+      },
+      "p_run_type": {
+        "type": "string"
+      },
+      "p_start_time": {
+        "type": "string"
+      },
+      "p_audit_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_audit_pipeline_name": {
+        "type": "string"
+      },
+      "p_source_system": {
+        "type": "string"
+      },
+      "p_source_object": {
+        "type": "string"
+      },
+      "p_source_path": {
+        "type": "string"
+      },
+      "p_source_options": {
+        "type": "string"
+      },
+      "p_landing_path": {
+        "type": "string"
+      },
+      "p_load_strategy": {
+        "type": "string"
+      },
+      "p_source_conn_ref": {
+        "type": "string"
+      },
+      "p_source_connection_settings": {
+        "type": "string"
+      },
+      "p_target_conn_ref": {
+        "type": "string"
+      },
+      "p_target_connection_settings": {
+        "type": "string"
+      },
+      "p_target_schema": {
+        "type": "string"
+      },
+      "p_target_table": {
+        "type": "string"
+      },
+      "p_source_connection_type": {
+        "type": "string"
+      }
+    }
+  }
+}
