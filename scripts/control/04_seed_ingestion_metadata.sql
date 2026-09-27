@@ -1,22 +1,24 @@
 /*
     04_seed_ingestion_metadata.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
-    Purpose: Seed ingestion configuration and initialize relational watermark state
-             for DATABASE + INCREMENTAL source objects. FILE + INCREMENTAL uses
-             control.file_ingestion_state instead of relational watermarks.
+    Purpose: Seed ingestion configuration and initialize generic pipeline watermark
+             state for all INCREMENTAL source objects. DATABASE, FILE, and future
+             API patterns share control.pipeline_watermarks.
 
     Re-run behavior:
       - Existing config rows are updated.
       - Missing config rows are inserted.
       - Existing watermark values are preserved.
-      - Missing DATABASE incremental watermark rows are initialized to 1900-01-01.
-      - FILE incremental processed-file state is preserved and is not seeded here.
+      - Missing DATABASE incremental watermark rows start at 1900-01-01.
+      - Missing FILE incremental watermark rows start at the empty string.
+      - Existing watermark values are preserved.
 */
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-DECLARE @InitialWatermark DATETIME2(3) = '1900-01-01T00:00:00.000';
+DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
+DECLARE @InitialFileWatermark NVARCHAR(1000) = '';
 
 DECLARE @Seed TABLE
 (
@@ -89,7 +91,7 @@ VALUES
         'fulfillment',
         'inventory_movements',
         'INCREMENTAL',
-        NULL,
+        'source_file_name',
         1
     );
 
@@ -181,10 +183,13 @@ BEGIN TRY
     SELECT
         c.ingestion_config_id,
         c.watermark_field,
-        @InitialWatermark
+        CASE
+            WHEN c.ingestion_pattern = 'DATABASE' THEN @InitialDatabaseWatermark
+            WHEN c.ingestion_pattern = 'FILE' THEN @InitialFileWatermark
+            ELSE ''
+        END
     FROM control.ingestion_config c
-    WHERE c.source_system = 'ECOMMERCE'
-      AND c.load_strategy = 'INCREMENTAL'
+    WHERE c.load_strategy = 'INCREMENTAL'
       AND NOT EXISTS
       (
           SELECT 1
@@ -223,6 +228,6 @@ ORDER BY ingestion_config_id;
 
 SELECT *
 FROM control.v_pipeline_watermarks
-WHERE source_system = 'ECOMMERCE'
+WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR')
 ORDER BY ingestion_config_id;
 GO
