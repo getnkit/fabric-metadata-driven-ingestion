@@ -29,7 +29,7 @@ successful REGULAR ingestion and the immediate no-new-data test.
 
 It is used later to create fresh rows and updates beyond the committed watermark.
 
-## 2) Run on Fabric SQL Database — `sqldb_ecommerce_control`
+## 2) Run on Fabric SQL Database — `sqldb_ingestion_control`
 
 Run in this order:
 
