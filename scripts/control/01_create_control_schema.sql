@@ -58,11 +58,12 @@ CREATE TABLE control.ingestion_config
     source_conn_ref      NVARCHAR(100) NOT NULL,
     source_schema        NVARCHAR(128) NULL,
     source_object        NVARCHAR(128) NOT NULL,
+    source_path          NVARCHAR(1000) NULL,
 
     ingestion_pattern    VARCHAR(20) NOT NULL,
     source_options       NVARCHAR(MAX) NULL,
 
-    target_folder        NVARCHAR(500) NULL,
+    landing_path         NVARCHAR(1000) NULL,
     target_conn_ref      NVARCHAR(100) NOT NULL,
     target_schema        NVARCHAR(128) NOT NULL,
     target_table         NVARCHAR(128) NOT NULL,
@@ -96,10 +97,18 @@ CREATE TABLE control.ingestion_config
             (ingestion_pattern IN ('FILE','API'))
         ),
 
-    CONSTRAINT CK_ingestion_config_target_folder
+    CONSTRAINT CK_ingestion_config_source_path
         CHECK
         (
-            (ingestion_pattern = 'FILE' AND target_folder IS NOT NULL)
+            (ingestion_pattern = 'FILE' AND source_path IS NOT NULL)
+            OR
+            (ingestion_pattern IN ('DATABASE','API'))
+        ),
+
+    CONSTRAINT CK_ingestion_config_landing_path
+        CHECK
+        (
+            (ingestion_pattern = 'FILE' AND landing_path IS NOT NULL)
             OR
             (ingestion_pattern IN ('DATABASE','API'))
         ),
