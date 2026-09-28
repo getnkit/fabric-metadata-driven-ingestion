@@ -61,13 +61,20 @@ Current DATABASE configs use `file_format = NULL` and `source_options = NULL`.
 
 ```text
 Source connection + source_path
+  -> Binary copy
   -> Landing + landing_path
-  -> FILE ingestion pipeline
+  -> file_format router
+       -> DELIMITED_TEXT parser
+       -> PARQUET parser (future)
+       -> JSON parser    (future)
   -> Bronze Delta table
 ```
 
-Landing is retained for FILE ingestion because the delivered file is itself the
-raw ingestion artifact and can be reused for troubleshooting or reprocessing.
+The source-to-Landing step is intentionally Binary so the delivered file is preserved byte-for-byte. Parsing starts only after the raw artifact reaches Landing.
+
+The current implementation contains the `DELIMITED_TEXT` branch. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT`; adding another format means adding another parser branch after Landing rather than duplicating the SFTP source-copy logic.
+
+Landing is retained for FILE ingestion because the delivered file is itself the raw ingestion artifact and can be reused for troubleshooting or reprocessing.
 
 DATABASE ingestion remains direct-to-Bronze.
 
@@ -179,6 +186,7 @@ source_schema      = NULL
 source_object      = inventory_snapshot
 source_path        = /outbound/inventory/
 ingestion_pattern  = FILE
+file_format        = DELIMITED_TEXT
 landing_path       = Files/landing/logistics_vendor/inventory_snapshot/
 target_conn_ref    = LH_ECOMMERCE_BRONZE
 target_schema      = fulfillment
@@ -191,7 +199,6 @@ watermark_field    = NULL
 
 ```json
 {
-  "file_format": "CSV",
   "file_name_pattern": "inventory_snapshot.csv",
   "delimiter": ",",
   "has_header": true,
@@ -222,6 +229,7 @@ The first incremental FILE feed is:
 ```text
 source_object      = inventory_movement
 source_path        = /outbound/inventory/movements/
+file_format        = DELIMITED_TEXT
 file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
@@ -279,3 +287,29 @@ different policy such as a manifest/receipt state model.
 FILE + INCREMENTAL initially supports `REGULAR` runs only. Replay semantics
 will be designed separately rather than reusing relational RERUN/BACKFILL
 datetime parameters implicitly.
+
+
+## Format-routing boundary
+
+`source_connection_type` and `file_format` answer different questions:
+
+```text
+source_connection_type
+= how the raw file reaches Landing
+
+file_format
+= how the Landing artifact is parsed into Bronze
+```
+
+For the current SFTP adapter:
+
+```text
+SFTP
+  -> Binary copy to Landing
+  -> Switch(file_format)
+       -> DELIMITED_TEXT
+            -> DelimitedText reader
+            -> Bronze
+```
+
+The routing boundary is implemented now, while only the delimited-text parser is implemented. This avoids hard-coding CSV semantics into the metadata model and avoids prematurely multiplying pipelines by connector x format.
