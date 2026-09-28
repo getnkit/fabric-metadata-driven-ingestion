@@ -97,7 +97,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "cpy_source_to_bronze",
+        "name": "copy_source_to_bronze",
         "dependsOn": [
           {
             "activity": "set_ingestion_timestamp",
@@ -123,7 +123,7 @@
         "name": "set_advance_watermark",
         "dependsOn": [
           {
-            "activity": "cpy_source_to_bronze",
+            "activity": "copy_source_to_bronze",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -222,7 +222,7 @@
             },
             "source_row_count": {
               "value": {
-                "value": "@activity('cpy_source_to_bronze').output.rowsRead",
+                "value": "@activity('copy_source_to_bronze').output.rowsRead",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -258,7 +258,7 @@
             },
             "target_row_count": {
               "value": {
-                "value": "@activity('cpy_source_to_bronze').output.rowsCopied",
+                "value": "@activity('copy_source_to_bronze').output.rowsCopied",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -360,7 +360,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('cpy_source_to_bronze').error.message",
+                "value": "@activity('copy_source_to_bronze').error.message",
                 "type": "Expression"
               },
               "type": "String"
@@ -519,7 +519,7 @@
         "name": "sp_finalize_bronze_copy_failed",
         "dependsOn": [
           {
-            "activity": "cpy_source_to_bronze",
+            "activity": "copy_source_to_bronze",
             "dependencyConditions": [
               "Failed"
             ]
@@ -530,7 +530,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('cpy_source_to_bronze').error.message",
+            "value": "@activity('copy_source_to_bronze').error.message",
             "type": "Expression"
           },
           "errorCode": "COPY_FAILED"
