@@ -61,6 +61,7 @@ CREATE TABLE control.ingestion_config
     source_path          NVARCHAR(1000) NULL,
 
     ingestion_pattern    VARCHAR(20) NOT NULL,
+    file_format          VARCHAR(30) NULL,
     source_options       NVARCHAR(MAX) NULL,
 
     landing_path         NVARCHAR(1000) NULL,
@@ -85,6 +86,14 @@ CREATE TABLE control.ingestion_config
 
     CONSTRAINT CK_ingestion_config_pattern
         CHECK (ingestion_pattern IN ('DATABASE','FILE','API')),
+
+    CONSTRAINT CK_ingestion_config_file_format
+        CHECK
+        (
+            (ingestion_pattern = 'FILE' AND file_format IN ('DELIMITED_TEXT','PARQUET','JSON'))
+            OR
+            (ingestion_pattern IN ('DATABASE','API') AND file_format IS NULL)
+        ),
 
     CONSTRAINT CK_ingestion_config_source_options_json
         CHECK (source_options IS NULL OR ISJSON(source_options) = 1),
