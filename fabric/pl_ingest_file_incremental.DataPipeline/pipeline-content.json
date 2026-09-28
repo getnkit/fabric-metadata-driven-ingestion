@@ -91,6 +91,10 @@
                       "p_watermark_field": {
                         "value": "@pipeline().parameters.p_watermark_field",
                         "type": "Expression"
+                      },
+                      "p_file_format": {
+                        "value": "@pipeline().parameters.p_file_format",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
@@ -192,6 +196,9 @@
         "type": "string"
       },
       "p_watermark_field": {
+        "type": "string"
+      },
+      "p_file_format": {
         "type": "string"
       }
     }
