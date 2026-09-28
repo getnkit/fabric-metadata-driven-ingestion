@@ -7,8 +7,8 @@ FILE/FULL is implemented and acceptance-tested. FILE/INCREMENTAL extends the sam
 The personal project intentionally keeps FILE ingestion lean:
 
 - one shared `control.ingestion_config`
-- first-class `source_path` and `landing_path`
-- pattern-specific source-reading options stored in `source_options`
+- first-class `source_path`, `landing_path`, and `file_format`
+- pattern-specific parser/source-reading options stored in `source_options`
 - no `control.file_ingestion_config`
 - no Data Contract subsystem in the current scope
 - no Quarantine / Reject Area
@@ -25,6 +25,7 @@ The generic columns continue to own routing and execution metadata:
 - `source_object`
 - `source_path`
 - `ingestion_pattern`
+- `file_format`
 - `source_options`
 - `landing_path`
 - `target_conn_ref`
@@ -50,11 +51,11 @@ to Bronze.
 
 For FILE ingestion, both fields are first-class metadata.
 
-`source_options` is an optional JSON object for pattern-specific source-reading
-options that do not belong in the generic relational schema.
+`file_format` is first-class FILE routing metadata because it changes how a raw Landing file is parsed into Bronze. The canonical values are `DELIMITED_TEXT`, `PARQUET`, and `JSON`.
 
-Current DATABASE configs do not require source-specific options and therefore use
-`source_options = NULL`.
+`source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds use `file_name_pattern`, `delimiter`, `has_header`, and `encoding`.
+
+Current DATABASE configs use `file_format = NULL` and `source_options = NULL`.
 
 ## FILE flow
 
