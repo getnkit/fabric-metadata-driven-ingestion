@@ -171,7 +171,7 @@ pl_ingest_object
   -> pl_ingest_file_incremental
   -> SFTP
   -> pl_ingest_sftp_incremental
-  -> pl_process_sftp_file_incremental
+  -> pl_load_sftp_incremental
 ```
 
 The incremental feed is:
