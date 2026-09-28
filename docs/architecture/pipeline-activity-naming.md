@@ -2,13 +2,13 @@
 
 Microsoft defines syntax and length rules for activity names, but does not
 prescribe a semantic naming convention for Fail or Stored Procedure activities.
-This project therefore uses a concise project convention.
+This project therefore uses a readable project convention. Activity-type prefixes are explicit where practical; Copy uses `copy_` rather than an abbreviation.
 
 ## Prefixes
 
 | Activity type | Prefix |
 |---|---|
-| Copy | `cpy_` |
+| Copy | `copy_` |
 | Lookup | `lkp_` |
 | Get Metadata | `gm_` |
 | Filter | `flt_` |
