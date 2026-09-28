@@ -87,6 +87,10 @@
                       "p_target_table": {
                         "value": "@pipeline().parameters.p_target_table",
                         "type": "Expression"
+                      },
+                      "p_file_format": {
+                        "value": "@pipeline().parameters.p_file_format",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
@@ -185,6 +189,9 @@
         "type": "string"
       },
       "p_source_connection_type": {
+        "type": "string"
+      },
+      "p_file_format": {
         "type": "string"
       }
     }
