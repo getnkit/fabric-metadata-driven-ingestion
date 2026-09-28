@@ -101,9 +101,7 @@ For an existing live control database created before M76, run
 the destructive bootstrap schema script.
 
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
-`scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID,
-then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh the first
-FILE/FULL config. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
+`scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`, then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh FILE metadata. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
 
 ## 6) Incremental-change simulator
 
@@ -156,6 +154,7 @@ For an existing live control database, run:
 
 ```text
 scripts/control/migrations/003_generalize_pipeline_watermark.sql
+scripts/control/migrations/004_add_file_format.sql
 scripts/control/02_create_control_procedures.sql
 scripts/control/04_seed_ingestion_metadata.sql
 ```
@@ -183,12 +182,15 @@ The incremental feed is:
 ```text
 source_object      = inventory_movement
 source_path        = /outbound/inventory/movements/
+file_format        = DELIMITED_TEXT
 file_name_pattern  = inventory_movement_*.csv
 landing_path       = Files/landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
 watermark_field    = last_modified_time
 ```
+
+The FILE format is first-class routing metadata. Source-to-Landing remains Binary/raw, then the pipeline routes by `file_format` before parsing into Bronze. The currently implemented parser branch is `DELIMITED_TEXT`; unsupported formats fail explicitly until their parser branch is implemented.
 
 The current implementation supports `REGULAR` FILE incremental runs only.
 It asks the SFTP connector for child files in the native Last Modified window
