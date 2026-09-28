@@ -1,0 +1,379 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_ingestion_timestamp",
+          "value": {
+            "value": "@formatDateTime(utcNow(), 'yyyy-MM-ddTHH:mm:ss.fff')",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_ingestion_timestamp",
+        "dependsOn": []
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_landing_relative_path",
+          "value": {
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_landing_relative_path",
+        "dependsOn": [
+          {
+            "activity": "set_ingestion_timestamp",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "BinarySource",
+            "storeSettings": {
+              "type": "SftpReadSettings",
+              "recursive": false,
+              "disableChunking": false
+            },
+            "datasetSettings": {
+              "type": "Binary",
+              "typeProperties": {
+                "location": {
+                  "type": "SftpLocation",
+                  "folderPath": {
+                    "value": "@pipeline().parameters.p_source_path",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@pipeline().parameters.p_source_file_name",
+                    "type": "Expression"
+                  }
+                }
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "BinarySink",
+            "storeSettings": {
+              "type": "LakehouseWriteSettings",
+              "copyBehavior": "PreserveHierarchy"
+            },
+            "datasetSettings": {
+              "type": "Binary",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@variables('v_landing_relative_path')",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@pipeline().parameters.p_source_file_name",
+                    "type": "Expression"
+                  }
+                }
+              },
+              "schema": [],
+              "connectionSettings": {
+                "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                    "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                    "rootFolder": "Files"
+                  },
+                  "externalReferences": {
+                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "copy_sftp_to_landing",
+        "dependsOn": [
+          {
+            "activity": "set_landing_relative_path",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Switch",
+        "typeProperties": {
+          "on": {
+            "value": "@toUpper(pipeline().parameters.p_file_format)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "DELIMITED_TEXT",
+              "activities": [
+                {
+                  "type": "Copy",
+                  "typeProperties": {
+                    "source": {
+                      "type": "DelimitedTextSource",
+                      "additionalColumns": [
+                        {
+                          "name": "_batch_id",
+                          "value": {
+                            "value": "@pipeline().parameters.p_batch_id",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_pipeline_run_id",
+                          "value": {
+                            "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_ingestion_timestamp",
+                          "value": {
+                            "value": "@variables('v_ingestion_timestamp')",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_source_file_name",
+                          "value": {
+                            "value": "@pipeline().parameters.p_source_file_name",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_source_file_path",
+                          "value": {
+                            "value": "@concat(pipeline().parameters.p_source_path, pipeline().parameters.p_source_file_name)",
+                            "type": "Expression"
+                          }
+                        }
+                      ],
+                      "storeSettings": {
+                        "type": "LakehouseReadSettings",
+                        "recursive": false,
+                        "enablePartitionDiscovery": false
+                      },
+                      "formatSettings": {
+                        "type": "DelimitedTextReadSettings"
+                      },
+                      "datasetSettings": {
+                        "type": "DelimitedText",
+                        "typeProperties": {
+                          "location": {
+                            "type": "LakehouseLocation",
+                            "folderPath": {
+                              "value": "@variables('v_landing_relative_path')",
+                              "type": "Expression"
+                            },
+                            "fileName": {
+                              "value": "@pipeline().parameters.p_source_file_name",
+                              "type": "Expression"
+                            }
+                          },
+                          "columnDelimiter": {
+                            "value": "@json(pipeline().parameters.p_source_options).delimiter",
+                            "type": "Expression"
+                          },
+                          "quoteChar": "\"",
+                          "escapeChar": "\\",
+                          "firstRowAsHeader": {
+                            "value": "@json(pipeline().parameters.p_source_options).has_header",
+                            "type": "Expression"
+                          },
+                          "encodingName": {
+                            "value": "@json(pipeline().parameters.p_source_options).encoding",
+                            "type": "Expression"
+                          }
+                        },
+                        "schema": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "rootFolder": "Files"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "sink": {
+                      "type": "LakehouseTableSink",
+                      "tableActionOption": "Append",
+                      "applyVOrder": false,
+                      "enableTimestampNtz": false,
+                      "partitionOption": "None",
+                      "datasetSettings": {
+                        "type": "LakehouseTable",
+                        "typeProperties": {
+                          "schema": {
+                            "value": "@pipeline().parameters.p_target_schema",
+                            "type": "Expression"
+                          },
+                          "table": {
+                            "value": "@pipeline().parameters.p_target_table",
+                            "type": "Expression"
+                          }
+                        },
+                        "schema": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "rootFolder": "Tables"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "translator": {
+                      "type": "TabularTranslator",
+                      "typeConversion": true,
+                      "typeConversionSettings": {
+                        "allowDataTruncation": true,
+                        "treatBooleanAsNumber": false
+                      }
+                    },
+                    "enableStaging": false
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "copy_landing_to_bronze_delimited_text",
+                  "dependsOn": []
+                }
+              ]
+            }
+          ],
+          "defaultActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
+                  "type": "Expression"
+                },
+                "errorCode": "UNSUPPORTED_FILE_FORMAT"
+              },
+              "name": "fail_unsupported_file_format",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "sw_file_format",
+        "dependsOn": [
+          {
+            "activity": "copy_sftp_to_landing",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_ingestion_config_id": {
+        "type": "int"
+      },
+      "p_start_time": {
+        "type": "string"
+      },
+      "p_audit_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_source_file_name": {
+        "type": "string"
+      },
+      "p_source_path": {
+        "type": "string"
+      },
+      "p_source_options": {
+        "type": "string"
+      },
+      "p_landing_path": {
+        "type": "string"
+      },
+      "p_source_connection_settings": {
+        "type": "string"
+      },
+      "p_target_connection_settings": {
+        "type": "string"
+      },
+      "p_target_schema": {
+        "type": "string"
+      },
+      "p_target_table": {
+        "type": "string"
+      },
+      "p_file_format": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "v_ingestion_timestamp": {
+        "type": "String"
+      },
+      "v_landing_relative_path": {
+        "type": "String"
+      }
+    }
+  }
+}
