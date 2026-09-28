@@ -330,6 +330,9 @@
       },
       "p_target_table": {
         "type": "string"
+      },
+      "p_file_format": {
+        "type": "string"
       }
     },
     "variables": {
