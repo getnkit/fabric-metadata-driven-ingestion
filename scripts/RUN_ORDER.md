@@ -91,7 +91,8 @@ FILE ingestion uses the same `control.ingestion_config` table:
 
 - `source_path` identifies where the source data is located.
 - `landing_path` identifies the platform-owned Landing Zone path.
-- `source_options` stores optional pattern-specific source-reading metadata as JSON.
+- `file_format` selects the Landing-to-Bronze parser for FILE ingestion.
+- `source_options` stores format/source-specific options such as file-name pattern, delimiter, header, and encoding.
 
 No separate `file_ingestion_config` table or Quarantine area is used in the
 current project scope.
@@ -131,11 +132,7 @@ pl_ingest_object
   -> pl_ingest_sftp_full
 ```
 
-The SFTP child performs two copies:
-
-1. SFTP Binary -> Lakehouse Files Landing, preserving the raw file.
-2. Landing CSV -> Bronze Delta table, appending the standard technical columns
-   `_batch_id`, `_pipeline_run_id`, and `_ingestion_timestamp`.
+The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then routes on `file_format`. The currently implemented `DELIMITED_TEXT` branch reads the Landing file as DelimitedText and appends it to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, and `_ingestion_timestamp`.
 
 The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
