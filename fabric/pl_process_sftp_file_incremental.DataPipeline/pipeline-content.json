@@ -121,7 +121,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "cpy_sftp_to_landing",
+        "name": "copy_sftp_to_landing",
         "dependsOn": [
           {
             "activity": "set_landing_relative_path",
@@ -132,161 +132,193 @@
         ]
       },
       {
-        "type": "Copy",
+        "type": "Switch",
         "typeProperties": {
-          "source": {
-            "type": "DelimitedTextSource",
-            "additionalColumns": [
-              {
-                "name": "_batch_id",
-                "value": {
-                  "value": "@pipeline().parameters.p_batch_id",
-                  "type": "Expression"
-                }
-              },
-              {
-                "name": "_pipeline_run_id",
-                "value": {
-                  "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                  "type": "Expression"
-                }
-              },
-              {
-                "name": "_ingestion_timestamp",
-                "value": {
-                  "value": "@variables('v_ingestion_timestamp')",
-                  "type": "Expression"
-                }
-              },
-              {
-                "name": "_source_file_name",
-                "value": {
-                  "value": "@pipeline().parameters.p_source_file_name",
-                  "type": "Expression"
-                }
-              },
-              {
-                "name": "_source_file_path",
-                "value": {
-                  "value": "@concat(pipeline().parameters.p_source_path, pipeline().parameters.p_source_file_name)",
-                  "type": "Expression"
-                }
-              }
-            ],
-            "storeSettings": {
-              "type": "LakehouseReadSettings",
-              "recursive": false,
-              "enablePartitionDiscovery": false
-            },
-            "formatSettings": {
-              "type": "DelimitedTextReadSettings"
-            },
-            "datasetSettings": {
-              "type": "DelimitedText",
-              "typeProperties": {
-                "location": {
-                  "type": "LakehouseLocation",
-                  "folderPath": {
-                    "value": "@variables('v_landing_relative_path')",
-                    "type": "Expression"
-                  },
-                  "fileName": {
-                    "value": "@pipeline().parameters.p_source_file_name",
-                    "type": "Expression"
-                  }
-                },
-                "columnDelimiter": {
-                  "value": "@json(pipeline().parameters.p_source_options).delimiter",
-                  "type": "Expression"
-                },
-                "quoteChar": "\"",
-                "escapeChar": "\\",
-                "firstRowAsHeader": {
-                  "value": "@json(pipeline().parameters.p_source_options).has_header",
-                  "type": "Expression"
-                },
-                "encodingName": {
-                  "value": "@json(pipeline().parameters.p_source_options).encoding",
-                  "type": "Expression"
-                }
-              },
-              "schema": [],
-              "connectionSettings": {
-                "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                "properties": {
-                  "type": "Lakehouse",
+          "on": {
+            "value": "@toUpper(pipeline().parameters.p_file_format)",
+            "type": "Expression"
+          },
+          "cases": [
+            {
+              "value": "DELIMITED_TEXT",
+              "activities": [
+                {
+                  "type": "Copy",
                   "typeProperties": {
-                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                    "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                    "rootFolder": "Files"
+                    "source": {
+                      "type": "DelimitedTextSource",
+                      "additionalColumns": [
+                        {
+                          "name": "_batch_id",
+                          "value": {
+                            "value": "@pipeline().parameters.p_batch_id",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_pipeline_run_id",
+                          "value": {
+                            "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_ingestion_timestamp",
+                          "value": {
+                            "value": "@variables('v_ingestion_timestamp')",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_source_file_name",
+                          "value": {
+                            "value": "@pipeline().parameters.p_source_file_name",
+                            "type": "Expression"
+                          }
+                        },
+                        {
+                          "name": "_source_file_path",
+                          "value": {
+                            "value": "@concat(pipeline().parameters.p_source_path, pipeline().parameters.p_source_file_name)",
+                            "type": "Expression"
+                          }
+                        }
+                      ],
+                      "storeSettings": {
+                        "type": "LakehouseReadSettings",
+                        "recursive": false,
+                        "enablePartitionDiscovery": false
+                      },
+                      "formatSettings": {
+                        "type": "DelimitedTextReadSettings"
+                      },
+                      "datasetSettings": {
+                        "type": "DelimitedText",
+                        "typeProperties": {
+                          "location": {
+                            "type": "LakehouseLocation",
+                            "folderPath": {
+                              "value": "@variables('v_landing_relative_path')",
+                              "type": "Expression"
+                            },
+                            "fileName": {
+                              "value": "@pipeline().parameters.p_source_file_name",
+                              "type": "Expression"
+                            }
+                          },
+                          "columnDelimiter": {
+                            "value": "@json(pipeline().parameters.p_source_options).delimiter",
+                            "type": "Expression"
+                          },
+                          "quoteChar": "\"",
+                          "escapeChar": "\\",
+                          "firstRowAsHeader": {
+                            "value": "@json(pipeline().parameters.p_source_options).has_header",
+                            "type": "Expression"
+                          },
+                          "encodingName": {
+                            "value": "@json(pipeline().parameters.p_source_options).encoding",
+                            "type": "Expression"
+                          }
+                        },
+                        "schema": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "rootFolder": "Files"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "sink": {
+                      "type": "LakehouseTableSink",
+                      "tableActionOption": "Append",
+                      "applyVOrder": false,
+                      "enableTimestampNtz": false,
+                      "partitionOption": "None",
+                      "datasetSettings": {
+                        "type": "LakehouseTable",
+                        "typeProperties": {
+                          "schema": {
+                            "value": "@pipeline().parameters.p_target_schema",
+                            "type": "Expression"
+                          },
+                          "table": {
+                            "value": "@pipeline().parameters.p_target_table",
+                            "type": "Expression"
+                          }
+                        },
+                        "schema": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "rootFolder": "Tables"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "translator": {
+                      "type": "TabularTranslator",
+                      "typeConversion": true,
+                      "typeConversionSettings": {
+                        "allowDataTruncation": true,
+                        "treatBooleanAsNumber": false
+                      }
+                    },
+                    "enableStaging": false
                   },
-                  "externalReferences": {
-                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
                   },
-                  "annotations": []
+                  "name": "copy_landing_to_bronze_delimited_text",
+                  "dependsOn": []
                 }
-              },
-              "annotations": []
+              ]
             }
-          },
-          "sink": {
-            "type": "LakehouseTableSink",
-            "tableActionOption": "Append",
-            "applyVOrder": false,
-            "enableTimestampNtz": false,
-            "partitionOption": "None",
-            "datasetSettings": {
-              "type": "LakehouseTable",
+          ],
+          "defaultActivities": [
+            {
+              "type": "Fail",
               "typeProperties": {
-                "schema": {
-                  "value": "@pipeline().parameters.p_target_schema",
+                "message": {
+                  "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
                   "type": "Expression"
                 },
-                "table": {
-                  "value": "@pipeline().parameters.p_target_table",
-                  "type": "Expression"
-                }
+                "errorCode": "UNSUPPORTED_FILE_FORMAT"
               },
-              "schema": [],
-              "connectionSettings": {
-                "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                "properties": {
-                  "type": "Lakehouse",
-                  "typeProperties": {
-                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                    "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                    "rootFolder": "Tables"
-                  },
-                  "externalReferences": {
-                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                  },
-                  "annotations": []
-                }
-              },
-              "annotations": []
+              "name": "fail_unsupported_file_format",
+              "dependsOn": []
             }
-          },
-          "translator": {
-            "type": "TabularTranslator",
-            "typeConversion": true,
-            "typeConversionSettings": {
-              "allowDataTruncation": true,
-              "treatBooleanAsNumber": false
-            }
-          },
-          "enableStaging": false
+          ]
         },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "cpy_landing_to_bronze",
+        "name": "sw_file_format",
         "dependsOn": [
           {
-            "activity": "cpy_sftp_to_landing",
+            "activity": "copy_sftp_to_landing",
             "dependencyConditions": [
               "Succeeded"
             ]
