@@ -27,6 +27,13 @@ BEGIN
     ALTER TABLE control.ingestion_config
         ADD file_format VARCHAR(30) NULL;
 END;
+GO
+
+/*
+    Batch boundary is intentional.
+    SQL Server compiles column references before executing the ALTER TABLE above,
+    so statements that reference file_format must be compiled in a later batch.
+*/
 
 /* Migrate the previous JSON-owned format into the routing column. */
 UPDATE control.ingestion_config
