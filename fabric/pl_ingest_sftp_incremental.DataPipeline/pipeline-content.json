@@ -194,7 +194,7 @@
             "type": "Expression"
           },
           "condition": {
-            "value": "@and(\n    equals(item().type, 'File'),\n    if(\n        contains(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'),\n        and(\n            startsWith(item().name, first(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*'))),\n            endsWith(item().name, last(split(@json(pipeline().parameters.p_source_options).file_name_pattern, '*')))\n        ),\n        equals(item().name, @json(pipeline().parameters.p_source_options).file_name_pattern)\n    )\n)",
+            "value": "@and(\n    equals(item().type, 'File'),\n    if(\n        contains(json(pipeline().parameters.p_source_options).file_name_pattern, '*'),\n        and(\n            startsWith(item().name, first(split(json(pipeline().parameters.p_source_options).file_name_pattern, '*'))),\n            endsWith(item().name, last(split(json(pipeline().parameters.p_source_options).file_name_pattern, '*')))\n        ),\n        equals(item().name, json(pipeline().parameters.p_source_options).file_name_pattern)\n    )\n)",
             "type": "Expression"
           }
         },
@@ -289,7 +289,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_process_file",
+              "name": "inv_load_sftp_incremental",
               "dependsOn": []
             }
           ]
