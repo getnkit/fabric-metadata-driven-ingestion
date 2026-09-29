@@ -296,6 +296,42 @@
                   },
                   "name": "copy_landing_to_bronze_delimited_text",
                   "dependsOn": []
+                },
+                {
+                  "type": "SetVariable",
+                  "typeProperties": {
+                    "variableName": "pipelineReturnValue",
+                    "value": [
+                      {
+                        "key": "source_row_count",
+                        "value": {
+                          "type": "Expression",
+                          "content": "@activity('copy_landing_to_bronze_delimited_text').output.rowsRead"
+                        }
+                      },
+                      {
+                        "key": "target_row_count",
+                        "value": {
+                          "type": "Expression",
+                          "content": "@activity('copy_landing_to_bronze_delimited_text').output.rowsCopied"
+                        }
+                      }
+                    ],
+                    "setSystemVariable": true
+                  },
+                  "policy": {
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "set_pipeline_return_value",
+                  "dependsOn": [
+                    {
+                      "activity": "copy_landing_to_bronze_delimited_text",
+                      "dependencyConditions": [
+                        "Succeeded"
+                      ]
+                    }
+                  ]
                 }
               ]
             }
