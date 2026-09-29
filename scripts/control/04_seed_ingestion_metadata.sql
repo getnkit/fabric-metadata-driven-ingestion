@@ -10,14 +10,14 @@
       - Missing config rows are inserted.
       - Existing watermark values are preserved.
       - Missing DATABASE incremental watermark rows start at 1900-01-01.
-      - Missing FILE incremental watermark rows start at 1900-01-01T00:00:00.000Z.
+      - Missing FILE incremental watermark rows start at 1900-01-01T00:00:00Z.
 */
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
-DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000Z';
+DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00Z';
 
 DECLARE @Seed TABLE
 (
