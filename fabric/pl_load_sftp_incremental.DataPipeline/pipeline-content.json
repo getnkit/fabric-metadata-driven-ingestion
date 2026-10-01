@@ -2,35 +2,24 @@
   "properties": {
     "activities": [
       {
+        "name": "set_ingestion_timestamp",
         "type": "SetVariable",
+        "dependsOn": [],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
         "typeProperties": {
           "variableName": "v_ingestion_timestamp",
           "value": {
             "value": "@formatDateTime(utcNow(), 'yyyy-MM-ddTHH:mm:ss.fff')",
             "type": "Expression"
           }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_ingestion_timestamp",
-        "dependsOn": []
+        }
       },
       {
-        "type": "SetVariable",
-        "typeProperties": {
-          "variableName": "v_landing_relative_path",
-          "value": {
-            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
         "name": "set_landing_relative_path",
+        "type": "SetVariable",
         "dependsOn": [
           {
             "activity": "set_ingestion_timestamp",
@@ -38,10 +27,37 @@
               "Succeeded"
             ]
           }
-        ]
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "v_landing_relative_path",
+          "value": {
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+            "type": "Expression"
+          }
+        }
       },
       {
+        "name": "copy_sftp_to_landing",
         "type": "Copy",
+        "dependsOn": [
+          {
+            "activity": "set_landing_relative_path",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
         "typeProperties": {
           "source": {
             "type": "BinarySource",
@@ -50,89 +66,83 @@
               "recursive": false,
               "disableChunking": false
             },
+            "formatSettings": {
+              "type": "BinaryReadSettings"
+            },
             "datasetSettings": {
+              "annotations": [],
               "type": "Binary",
               "typeProperties": {
                 "location": {
                   "type": "SftpLocation",
-                  "folderPath": {
-                    "value": "@pipeline().parameters.p_source_path",
-                    "type": "Expression"
-                  },
                   "fileName": {
                     "value": "@pipeline().parameters.p_source_file_name",
+                    "type": "Expression"
+                  },
+                  "folderPath": {
+                    "value": "@pipeline().parameters.p_source_path",
                     "type": "Expression"
                   }
                 }
               },
-              "schema": [],
               "externalReferences": {
                 "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
-              },
-              "annotations": []
+              }
             }
           },
           "sink": {
             "type": "BinarySink",
             "storeSettings": {
-              "type": "LakehouseWriteSettings",
+              "type": "AzureBlobStorageWriteSettings",
               "copyBehavior": "PreserveHierarchy"
             },
             "datasetSettings": {
-              "type": "Binary",
-              "typeProperties": {
-                "location": {
-                  "type": "LakehouseLocation",
-                  "folderPath": {
-                    "value": "@variables('v_landing_relative_path')",
-                    "type": "Expression"
-                  },
-                  "fileName": {
-                    "value": "@pipeline().parameters.p_source_file_name",
-                    "type": "Expression"
-                  }
-                }
-              },
-              "schema": [],
+              "annotations": [],
               "connectionSettings": {
                 "name": "1b08f434_4523_476f_9698_96d53331bb5a",
                 "properties": {
+                  "annotations": [],
                   "type": "Lakehouse",
                   "typeProperties": {
-                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
                     "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
                     "rootFolder": "Files"
                   },
                   "externalReferences": {
                     "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                  },
-                  "annotations": []
+                  }
                 }
               },
-              "annotations": []
+              "type": "Binary",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "fileName": {
+                    "value": "@pipeline().parameters.p_source_file_name",
+                    "type": "Expression"
+                  },
+                  "folderPath": {
+                    "value": "@variables('v_landing_relative_path')",
+                    "type": "Expression"
+                  }
+                }
+              }
             }
           },
           "enableStaging": false
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 0,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "copy_sftp_to_landing",
+        }
+      },
+      {
+        "name": "sw_file_format",
+        "type": "Switch",
         "dependsOn": [
           {
-            "activity": "set_landing_relative_path",
+            "activity": "copy_sftp_to_landing",
             "dependencyConditions": [
               "Succeeded"
             ]
           }
-        ]
-      },
-      {
-        "type": "Switch",
+        ],
         "typeProperties": {
           "on": {
             "value": "@toUpper(pipeline().parameters.p_file_format)",
@@ -143,7 +153,16 @@
               "value": "DELIMITED_TEXT",
               "activities": [
                 {
+                  "name": "copy_landing_to_bronze_delimited_text",
                   "type": "Copy",
+                  "dependsOn": [],
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                  },
                   "typeProperties": {
                     "source": {
                       "type": "DelimitedTextSource",
@@ -185,7 +204,7 @@
                         }
                       ],
                       "storeSettings": {
-                        "type": "LakehouseReadSettings",
+                        "type": "AzureBlobStorageReadSettings",
                         "recursive": false,
                         "enablePartitionDiscovery": false
                       },
@@ -193,16 +212,32 @@
                         "type": "DelimitedTextReadSettings"
                       },
                       "datasetSettings": {
+                        "annotations": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "annotations": [],
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "rootFolder": "Files"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            }
+                          }
+                        },
                         "type": "DelimitedText",
                         "typeProperties": {
                           "location": {
                             "type": "LakehouseLocation",
-                            "folderPath": {
-                              "value": "@variables('v_landing_relative_path')",
-                              "type": "Expression"
-                            },
                             "fileName": {
                               "value": "@pipeline().parameters.p_source_file_name",
+                              "type": "Expression"
+                            },
+                            "folderPath": {
+                              "value": "@variables('v_landing_relative_path')",
                               "type": "Expression"
                             }
                           },
@@ -210,44 +245,45 @@
                             "value": "@json(pipeline().parameters.p_source_options).delimiter",
                             "type": "Expression"
                           },
-                          "quoteChar": "\"",
+                          "encodingName": {
+                            "value": "@json(pipeline().parameters.p_source_options).encoding",
+                            "type": "Expression"
+                          },
                           "escapeChar": "\\",
                           "firstRowAsHeader": {
                             "value": "@json(pipeline().parameters.p_source_options).has_header",
                             "type": "Expression"
                           },
-                          "encodingName": {
-                            "value": "@json(pipeline().parameters.p_source_options).encoding",
-                            "type": "Expression"
-                          }
+                          "quoteChar": "\""
                         },
-                        "schema": [],
-                        "connectionSettings": {
-                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                          "properties": {
-                            "type": "Lakehouse",
-                            "typeProperties": {
-                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                              "rootFolder": "Files"
-                            },
-                            "externalReferences": {
-                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                            },
-                            "annotations": []
-                          }
-                        },
-                        "annotations": []
+                        "schema": []
                       }
                     },
                     "sink": {
                       "type": "LakehouseTableSink",
                       "tableActionOption": "Append",
+                      "partitionOption": "None",
                       "applyVOrder": false,
                       "enableTimestampNtz": false,
-                      "partitionOption": "None",
                       "datasetSettings": {
+                        "annotations": [],
+                        "connectionSettings": {
+                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                          "properties": {
+                            "annotations": [],
+                            "type": "Lakehouse",
+                            "typeProperties": {
+                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                              "rootFolder": "Tables"
+                            },
+                            "externalReferences": {
+                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                            }
+                          }
+                        },
                         "type": "LakehouseTable",
+                        "schema": [],
                         "typeProperties": {
                           "schema": {
                             "value": "@pipeline().parameters.p_target_schema",
@@ -257,26 +293,10 @@
                             "value": "@pipeline().parameters.p_target_table",
                             "type": "Expression"
                           }
-                        },
-                        "schema": [],
-                        "connectionSettings": {
-                          "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                          "properties": {
-                            "type": "Lakehouse",
-                            "typeProperties": {
-                              "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                              "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                              "rootFolder": "Tables"
-                            },
-                            "externalReferences": {
-                              "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                            },
-                            "annotations": []
-                          }
-                        },
-                        "annotations": []
+                        }
                       }
                     },
+                    "enableStaging": false,
                     "translator": {
                       "type": "TabularTranslator",
                       "typeConversion": true,
@@ -284,21 +304,24 @@
                         "allowDataTruncation": true,
                         "treatBooleanAsNumber": false
                       }
-                    },
-                    "enableStaging": false
-                  },
-                  "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "copy_landing_to_bronze_delimited_text",
-                  "dependsOn": []
+                    }
+                  }
                 },
                 {
+                  "name": "set_pipeline_return_value",
                   "type": "SetVariable",
+                  "dependsOn": [
+                    {
+                      "activity": "copy_landing_to_bronze_delimited_text",
+                      "dependencyConditions": [
+                        "Succeeded"
+                      ]
+                    }
+                  ],
+                  "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                  },
                   "typeProperties": {
                     "variableName": "pipelineReturnValue",
                     "value": [
@@ -318,48 +341,26 @@
                       }
                     ],
                     "setSystemVariable": true
-                  },
-                  "policy": {
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "set_pipeline_return_value",
-                  "dependsOn": [
-                    {
-                      "activity": "copy_landing_to_bronze_delimited_text",
-                      "dependencyConditions": [
-                        "Succeeded"
-                      ]
-                    }
-                  ]
+                  }
                 }
               ]
             }
           ],
           "defaultActivities": [
             {
+              "name": "fail_unsupported_file_format",
               "type": "Fail",
+              "dependsOn": [],
               "typeProperties": {
                 "message": {
                   "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
                   "type": "Expression"
                 },
                 "errorCode": "UNSUPPORTED_FILE_FORMAT"
-              },
-              "name": "fail_unsupported_file_format",
-              "dependsOn": []
+              }
             }
           ]
-        },
-        "name": "sw_file_format",
-        "dependsOn": [
-          {
-            "activity": "copy_sftp_to_landing",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
+        }
       }
     ],
     "parameters": {

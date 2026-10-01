@@ -45,10 +45,17 @@
         "typeProperties": {
           "source": {
             "type": "BinarySource",
+            "formatSettings": {
+              "type": "BinaryReadSettings"
+            },
             "storeSettings": {
               "type": "SftpReadSettings",
               "disableChunking": false,
               "recursive": false,
+              "wildcardFolderPath": {
+                "value": "@pipeline().parameters.p_source_path",
+                "type": "Expression"
+              },
               "wildcardFileName": {
                 "value": "@json(pipeline().parameters.p_source_options).file_name_pattern",
                 "type": "Expression"
@@ -58,14 +65,9 @@
               "type": "Binary",
               "typeProperties": {
                 "location": {
-                  "type": "SftpLocation",
-                  "folderPath": {
-                    "value": "@pipeline().parameters.p_source_path",
-                    "type": "Expression"
-                  }
+                  "type": "SftpLocation"
                 }
               },
-              "schema": [],
               "externalReferences": {
                 "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
               },
@@ -75,7 +77,7 @@
           "sink": {
             "type": "BinarySink",
             "storeSettings": {
-              "type": "LakehouseWriteSettings",
+              "type": "AzureBlobStorageWriteSettings",
               "copyBehavior": "PreserveHierarchy"
             },
             "datasetSettings": {
@@ -89,7 +91,6 @@
                   }
                 }
               },
-              "schema": [],
               "connectionSettings": {
                 "name": "1b08f434_4523_476f_9698_96d53331bb5a",
                 "properties": {
@@ -170,7 +171,7 @@
                         }
                       ],
                       "storeSettings": {
-                        "type": "LakehouseReadSettings",
+                        "type": "AzureBlobStorageReadSettings",
                         "recursive": false,
                         "enablePartitionDiscovery": false
                       },

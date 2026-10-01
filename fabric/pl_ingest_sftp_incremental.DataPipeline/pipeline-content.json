@@ -147,7 +147,6 @@
                 }
               }
             },
-            "schema": [],
             "externalReferences": {
               "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
             },
@@ -167,6 +166,9 @@
               "value": "@variables('v_processing_upper_bound')",
               "type": "Expression"
             }
+          },
+          "formatSettings": {
+            "type": "BinaryReadSettings"
           }
         },
         "policy": {
