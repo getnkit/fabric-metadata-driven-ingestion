@@ -9,7 +9,7 @@ CREATE TABLE [audit].[ingestion_log] (
     [source_conn_ref]        NVARCHAR (100)   NULL,
     [source_schema]          NVARCHAR (128)   NULL,
     [source_object]          NVARCHAR (128)   NULL,
-    [landing_path]            NVARCHAR (1000)  NULL,
+    [landing_path]           NVARCHAR (1000)  NULL,
     [target_conn_ref]        NVARCHAR (100)   NULL,
     [target_schema]          NVARCHAR (128)   NULL,
     [target_table]           NVARCHAR (128)   NULL,
