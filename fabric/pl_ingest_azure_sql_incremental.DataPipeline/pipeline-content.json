@@ -367,7 +367,7 @@
                     "value": "FAILED",
                     "type": "String"
                   },
-                  "target_path": {
+                  "landing_path": {
                     "value": null,
                     "type": "String"
                   },
@@ -668,7 +668,7 @@
                     "value": "SKIPPED",
                     "type": "String"
                   },
-                  "target_path": {
+                  "landing_path": {
                     "value": null,
                     "type": "String"
                   },
