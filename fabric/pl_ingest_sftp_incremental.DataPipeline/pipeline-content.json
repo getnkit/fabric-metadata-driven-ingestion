@@ -299,7 +299,7 @@
               "typeProperties": {
                 "variableName": "v_source_row_count_temp",
                 "value": {
-                  "value": "@string(add(int(variables('v_source_row_count')), int(activity('inv_load_sftp_incremental').output.pipelineReturnValue.source_row_count)))",
+                  "value": "@string(add(int(variables('v_source_row_count')), int(activity('inv_load_sftp_incremental').output.properties.returnValue.source_row_count)))",
                   "type": "Expression"
                 }
               },
@@ -345,7 +345,7 @@
               "typeProperties": {
                 "variableName": "v_target_row_count_temp",
                 "value": {
-                  "value": "@string(add(int(variables('v_target_row_count')), int(activity('inv_load_sftp_incremental').output.pipelineReturnValue.target_row_count)))",
+                  "value": "@string(add(int(variables('v_target_row_count')), int(activity('inv_load_sftp_incremental').output.properties.returnValue.target_row_count)))",
                   "type": "Expression"
                 }
               },
