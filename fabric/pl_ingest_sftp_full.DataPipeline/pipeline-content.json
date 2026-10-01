@@ -385,7 +385,7 @@
                         "value": "SUCCESS",
                         "type": "String"
                       },
-                      "target_path": {
+                      "landing_path": {
                         "value": {
                           "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
                           "type": "Expression"
@@ -574,7 +574,7 @@
                         "value": "FAILED",
                         "type": "String"
                       },
-                      "target_path": {
+                      "landing_path": {
                         "value": {
                           "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
                           "type": "Expression"
@@ -802,7 +802,7 @@
                     "value": "FAILED",
                     "type": "String"
                   },
-                  "target_path": {
+                  "landing_path": {
                     "value": {
                       "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
                       "type": "Expression"
@@ -1031,7 +1031,7 @@
               "value": "FAILED",
               "type": "String"
             },
-            "target_path": {
+            "landing_path": {
               "value": {
                 "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
                 "type": "Expression"
