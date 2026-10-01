@@ -216,7 +216,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@not(\n    or(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'FULL'\n            ),\n            equals(\n                variables('v_run_type'),\n                'BACKFILL'\n            )\n        ),\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                'FILE'\n            ),\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'INCREMENTAL'\n            ),\n            not(\n                equals(\n                    variables('v_run_type'),\n                    'REGULAR'\n                )\n            )\n        )\n    )\n)",
+            "value": "@not(\n    or(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'FULL'\n            ),\n            equals(\n                variables('v_run_type'),\n                'BACKFILL'\n            )\n        ),\n        and(\n            and(\n                equals(\n                    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                    'FILE'\n                ),\n                equals(\n                    activity('lkp_ingestion_config').output.value[0].load_strategy,\n                    'INCREMENTAL'\n                )\n            ),\n            not(\n                equals(\n                    variables('v_run_type'),\n                    'REGULAR'\n                )\n            )\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -249,7 +249,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'DATABASE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        ),\n        or(\n            equals(variables('v_run_type'), 'RERUN'),\n            equals(variables('v_run_type'), 'BACKFILL')\n        )\n    ),\n    and(\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    ),\n    and(\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    )\n)",
+            "value": "@if(\n    and(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                'DATABASE'\n            ),\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'INCREMENTAL'\n            )\n        ),\n        or(\n            equals(variables('v_run_type'), 'RERUN'),\n            equals(variables('v_run_type'), 'BACKFILL')\n        )\n    ),\n    and(\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    ),\n    and(\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
