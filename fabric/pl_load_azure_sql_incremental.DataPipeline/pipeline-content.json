@@ -252,7 +252,7 @@
               "value": "SUCCESS",
               "type": "String"
             },
-            "target_path": {
+            "landing_path": {
               "value": null,
               "type": "String"
             },
@@ -450,7 +450,7 @@
               "value": "FAILED",
               "type": "String"
             },
-            "target_path": {
+            "landing_path": {
               "value": null,
               "type": "String"
             },
