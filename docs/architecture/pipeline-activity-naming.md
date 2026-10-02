@@ -15,6 +15,7 @@ Microsoft defines syntax and length rules for activity names, but does not presc
 | Append Variable | `append_` |
 | If Condition | `if_` |
 | Switch | `sw_` |
+| Until | `until_` |
 | Invoke Pipeline | `inv_` |
 | Notebook | `nb_` |
 | Stored Procedure | `sp_` |
@@ -74,7 +75,7 @@ Notebook activity names identify why cleanup was invoked:
 ```text
 nb_cleanup_bronze_write_failed
 nb_cleanup_bronze_post_write_failed
-nb_cleanup_bronze_candidate_files_failed
+nb_cleanup_bronze_file_traversal_failed
 ```
 
 The distinction is intentional:
@@ -86,8 +87,8 @@ write_failed
 post_write_failed
 = the Bronze write succeeded, but a later control step failed before successful finalization
 
-candidate_files_failed
-= the FILE incremental candidate-file loop failed after one or more child loads may have written Bronze rows
+file_traversal_failed
+= FILE incremental recursive traversal failed after one or more nested-file loads may have written Bronze rows
 ```
 
 Cleanup-failure branches retain the same context:
@@ -101,17 +102,17 @@ sp_finalize_bronze_post_write_cleanup_failed
 fail_bronze_post_write_cleanup
 fail_bronze_post_write_cleanup_finalization
 
-sp_finalize_candidate_files_cleanup_failed
-fail_candidate_files_cleanup
-fail_candidate_files_cleanup_finalization
+sp_finalize_file_traversal_cleanup_failed
+fail_file_traversal_cleanup
+fail_file_traversal_cleanup_finalization
 ```
 
-The original candidate-file failure branch is:
+The original traversal failure branch is:
 
 ```text
-sp_finalize_candidate_files_failed
-fail_candidate_files
-fail_candidate_files_finalization
+sp_finalize_file_traversal_failed
+fail_file_traversal
+fail_file_traversal_finalization
 ```
 
 Audit/error codes mirror the semantic failure boundary:
@@ -120,7 +121,7 @@ Audit/error codes mirror the semantic failure boundary:
 LANDING_WRITE_FAILED
 BRONZE_WRITE_FAILED
 BRONZE_POST_WRITE_FAILED
-FILE_PROCESSING_FAILED
+FILE_TRAVERSAL_FAILED
 BRONZE_CLEANUP_FAILED
 FINALIZATION_FAILED
 ```
@@ -151,6 +152,9 @@ pl_ingest_<connector>_<strategy>
 
 pl_load_<connector>_<strategy>
 = worker that performs the actual data movement/write for that connector
+
+pl_scan_<connector>_<scope>_<strategy>
+= bounded discovery helper used by an orchestration pipeline
 ```
 
 Current incremental worker examples:
@@ -158,6 +162,7 @@ Current incremental worker examples:
 ```text
 pl_load_azure_sql_incremental
 pl_load_sftp_incremental
+pl_scan_sftp_folder_incremental
 ```
 
 Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix:
@@ -168,6 +173,7 @@ pl_ingest_azure_sql_incremental -> inv_ingest_azure_sql_incremental
 pl_load_azure_sql_incremental -> inv_load_azure_sql_incremental
 pl_ingest_sftp_incremental -> inv_ingest_sftp_incremental
 pl_load_sftp_incremental -> inv_load_sftp_incremental
+pl_scan_sftp_folder_incremental -> inv_scan_sftp_folder_incremental
 ```
 
 The `load` verb is preferred over `process` for workers because their responsibility is ingestion data movement into Landing/Bronze, not downstream transformation. Granularity suffixes such as `_file` or `_object` are omitted unless they become necessary to distinguish multiple workers with otherwise identical names.
