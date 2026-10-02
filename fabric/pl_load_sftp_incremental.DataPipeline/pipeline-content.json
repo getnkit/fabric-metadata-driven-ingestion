@@ -35,7 +35,7 @@
         "typeProperties": {
           "variableName": "v_landing_relative_path",
           "value": {
-            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/',\n    pipeline().parameters.p_source_relative_folder\n)",
             "type": "Expression"
           }
         }
@@ -401,6 +401,9 @@
         "type": "string"
       },
       "p_file_format": {
+        "type": "string"
+      },
+      "p_source_relative_folder": {
         "type": "string"
       }
     },
