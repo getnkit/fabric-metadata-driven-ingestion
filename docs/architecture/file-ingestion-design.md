@@ -86,6 +86,16 @@ If a file cannot be found, opened, or parsed according to `source_options`, the
 ingestion run fails and records the error in the normal ingestion audit path. A
 file already copied to Landing remains there for inspection/reprocessing.
 
+When a failed path may already have appended rows to Bronze, the framework invokes
+the reusable `nb_cleanup_bronze_batch_rows` notebook. Cleanup is scoped to the
+current `_batch_id`, verifies that the batch has zero remaining Bronze rows, and
+only then allows the FAILED run to be finalized. This makes a subsequent rerun
+safe without turning Bronze into a MERGE/deduplication layer.
+
+The framework intentionally does not auto-clean after an ambiguous
+`sp_finalize_success` failure because the control transaction may already have
+committed.
+
 Business data-quality and a governed Data Contract model are intentionally outside
 the current M76 scope.
 
