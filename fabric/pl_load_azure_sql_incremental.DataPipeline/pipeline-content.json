@@ -180,7 +180,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_cleanup_post_write_failed",
+        "name": "nb_cleanup_bronze_post_write_failed",
         "dependsOn": [
           {
             "activity": "set_advance_watermark",
@@ -378,7 +378,7 @@
         "name": "sp_finalize_post_write_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_post_write_failed",
+            "activity": "nb_cleanup_bronze_post_write_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -414,7 +414,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_post_write_failed').error.message)",
+                "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -573,7 +573,7 @@
         "name": "sp_finalize_post_write_cleanup_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_post_write_failed",
+            "activity": "nb_cleanup_bronze_post_write_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -603,7 +603,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_post_write_failed').error.message)",
+            "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
