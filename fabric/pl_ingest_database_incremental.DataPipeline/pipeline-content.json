@@ -64,7 +64,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_azure_sql_incremental",
+                  "name": "inv_ingest_azure_sql_incremental",
                   "dependsOn": []
                 }
               ]
