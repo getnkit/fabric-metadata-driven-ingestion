@@ -839,7 +839,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_process_incremental",
+              "name": "inv_load_azure_sql_incremental",
               "dependsOn": []
             }
           ]
