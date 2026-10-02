@@ -112,7 +112,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_sftp_incremental",
+                  "name": "inv_ingest_sftp_incremental",
                   "dependsOn": []
                 }
               ]
