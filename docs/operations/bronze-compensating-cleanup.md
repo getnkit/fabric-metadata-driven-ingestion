@@ -41,8 +41,8 @@ nb_cleanup_bronze_write_failed
 nb_cleanup_bronze_post_write_failed
 = Bronze write succeeded, but a later control step failed before successful finalization
 
-nb_cleanup_bronze_candidate_files_failed
-= the FILE incremental candidate-file loop failed after one or more child loads may have written Bronze rows
+nb_cleanup_bronze_file_traversal_failed
+= FILE incremental recursive traversal failed after one or more nested-file loads may have written Bronze rows
 ```
 
 The same notebook logical item is reused; only the calling activity name changes to describe the trigger context.
