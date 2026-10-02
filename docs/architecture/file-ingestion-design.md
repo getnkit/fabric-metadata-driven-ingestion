@@ -270,19 +270,26 @@ LOW <= LastModified < HIGH
 ```
 
 SFTP incremental discovery supports arbitrary nested subfolders beneath
-`source_path`. The orchestration pipeline keeps a queue of folders and processes
-one folder per iteration. A dedicated one-folder scanner lists immediate child
-folders without a modified-time filter, lists candidate files in the current
-folder with the LOW/HIGH modified-time filter, applies `file_name_pattern`,
-and invokes the existing per-file load worker.
+`source_path` without implementing folder traversal in pipeline control flow.
 
-This two-level design is intentional: Fabric/ADF nested-activity rules do not
-allow a ForEach directly inside an Until loop, so the Until remains in
-`pl_ingest_sftp_incremental` while the per-folder ForEach work is isolated in
-`pl_scan_sftp_folder_incremental`.
+The SFTP Copy activity performs one recursive Binary copy from the configured
+source root to the batch-specific Landing folder. It applies the configured
+`file_name_pattern` together with the LOW/HIGH Last Modified window and uses
+`PreserveHierarchy`, so the connector itself handles arbitrary folder depth.
 
-The traversal is breadth-first and does not hard-code year/month/day depth. Child
-folders are appended to a de-duplicated queue until the queue is exhausted.
+After Landing succeeds, `nb_load_landing_to_bronze_delimited_text` recursively
+reads only that batch's Landing folder, parses the delimited files, adds the
+technical lineage columns, and appends the result to the Bronze Delta table.
+
+This keeps responsibilities narrow:
+
+```text
+SFTP connector
+  = recursive discovery + Last Modified filtering + raw Binary landing
+
+Notebook
+  = recursive Landing parsing + technical metadata + Bronze Delta append
+```
 
 Every matching file is copied to the batch-specific Landing folder and then
 appended to Bronze. The file's relative source-folder hierarchy is preserved
@@ -301,10 +308,32 @@ landing:
             file.csv
 ```
 
-If traversal completes successfully, the pipeline watermark advances to
-`HIGH`. A traversal with no matching files is recorded as `SKIPPED` but can
-still advance the Last Modified checkpoint to `HIGH`; this avoids repeatedly
-rescanning the same empty time window.
+If the recursive Landing copy finds matching files and the Bronze load succeeds,
+the pipeline watermark advances to `HIGH`. If the recursive copy finds no
+matching files, the run is recorded as `SKIPPED` and can still advance the Last
+Modified checkpoint to `HIGH`; this avoids repeatedly rescanning the same empty
+time window.
+
+The current SFTP incremental physical flow is therefore:
+
+```text
+pl_ingest_sftp_incremental
+  -> copy_sftp_to_landing
+       recursive = true
+       wildcard file_name_pattern
+       LOW <= LastModified < HIGH
+       PreserveHierarchy
+  -> if_files_found
+       -> DELIMITED_TEXT
+            -> nb_load_landing_to_bronze_delimited_text
+            -> sp_finalize_success
+       -> no files
+            -> sp_finalize_skipped
+```
+
+The previous explicit folder-queue / Until / scanner-pipeline design was removed
+because it duplicated recursive traversal already provided by the SFTP Copy
+connector.
 
 The source filename remains evidence and lineage metadata in Bronze
 (`_source_file_name`, `_source_file_path`) but is not used as the checkpoint.
