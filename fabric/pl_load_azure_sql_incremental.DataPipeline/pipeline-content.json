@@ -120,7 +120,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "set_advance_watermark",
+        "name": "set_advance_watermark_flag",
         "dependsOn": [
           {
             "activity": "copy_source_to_bronze",
@@ -183,7 +183,7 @@
         "name": "nb_cleanup_bronze_post_write_failed",
         "dependsOn": [
           {
-            "activity": "set_advance_watermark",
+            "activity": "set_advance_watermark_flag",
             "dependencyConditions": [
               "Failed"
             ]
@@ -214,12 +214,12 @@
               "type": "DateTime"
             },
             "error_code": {
-              "value": "POST_WRITE_PROCESSING_FAILED",
+              "value": "BRONZE_POST_WRITE_FAILED",
               "type": "String"
             },
             "error_message": {
               "value": {
-                "value": "@activity('set_advance_watermark').error.message",
+                "value": "@activity('set_advance_watermark_flag').error.message",
                 "type": "Expression"
               },
               "type": "String"
@@ -375,7 +375,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_post_write_failed",
+        "name": "sp_finalize_bronze_post_write_failed",
         "dependsOn": [
           {
             "activity": "nb_cleanup_bronze_post_write_failed",
@@ -414,7 +414,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
+                "value": "@concat('Original Bronze post-write failure: ', activity('set_advance_watermark_flag').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -570,7 +570,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_post_write_cleanup_failed",
+        "name": "sp_finalize_bronze_post_write_cleanup_failed",
         "dependsOn": [
           {
             "activity": "nb_cleanup_bronze_post_write_failed",
@@ -584,15 +584,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('set_advance_watermark').error.message",
+            "value": "@activity('set_advance_watermark_flag').error.message",
             "type": "Expression"
           },
-          "errorCode": "POST_WRITE_PROCESSING_FAILED"
+          "errorCode": "BRONZE_POST_WRITE_FAILED"
         },
-        "name": "fail_post_write_processing",
+        "name": "fail_bronze_post_write",
         "dependsOn": [
           {
-            "activity": "sp_finalize_post_write_failed",
+            "activity": "sp_finalize_bronze_post_write_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -603,34 +603,53 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original post-write processing failure: ', activity('set_advance_watermark').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
-            "type": "Expression"
-          },
-          "errorCode": "BRONZE_CLEANUP_FAILED"
-        },
-        "name": "fail_post_write_cleanup",
-        "dependsOn": [
-          {
-            "activity": "sp_finalize_post_write_cleanup_failed",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "Fail",
-        "typeProperties": {
-          "message": {
-            "value": "@activity('sp_finalize_post_write_cleanup_failed').error.message",
+            "value": "@activity('sp_finalize_bronze_post_write_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_post_write_cleanup_finalization",
+        "name": "fail_bronze_post_write_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_post_write_cleanup_failed",
+            "activity": "sp_finalize_bronze_post_write_failed",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@concat('Original Bronze post-write failure: ', activity('set_advance_watermark_flag').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_post_write_failed').error.message)",
+            "type": "Expression"
+          },
+          "errorCode": "BRONZE_CLEANUP_FAILED"
+        },
+        "name": "fail_bronze_post_write_cleanup",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_bronze_post_write_cleanup_failed",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@activity('sp_finalize_bronze_post_write_cleanup_failed').error.message",
+            "type": "Expression"
+          },
+          "errorCode": "FINALIZATION_FAILED"
+        },
+        "name": "fail_bronze_post_write_cleanup_finalization",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_bronze_post_write_cleanup_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -831,7 +850,7 @@
         "name": "sp_finalize_success",
         "dependsOn": [
           {
-            "activity": "set_advance_watermark",
+            "activity": "set_advance_watermark_flag",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -888,7 +907,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_cleanup_bronze_copy_failed",
+        "name": "nb_cleanup_bronze_write_failed",
         "dependsOn": [
           {
             "activity": "copy_source_to_bronze",
@@ -922,7 +941,7 @@
               "type": "DateTime"
             },
             "error_code": {
-              "value": "COPY_FAILED",
+              "value": "BRONZE_WRITE_FAILED",
               "type": "String"
             },
             "error_message": {
@@ -1083,10 +1102,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_bronze_copy_failed",
+        "name": "sp_finalize_bronze_write_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_bronze_copy_failed",
+            "activity": "nb_cleanup_bronze_write_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1122,7 +1141,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original Bronze copy failure: ', activity('copy_source_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_copy_failed').error.message)",
+                "value": "@concat('Original Bronze write failure: ', activity('copy_source_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1278,10 +1297,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_bronze_cleanup_failed",
+        "name": "sp_finalize_bronze_write_cleanup_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_bronze_copy_failed",
+            "activity": "nb_cleanup_bronze_write_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -1292,15 +1311,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original Bronze copy failure: ', activity('copy_source_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_copy_failed').error.message)",
+            "value": "@concat('Original Bronze write failure: ', activity('copy_source_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
         },
-        "name": "fail_bronze_cleanup",
+        "name": "fail_bronze_write_cleanup",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_cleanup_failed",
+            "activity": "sp_finalize_bronze_write_cleanup_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1311,15 +1330,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_bronze_cleanup_failed').error.message",
+            "value": "@activity('sp_finalize_bronze_write_cleanup_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_bronze_cleanup_finalization",
+        "name": "fail_bronze_write_cleanup_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_cleanup_failed",
+            "activity": "sp_finalize_bronze_write_cleanup_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -1333,12 +1352,12 @@
             "value": "@activity('copy_source_to_bronze').error.message",
             "type": "Expression"
           },
-          "errorCode": "COPY_FAILED"
+          "errorCode": "BRONZE_WRITE_FAILED"
         },
-        "name": "fail_bronze_copy",
+        "name": "fail_bronze_write",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_write_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1349,15 +1368,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_bronze_copy_failed').error.message",
+            "value": "@activity('sp_finalize_bronze_write_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_bronze_copy_finalization",
+        "name": "fail_bronze_write_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_bronze_copy_failed",
+            "activity": "sp_finalize_bronze_write_failed",
             "dependencyConditions": [
               "Failed"
             ]
