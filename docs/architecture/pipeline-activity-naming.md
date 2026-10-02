@@ -160,4 +160,14 @@ pl_load_azure_sql_incremental
 pl_load_sftp_incremental
 ```
 
+Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix:
+
+```text
+pl_ingest_database_incremental -> inv_ingest_database_incremental
+pl_ingest_azure_sql_incremental -> inv_ingest_azure_sql_incremental
+pl_load_azure_sql_incremental -> inv_load_azure_sql_incremental
+pl_ingest_sftp_incremental -> inv_ingest_sftp_incremental
+pl_load_sftp_incremental -> inv_load_sftp_incremental
+```
+
 The `load` verb is preferred over `process` for workers because their responsibility is ingestion data movement into Landing/Bronze, not downstream transformation. Granularity suffixes such as `_file` or `_object` are omitted unless they become necessary to distinguish multiple workers with otherwise identical names.
