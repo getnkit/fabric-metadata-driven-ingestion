@@ -41,15 +41,11 @@ def _require_safe_path_segment(name, value):
 
 workspace_id = _require_safe_path_segment("p_workspace_id", p_workspace_id)
 lakehouse_id = _require_safe_path_segment("p_lakehouse_id", p_lakehouse_id)
+target_schema = _require_safe_path_segment("p_target_schema", p_target_schema)
 target_table = _require_safe_path_segment("p_target_table", p_target_table)
 batch_id = _require_nonempty("p_batch_id", p_batch_id)
 
-schema = "" if p_target_schema is None else str(p_target_schema).strip()
-if schema:
-    schema = _require_safe_path_segment("p_target_schema", schema)
-    table_relative_path = f"{schema}/{target_table}"
-else:
-    table_relative_path = target_table
+table_relative_path = f"{target_schema}/{target_table}"
 
 table_path = (
     f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com/"
