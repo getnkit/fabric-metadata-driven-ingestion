@@ -136,9 +136,9 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_folder_queue",
+          "variableName": "v_ingestion_timestamp",
           "value": {
-            "value": "@createArray(if(endsWith(pipeline().parameters.p_source_path, '/'), pipeline().parameters.p_source_path, concat(pipeline().parameters.p_source_path, '/')))",
+            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fff'\n)",
             "type": "Expression"
           }
         },
@@ -146,7 +146,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "set_folder_queue",
+        "name": "set_ingestion_timestamp",
         "dependsOn": [
           {
             "activity": "set_processing_upper_bound",
@@ -157,86 +157,1363 @@
         ]
       },
       {
-        "type": "Until",
+        "type": "SetVariable",
         "typeProperties": {
-          "expression": {
-            "value": "@or(not(empty(variables('v_traversal_error_message'))), greaterOrEquals(int(variables('v_folder_index')), length(variables('v_folder_queue'))))",
+          "variableName": "v_landing_relative_path",
+          "value": {
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
             "type": "Expression"
-          },
-          "timeout": "0.12:00:00",
-          "activities": [
-            {
-              "type": "InvokePipeline",
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_landing_relative_path",
+        "dependsOn": [
+          {
+            "activity": "set_ingestion_timestamp",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "BinarySource",
+            "formatSettings": {
+              "type": "BinaryReadSettings"
+            },
+            "storeSettings": {
+              "type": "SftpReadSettings",
+              "disableChunking": false,
+              "recursive": true,
+              "wildcardFolderPath": {
+                "value": "@pipeline().parameters.p_source_path",
+                "type": "Expression"
+              },
+              "wildcardFileName": {
+                "value": "@json(pipeline().parameters.p_source_options).file_name_pattern",
+                "type": "Expression"
+              },
+              "modifiedDatetimeStart": {
+                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                "type": "Expression"
+              },
+              "modifiedDatetimeEnd": {
+                "value": "@variables('v_processing_upper_bound')",
+                "type": "Expression"
+              }
+            },
+            "datasetSettings": {
+              "type": "Binary",
               "typeProperties": {
-                "parameters": {
-                  "p_batch_id": {
-                    "value": "@pipeline().parameters.p_batch_id",
-                    "type": "Expression"
-                  },
-                  "p_ingestion_config_id": {
-                    "value": "@pipeline().parameters.p_ingestion_config_id",
-                    "type": "Expression"
-                  },
-                  "p_start_time": {
-                    "value": "@pipeline().parameters.p_start_time",
-                    "type": "Expression"
-                  },
-                  "p_audit_pipeline_run_id": {
-                    "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                    "type": "Expression"
-                  },
-                  "p_source_root_path": {
-                    "value": "@if(endsWith(pipeline().parameters.p_source_path, '/'), pipeline().parameters.p_source_path, concat(pipeline().parameters.p_source_path, '/'))",
-                    "type": "Expression"
-                  },
-                  "p_current_source_path": {
-                    "value": "@variables('v_folder_queue')[int(variables('v_folder_index'))]",
-                    "type": "Expression"
-                  },
-                  "p_source_options": {
-                    "value": "@pipeline().parameters.p_source_options",
-                    "type": "Expression"
-                  },
-                  "p_landing_path": {
-                    "value": "@pipeline().parameters.p_landing_path",
-                    "type": "Expression"
-                  },
-                  "p_source_connection_settings": {
-                    "value": "@pipeline().parameters.p_source_connection_settings",
-                    "type": "Expression"
-                  },
-                  "p_target_connection_settings": {
-                    "value": "@pipeline().parameters.p_target_connection_settings",
-                    "type": "Expression"
-                  },
-                  "p_target_schema": {
-                    "value": "@pipeline().parameters.p_target_schema",
-                    "type": "Expression"
-                  },
-                  "p_target_table": {
-                    "value": "@pipeline().parameters.p_target_table",
-                    "type": "Expression"
-                  },
-                  "p_file_format": {
-                    "value": "@pipeline().parameters.p_file_format",
-                    "type": "Expression"
-                  },
-                  "p_processing_lower_bound": {
-                    "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                    "type": "Expression"
-                  },
-                  "p_processing_upper_bound": {
-                    "value": "@variables('v_processing_upper_bound')",
-                    "type": "Expression"
-                  }
-                },
-                "waitOnCompletion": true,
-                "workspaceId": "00000000-0000-0000-0000-000000000000",
-                "pipelineId": "6a5e9c8f-21d4-4b7a-9f0e-3c2d1b8a7e6f",
-                "operationType": "InvokeFabricPipeline"
+                "location": {
+                  "type": "SftpLocation"
+                }
               },
               "externalReferences": {
-                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "BinarySink",
+            "storeSettings": {
+              "type": "AzureBlobStorageWriteSettings",
+              "copyBehavior": "PreserveHierarchy"
+            },
+            "datasetSettings": {
+              "type": "Binary",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@variables('v_landing_relative_path')",
+                    "type": "Expression"
+                  }
+                }
+              },
+              "connectionSettings": {
+                "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                    "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                    "rootFolder": "Files"
+                  },
+                  "externalReferences": {
+                    "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                  },
+                  "annotations": []
+                }
+              },
+              "annotations": []
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "copy_sftp_to_landing",
+        "dependsOn": [
+          {
+            "activity": "set_landing_relative_path",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@greater(int(activity('copy_sftp_to_landing').output.filesRead), 0)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [
+            {
+              "type": "Switch",
+              "typeProperties": {
+                "on": {
+                  "value": "@toUpper(pipeline().parameters.p_file_format)",
+                  "type": "Expression"
+                },
+                "cases": [
+                  {
+                    "value": "DELIMITED_TEXT",
+                    "activities": [
+                      {
+                        "type": "TridentNotebook",
+                        "typeProperties": {
+                          "notebookId": "8f6d4c2a-7b91-4e5f-a2c8-3d1e9b7f6042",
+                          "workspaceId": "00000000-0000-0000-0000-000000000000",
+                          "parameters": {
+                            "p_workspace_id": {
+                              "value": {
+                                "value": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_lakehouse_id": {
+                              "value": {
+                                "value": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_landing_relative_path": {
+                              "value": {
+                                "value": "@variables('v_landing_relative_path')",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_source_root_path": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_path",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_source_options": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_options",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_target_schema": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_schema",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_target_table": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_table",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_batch_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_batch_id",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_pipeline_run_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_ingestion_timestamp": {
+                              "value": {
+                                "value": "@variables('v_ingestion_timestamp')",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "policy": {
+                          "timeout": "0.02:00:00",
+                          "retry": 0,
+                          "retryIntervalInSeconds": 30,
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "nb_load_landing_to_bronze_delimited_text",
+                        "dependsOn": []
+                      },
+                      {
+                        "type": "SqlServerStoredProcedure",
+                        "typeProperties": {
+                          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                          "storedProcedureParameters": {
+                            "advance_watermark": {
+                              "value": "true",
+                              "type": "Boolean"
+                            },
+                            "batch_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_batch_id",
+                                "type": "Expression"
+                              },
+                              "type": "Guid"
+                            },
+                            "end_time": {
+                              "value": {
+                                "value": "@utcNow()",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "error_code": {
+                              "value": null,
+                              "type": "String"
+                            },
+                            "error_message": {
+                              "value": null,
+                              "type": "String"
+                            },
+                            "ingestion_config_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_ingestion_config_id",
+                                "type": "Expression"
+                              },
+                              "type": "Int32"
+                            },
+                            "load_strategy": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_load_strategy",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_name": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_run_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_lower_bound": {
+                              "value": {
+                                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_upper_bound": {
+                              "value": {
+                                "value": "@variables('v_processing_upper_bound')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "run_type": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_run_type",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_object": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_object",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_row_count": {
+                              "value": {
+                                "value": "@int(json(activity('nb_load_landing_to_bronze_delimited_text').output.result.exitValue).source_row_count)",
+                                "type": "Expression"
+                              },
+                              "type": "Int64"
+                            },
+                            "source_schema": {
+                              "value": null,
+                              "type": "String"
+                            },
+                            "source_system": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_system",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "start_time": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_start_time",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "status": {
+                              "value": "SUCCESS",
+                              "type": "String"
+                            },
+                            "landing_path": {
+                              "value": {
+                                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_row_count": {
+                              "value": {
+                                "value": "@int(json(activity('nb_load_landing_to_bronze_delimited_text').output.result.exitValue).target_row_count)",
+                                "type": "Expression"
+                              },
+                              "type": "Int64"
+                            },
+                            "watermark_field": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_watermark_field",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_schema": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_schema",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_table": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_table",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            }
+                          }
+                        },
+                        "connectionSettings": {
+                          "name": "sqldb_ingestion_control",
+                          "properties": {
+                            "type": "FabricSqlDatabase",
+                            "typeProperties": {
+                              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                              "workspaceId": "00000000-0000-0000-0000-000000000000"
+                            },
+                            "externalReferences": {
+                              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "policy": {
+                          "timeout": "0.12:00:00",
+                          "retry": 0,
+                          "retryIntervalInSeconds": 30,
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "sp_finalize_success",
+                        "dependsOn": [
+                          {
+                            "activity": "nb_load_landing_to_bronze_delimited_text",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "TridentNotebook",
+                        "typeProperties": {
+                          "notebookId": "7b8c5a1d-4f23-4c0a-a9e7-21d8b2f4c6a1",
+                          "workspaceId": "00000000-0000-0000-0000-000000000000",
+                          "parameters": {
+                            "p_workspace_id": {
+                              "value": {
+                                "value": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_lakehouse_id": {
+                              "value": {
+                                "value": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_target_schema": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_schema",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_target_table": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_table",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            },
+                            "p_batch_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_batch_id",
+                                "type": "Expression"
+                              },
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "policy": {
+                          "timeout": "0.01:00:00",
+                          "retry": 1,
+                          "retryIntervalInSeconds": 30,
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "nb_cleanup_bronze_write_failed",
+                        "dependsOn": [
+                          {
+                            "activity": "nb_load_landing_to_bronze_delimited_text",
+                            "dependencyConditions": [
+                              "Failed"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "SqlServerStoredProcedure",
+                        "typeProperties": {
+                          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                          "storedProcedureParameters": {
+                            "advance_watermark": {
+                              "value": "false",
+                              "type": "Boolean"
+                            },
+                            "batch_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_batch_id",
+                                "type": "Expression"
+                              },
+                              "type": "Guid"
+                            },
+                            "end_time": {
+                              "value": {
+                                "value": "@utcNow()",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "error_code": {
+                              "value": "BRONZE_WRITE_FAILED",
+                              "type": "String"
+                            },
+                            "error_message": {
+                              "value": {
+                                "value": "@activity('nb_load_landing_to_bronze_delimited_text').error.message",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "ingestion_config_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_ingestion_config_id",
+                                "type": "Expression"
+                              },
+                              "type": "Int32"
+                            },
+                            "load_strategy": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_load_strategy",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_name": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_run_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_lower_bound": {
+                              "value": {
+                                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_upper_bound": {
+                              "value": {
+                                "value": "@variables('v_processing_upper_bound')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "run_type": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_run_type",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_object": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_object",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_row_count": {
+                              "value": null,
+                              "type": "Int64"
+                            },
+                            "source_schema": {
+                              "value": null,
+                              "type": "String"
+                            },
+                            "source_system": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_system",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "start_time": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_start_time",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "status": {
+                              "value": "FAILED",
+                              "type": "String"
+                            },
+                            "landing_path": {
+                              "value": {
+                                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_row_count": {
+                              "value": null,
+                              "type": "Int64"
+                            },
+                            "watermark_field": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_watermark_field",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_schema": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_schema",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_table": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_table",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            }
+                          }
+                        },
+                        "connectionSettings": {
+                          "name": "sqldb_ingestion_control",
+                          "properties": {
+                            "type": "FabricSqlDatabase",
+                            "typeProperties": {
+                              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                              "workspaceId": "00000000-0000-0000-0000-000000000000"
+                            },
+                            "externalReferences": {
+                              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "policy": {
+                          "timeout": "0.12:00:00",
+                          "retry": 2,
+                          "retryIntervalInSeconds": 30,
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "sp_finalize_bronze_write_failed",
+                        "dependsOn": [
+                          {
+                            "activity": "nb_cleanup_bronze_write_failed",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "SqlServerStoredProcedure",
+                        "typeProperties": {
+                          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                          "storedProcedureParameters": {
+                            "advance_watermark": {
+                              "value": "false",
+                              "type": "Boolean"
+                            },
+                            "batch_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_batch_id",
+                                "type": "Expression"
+                              },
+                              "type": "Guid"
+                            },
+                            "end_time": {
+                              "value": {
+                                "value": "@utcNow()",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "error_code": {
+                              "value": "BRONZE_CLEANUP_FAILED",
+                              "type": "String"
+                            },
+                            "error_message": {
+                              "value": {
+                                "value": "@concat('Original Bronze write failure: ', activity('nb_load_landing_to_bronze_delimited_text').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "ingestion_config_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_ingestion_config_id",
+                                "type": "Expression"
+                              },
+                              "type": "Int32"
+                            },
+                            "load_strategy": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_load_strategy",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_name": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "pipeline_run_id": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_lower_bound": {
+                              "value": {
+                                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "processing_upper_bound": {
+                              "value": {
+                                "value": "@variables('v_processing_upper_bound')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "run_type": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_run_type",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_object": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_object",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_row_count": {
+                              "value": null,
+                              "type": "Int64"
+                            },
+                            "source_schema": {
+                              "value": null,
+                              "type": "String"
+                            },
+                            "source_system": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_system",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "start_time": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_start_time",
+                                "type": "Expression"
+                              },
+                              "type": "DateTime"
+                            },
+                            "status": {
+                              "value": "FAILED",
+                              "type": "String"
+                            },
+                            "landing_path": {
+                              "value": {
+                                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_row_count": {
+                              "value": null,
+                              "type": "Int64"
+                            },
+                            "watermark_field": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_watermark_field",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_schema": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_schema",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_table": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_table",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "source_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_source_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            },
+                            "target_conn_ref": {
+                              "value": {
+                                "value": "@pipeline().parameters.p_target_conn_ref",
+                                "type": "Expression"
+                              },
+                              "type": "String"
+                            }
+                          }
+                        },
+                        "connectionSettings": {
+                          "name": "sqldb_ingestion_control",
+                          "properties": {
+                            "type": "FabricSqlDatabase",
+                            "typeProperties": {
+                              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                              "workspaceId": "00000000-0000-0000-0000-000000000000"
+                            },
+                            "externalReferences": {
+                              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                            },
+                            "annotations": []
+                          }
+                        },
+                        "policy": {
+                          "timeout": "0.12:00:00",
+                          "retry": 2,
+                          "retryIntervalInSeconds": 30,
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "sp_finalize_bronze_write_cleanup_failed",
+                        "dependsOn": [
+                          {
+                            "activity": "nb_cleanup_bronze_write_failed",
+                            "dependencyConditions": [
+                              "Failed"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Fail",
+                        "typeProperties": {
+                          "message": {
+                            "value": "@concat('Original Bronze write failure: ', activity('nb_load_landing_to_bronze_delimited_text').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                            "type": "Expression"
+                          },
+                          "errorCode": "BRONZE_CLEANUP_FAILED"
+                        },
+                        "name": "fail_bronze_write_cleanup",
+                        "dependsOn": [
+                          {
+                            "activity": "sp_finalize_bronze_write_cleanup_failed",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Fail",
+                        "typeProperties": {
+                          "message": {
+                            "value": "@activity('sp_finalize_bronze_write_cleanup_failed').error.message",
+                            "type": "Expression"
+                          },
+                          "errorCode": "FINALIZATION_FAILED"
+                        },
+                        "name": "fail_bronze_write_cleanup_finalization",
+                        "dependsOn": [
+                          {
+                            "activity": "sp_finalize_bronze_write_cleanup_failed",
+                            "dependencyConditions": [
+                              "Failed"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Fail",
+                        "typeProperties": {
+                          "message": {
+                            "value": "@activity('nb_load_landing_to_bronze_delimited_text').error.message",
+                            "type": "Expression"
+                          },
+                          "errorCode": "BRONZE_WRITE_FAILED"
+                        },
+                        "name": "fail_bronze_write",
+                        "dependsOn": [
+                          {
+                            "activity": "sp_finalize_bronze_write_failed",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Fail",
+                        "typeProperties": {
+                          "message": {
+                            "value": "@activity('sp_finalize_bronze_write_failed').error.message",
+                            "type": "Expression"
+                          },
+                          "errorCode": "FINALIZATION_FAILED"
+                        },
+                        "name": "fail_bronze_write_finalization",
+                        "dependsOn": [
+                          {
+                            "activity": "sp_finalize_bronze_write_failed",
+                            "dependencyConditions": [
+                              "Failed"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "defaultActivities": [
+                  {
+                    "type": "SqlServerStoredProcedure",
+                    "typeProperties": {
+                      "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                      "storedProcedureParameters": {
+                        "advance_watermark": {
+                          "value": "false",
+                          "type": "Boolean"
+                        },
+                        "batch_id": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_batch_id",
+                            "type": "Expression"
+                          },
+                          "type": "Guid"
+                        },
+                        "end_time": {
+                          "value": {
+                            "value": "@utcNow()",
+                            "type": "Expression"
+                          },
+                          "type": "DateTime"
+                        },
+                        "error_code": {
+                          "value": "UNSUPPORTED_FILE_FORMAT",
+                          "type": "String"
+                        },
+                        "error_message": {
+                          "value": {
+                            "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "ingestion_config_id": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_ingestion_config_id",
+                            "type": "Expression"
+                          },
+                          "type": "Int32"
+                        },
+                        "load_strategy": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_load_strategy",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "pipeline_name": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_audit_pipeline_name",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "pipeline_run_id": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "processing_lower_bound": {
+                          "value": {
+                            "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "processing_upper_bound": {
+                          "value": {
+                            "value": "@variables('v_processing_upper_bound')",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "run_type": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_run_type",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "source_object": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_source_object",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "source_row_count": {
+                          "value": null,
+                          "type": "Int64"
+                        },
+                        "source_schema": {
+                          "value": null,
+                          "type": "String"
+                        },
+                        "source_system": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_source_system",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "start_time": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_start_time",
+                            "type": "Expression"
+                          },
+                          "type": "DateTime"
+                        },
+                        "status": {
+                          "value": "FAILED",
+                          "type": "String"
+                        },
+                        "landing_path": {
+                          "value": {
+                            "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "target_row_count": {
+                          "value": null,
+                          "type": "Int64"
+                        },
+                        "watermark_field": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_watermark_field",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "target_schema": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_target_schema",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "target_table": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_target_table",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "source_conn_ref": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_source_conn_ref",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        },
+                        "target_conn_ref": {
+                          "value": {
+                            "value": "@pipeline().parameters.p_target_conn_ref",
+                            "type": "Expression"
+                          },
+                          "type": "String"
+                        }
+                      }
+                    },
+                    "connectionSettings": {
+                      "name": "sqldb_ingestion_control",
+                      "properties": {
+                        "type": "FabricSqlDatabase",
+                        "typeProperties": {
+                          "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                          "workspaceId": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "externalReferences": {
+                          "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                        },
+                        "annotations": []
+                      }
+                    },
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 2,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "sp_finalize_unsupported_file_format",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "Fail",
+                    "typeProperties": {
+                      "message": {
+                        "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
+                        "type": "Expression"
+                      },
+                      "errorCode": "UNSUPPORTED_FILE_FORMAT"
+                    },
+                    "name": "fail_unsupported_file_format",
+                    "dependsOn": [
+                      {
+                        "activity": "sp_finalize_unsupported_file_format",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Fail",
+                    "typeProperties": {
+                      "message": {
+                        "value": "@activity('sp_finalize_unsupported_file_format').error.message",
+                        "type": "Expression"
+                      },
+                      "errorCode": "FINALIZATION_FAILED"
+                    },
+                    "name": "fail_unsupported_file_format_finalization",
+                    "dependsOn": [
+                      {
+                        "activity": "sp_finalize_unsupported_file_format",
+                        "dependencyConditions": [
+                          "Failed"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "name": "sw_file_format",
+              "dependsOn": []
+            }
+          ],
+          "ifFalseActivities": [
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                "storedProcedureParameters": {
+                  "advance_watermark": {
+                    "value": "true",
+                    "type": "Boolean"
+                  },
+                  "batch_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_batch_id",
+                      "type": "Expression"
+                    },
+                    "type": "Guid"
+                  },
+                  "end_time": {
+                    "value": {
+                      "value": "@utcNow()",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "error_code": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "error_message": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "ingestion_config_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_ingestion_config_id",
+                      "type": "Expression"
+                    },
+                    "type": "Int32"
+                  },
+                  "load_strategy": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_load_strategy",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_name": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "pipeline_run_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "processing_lower_bound": {
+                    "value": {
+                      "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "processing_upper_bound": {
+                    "value": {
+                      "value": "@variables('v_processing_upper_bound')",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "run_type": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_run_type",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_object": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_source_object",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_row_count": {
+                    "value": "0",
+                    "type": "Int64"
+                  },
+                  "source_schema": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "source_system": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_source_system",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "start_time": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_start_time",
+                      "type": "Expression"
+                    },
+                    "type": "DateTime"
+                  },
+                  "status": {
+                    "value": "SKIPPED",
+                    "type": "String"
+                  },
+                  "landing_path": {
+                    "value": null,
+                    "type": "String"
+                  },
+                  "target_row_count": {
+                    "value": "0",
+                    "type": "Int64"
+                  },
+                  "watermark_field": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_watermark_field",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_schema": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_target_schema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_table": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_target_table",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "source_conn_ref": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_source_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "target_conn_ref": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_target_conn_ref",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  }
+                }
+              },
+              "connectionSettings": {
+                "name": "sqldb_ingestion_control",
+                "properties": {
+                  "type": "FabricSqlDatabase",
+                  "typeProperties": {
+                    "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                  },
+                  "externalReferences": {
+                    "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                  },
+                  "annotations": []
+                }
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -245,268 +1522,15 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_scan_sftp_folder_incremental",
+              "name": "sp_finalize_skipped",
               "dependsOn": []
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_folder_queue_temp",
-                "value": {
-                  "value": "@union(variables('v_folder_queue'), activity('inv_scan_sftp_folder_incremental').output.properties.returnValue.child_folders)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_folder_queue_temp",
-              "dependsOn": [
-                {
-                  "activity": "inv_scan_sftp_folder_incremental",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_folder_queue",
-                "value": {
-                  "value": "@variables('v_folder_queue_temp')",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_folder_queue",
-              "dependsOn": [
-                {
-                  "activity": "set_folder_queue_temp",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_source_row_count_temp",
-                "value": {
-                  "value": "@string(add(int(variables('v_source_row_count')), int(activity('inv_scan_sftp_folder_incremental').output.properties.returnValue.source_row_count)))",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_source_row_count_temp",
-              "dependsOn": [
-                {
-                  "activity": "set_folder_queue",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_source_row_count",
-                "value": {
-                  "value": "@variables('v_source_row_count_temp')",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_source_row_count",
-              "dependsOn": [
-                {
-                  "activity": "set_source_row_count_temp",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_target_row_count_temp",
-                "value": {
-                  "value": "@string(add(int(variables('v_target_row_count')), int(activity('inv_scan_sftp_folder_incremental').output.properties.returnValue.target_row_count)))",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_target_row_count_temp",
-              "dependsOn": [
-                {
-                  "activity": "set_source_row_count",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_target_row_count",
-                "value": {
-                  "value": "@variables('v_target_row_count_temp')",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_target_row_count",
-              "dependsOn": [
-                {
-                  "activity": "set_target_row_count_temp",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_candidate_file_count_temp",
-                "value": {
-                  "value": "@string(add(int(variables('v_candidate_file_count')), int(activity('inv_scan_sftp_folder_incremental').output.properties.returnValue.candidate_file_count)))",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_candidate_file_count_temp",
-              "dependsOn": [
-                {
-                  "activity": "set_target_row_count",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_candidate_file_count",
-                "value": {
-                  "value": "@variables('v_candidate_file_count_temp')",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_candidate_file_count",
-              "dependsOn": [
-                {
-                  "activity": "set_candidate_file_count_temp",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_folder_index_temp",
-                "value": {
-                  "value": "@string(add(int(variables('v_folder_index')), 1))",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_folder_index_temp",
-              "dependsOn": [
-                {
-                  "activity": "set_candidate_file_count",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_folder_index",
-                "value": {
-                  "value": "@variables('v_folder_index_temp')",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_folder_index",
-              "dependsOn": [
-                {
-                  "activity": "set_folder_index_temp",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_traversal_error_message",
-                "value": {
-                  "value": "@concat('Folder ', variables('v_folder_queue')[int(variables('v_folder_index'))], ': ', activity('inv_scan_sftp_folder_incremental').error.message)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_traversal_error_message",
-              "dependsOn": [
-                {
-                  "activity": "inv_scan_sftp_folder_incremental",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
-        "name": "until_sftp_folders",
+        "name": "if_files_found",
         "dependsOn": [
           {
-            "activity": "set_folder_queue",
+            "activity": "copy_sftp_to_landing",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -514,939 +1538,234 @@
         ]
       },
       {
-        "type": "Switch",
+        "type": "SqlServerStoredProcedure",
         "typeProperties": {
-          "on": {
-            "value": "@if(not(empty(variables('v_traversal_error_message'))), 'FAILED', if(greater(int(variables('v_candidate_file_count')), 0), 'SUCCESS', 'SKIPPED'))",
-            "type": "Expression"
-          },
-          "cases": [
-            {
-              "value": "SUCCESS",
-              "activities": [
-                {
-                  "type": "SqlServerStoredProcedure",
-                  "typeProperties": {
-                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                    "storedProcedureParameters": {
-                      "advance_watermark": {
-                        "value": "true",
-                        "type": "Boolean"
-                      },
-                      "batch_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_batch_id",
-                          "type": "Expression"
-                        },
-                        "type": "Guid"
-                      },
-                      "end_time": {
-                        "value": {
-                          "value": "@utcNow()",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "error_code": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "error_message": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "ingestion_config_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_ingestion_config_id",
-                          "type": "Expression"
-                        },
-                        "type": "Int32"
-                      },
-                      "load_strategy": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_load_strategy",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_name": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_name",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_run_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_lower_bound": {
-                        "value": {
-                          "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_upper_bound": {
-                        "value": {
-                          "value": "@variables('v_processing_upper_bound')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "run_type": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_run_type",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_object": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_object",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_row_count": {
-                        "value": {
-                          "value": "@int(variables('v_source_row_count'))",
-                          "type": "Expression"
-                        },
-                        "type": "Int64"
-                      },
-                      "source_schema": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "source_system": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_system",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "start_time": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_start_time",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "status": {
-                        "value": "SUCCESS",
-                        "type": "String"
-                      },
-                      "landing_path": {
-                        "value": {
-                          "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_row_count": {
-                        "value": {
-                          "value": "@int(variables('v_target_row_count'))",
-                          "type": "Expression"
-                        },
-                        "type": "Int64"
-                      },
-                      "watermark_field": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_watermark_field",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_schema": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_schema",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_table": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_table",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      }
-                    }
-                  },
-                  "connectionSettings": {
-                    "name": "sqldb_ingestion_control",
-                    "properties": {
-                      "type": "FabricSqlDatabase",
-                      "typeProperties": {
-                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                        "workspaceId": "00000000-0000-0000-0000-000000000000"
-                      },
-                      "externalReferences": {
-                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                      },
-                      "annotations": []
-                    }
-                  },
-                  "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "sp_finalize_success",
-                  "dependsOn": []
-                }
-              ]
+          "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+          "storedProcedureParameters": {
+            "advance_watermark": {
+              "value": "false",
+              "type": "Boolean"
             },
-            {
-              "value": "SKIPPED",
-              "activities": [
-                {
-                  "type": "SqlServerStoredProcedure",
-                  "typeProperties": {
-                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                    "storedProcedureParameters": {
-                      "advance_watermark": {
-                        "value": "true",
-                        "type": "Boolean"
-                      },
-                      "batch_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_batch_id",
-                          "type": "Expression"
-                        },
-                        "type": "Guid"
-                      },
-                      "end_time": {
-                        "value": {
-                          "value": "@utcNow()",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "error_code": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "error_message": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "ingestion_config_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_ingestion_config_id",
-                          "type": "Expression"
-                        },
-                        "type": "Int32"
-                      },
-                      "load_strategy": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_load_strategy",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_name": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_name",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_run_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_lower_bound": {
-                        "value": {
-                          "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_upper_bound": {
-                        "value": {
-                          "value": "@variables('v_processing_upper_bound')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "run_type": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_run_type",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_object": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_object",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_row_count": {
-                        "value": "0",
-                        "type": "Int64"
-                      },
-                      "source_schema": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "source_system": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_system",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "start_time": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_start_time",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "status": {
-                        "value": "SKIPPED",
-                        "type": "String"
-                      },
-                      "landing_path": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "target_row_count": {
-                        "value": "0",
-                        "type": "Int64"
-                      },
-                      "watermark_field": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_watermark_field",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_schema": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_schema",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_table": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_table",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      }
-                    }
-                  },
-                  "connectionSettings": {
-                    "name": "sqldb_ingestion_control",
-                    "properties": {
-                      "type": "FabricSqlDatabase",
-                      "typeProperties": {
-                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                        "workspaceId": "00000000-0000-0000-0000-000000000000"
-                      },
-                      "externalReferences": {
-                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                      },
-                      "annotations": []
-                    }
-                  },
-                  "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "sp_finalize_skipped",
-                  "dependsOn": []
-                }
-              ]
-            },
-            {
-              "value": "FAILED",
-              "activities": [
-                {
-                  "type": "TridentNotebook",
-                  "typeProperties": {
-                    "notebookId": "7b8c5a1d-4f23-4c0a-a9e7-21d8b2f4c6a1",
-                    "workspaceId": "00000000-0000-0000-0000-000000000000",
-                    "parameters": {
-                      "p_workspace_id": {
-                        "value": {
-                          "value": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                          "type": "Expression"
-                        },
-                        "type": "string"
-                      },
-                      "p_lakehouse_id": {
-                        "value": {
-                          "value": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                          "type": "Expression"
-                        },
-                        "type": "string"
-                      },
-                      "p_target_schema": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_schema",
-                          "type": "Expression"
-                        },
-                        "type": "string"
-                      },
-                      "p_target_table": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_table",
-                          "type": "Expression"
-                        },
-                        "type": "string"
-                      },
-                      "p_batch_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_batch_id",
-                          "type": "Expression"
-                        },
-                        "type": "string"
-                      }
-                    }
-                  },
-                  "policy": {
-                    "timeout": "0.01:00:00",
-                    "retry": 1,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "nb_cleanup_bronze_file_traversal_failed",
-                  "dependsOn": []
-                },
-                {
-                  "type": "SqlServerStoredProcedure",
-                  "typeProperties": {
-                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                    "storedProcedureParameters": {
-                      "advance_watermark": {
-                        "value": "false",
-                        "type": "Boolean"
-                      },
-                      "batch_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_batch_id",
-                          "type": "Expression"
-                        },
-                        "type": "Guid"
-                      },
-                      "end_time": {
-                        "value": {
-                          "value": "@utcNow()",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "error_code": {
-                        "value": "FILE_TRAVERSAL_FAILED",
-                        "type": "String"
-                      },
-                      "error_message": {
-                        "value": {
-                          "value": "@variables('v_traversal_error_message')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "ingestion_config_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_ingestion_config_id",
-                          "type": "Expression"
-                        },
-                        "type": "Int32"
-                      },
-                      "load_strategy": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_load_strategy",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_name": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_name",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_run_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_lower_bound": {
-                        "value": {
-                          "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_upper_bound": {
-                        "value": {
-                          "value": "@variables('v_processing_upper_bound')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "run_type": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_run_type",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_object": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_object",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_row_count": {
-                        "value": null,
-                        "type": "Int64"
-                      },
-                      "source_schema": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "source_system": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_system",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "start_time": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_start_time",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "status": {
-                        "value": "FAILED",
-                        "type": "String"
-                      },
-                      "landing_path": {
-                        "value": {
-                          "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_row_count": {
-                        "value": null,
-                        "type": "Int64"
-                      },
-                      "watermark_field": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_watermark_field",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_schema": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_schema",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_table": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_table",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      }
-                    }
-                  },
-                  "connectionSettings": {
-                    "name": "sqldb_ingestion_control",
-                    "properties": {
-                      "type": "FabricSqlDatabase",
-                      "typeProperties": {
-                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                        "workspaceId": "00000000-0000-0000-0000-000000000000"
-                      },
-                      "externalReferences": {
-                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                      },
-                      "annotations": []
-                    }
-                  },
-                  "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 2,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "sp_finalize_file_traversal_failed",
-                  "dependsOn": [
-                    {
-                      "activity": "nb_cleanup_bronze_file_traversal_failed",
-                      "dependencyConditions": [
-                        "Succeeded"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "SqlServerStoredProcedure",
-                  "typeProperties": {
-                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                    "storedProcedureParameters": {
-                      "advance_watermark": {
-                        "value": "false",
-                        "type": "Boolean"
-                      },
-                      "batch_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_batch_id",
-                          "type": "Expression"
-                        },
-                        "type": "Guid"
-                      },
-                      "end_time": {
-                        "value": {
-                          "value": "@utcNow()",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "error_code": {
-                        "value": "BRONZE_CLEANUP_FAILED",
-                        "type": "String"
-                      },
-                      "error_message": {
-                        "value": {
-                          "value": "@concat('Original FILE traversal failure: ', variables('v_traversal_error_message'), ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_file_traversal_failed').error.message)",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "ingestion_config_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_ingestion_config_id",
-                          "type": "Expression"
-                        },
-                        "type": "Int32"
-                      },
-                      "load_strategy": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_load_strategy",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_name": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_name",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "pipeline_run_id": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_lower_bound": {
-                        "value": {
-                          "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "processing_upper_bound": {
-                        "value": {
-                          "value": "@variables('v_processing_upper_bound')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "run_type": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_run_type",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_object": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_object",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_row_count": {
-                        "value": null,
-                        "type": "Int64"
-                      },
-                      "source_schema": {
-                        "value": null,
-                        "type": "String"
-                      },
-                      "source_system": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_system",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "start_time": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_start_time",
-                          "type": "Expression"
-                        },
-                        "type": "DateTime"
-                      },
-                      "status": {
-                        "value": "FAILED",
-                        "type": "String"
-                      },
-                      "landing_path": {
-                        "value": {
-                          "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_row_count": {
-                        "value": null,
-                        "type": "Int64"
-                      },
-                      "watermark_field": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_watermark_field",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_schema": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_schema",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_table": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_table",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "source_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_source_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      },
-                      "target_conn_ref": {
-                        "value": {
-                          "value": "@pipeline().parameters.p_target_conn_ref",
-                          "type": "Expression"
-                        },
-                        "type": "String"
-                      }
-                    }
-                  },
-                  "connectionSettings": {
-                    "name": "sqldb_ingestion_control",
-                    "properties": {
-                      "type": "FabricSqlDatabase",
-                      "typeProperties": {
-                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                        "workspaceId": "00000000-0000-0000-0000-000000000000"
-                      },
-                      "externalReferences": {
-                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                      },
-                      "annotations": []
-                    }
-                  },
-                  "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 2,
-                    "retryIntervalInSeconds": 30,
-                    "secureInput": false,
-                    "secureOutput": false
-                  },
-                  "name": "sp_finalize_file_traversal_cleanup_failed",
-                  "dependsOn": [
-                    {
-                      "activity": "nb_cleanup_bronze_file_traversal_failed",
-                      "dependencyConditions": [
-                        "Failed"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "Fail",
-                  "typeProperties": {
-                    "message": {
-                      "value": "@concat('Original FILE traversal failure: ', variables('v_traversal_error_message'), ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_file_traversal_failed').error.message)",
-                      "type": "Expression"
-                    },
-                    "errorCode": "BRONZE_CLEANUP_FAILED"
-                  },
-                  "name": "fail_file_traversal_cleanup",
-                  "dependsOn": [
-                    {
-                      "activity": "sp_finalize_file_traversal_cleanup_failed",
-                      "dependencyConditions": [
-                        "Succeeded"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "Fail",
-                  "typeProperties": {
-                    "message": {
-                      "value": "@activity('sp_finalize_file_traversal_cleanup_failed').error.message",
-                      "type": "Expression"
-                    },
-                    "errorCode": "FINALIZATION_FAILED"
-                  },
-                  "name": "fail_file_traversal_cleanup_finalization",
-                  "dependsOn": [
-                    {
-                      "activity": "sp_finalize_file_traversal_cleanup_failed",
-                      "dependencyConditions": [
-                        "Failed"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "Fail",
-                  "typeProperties": {
-                    "message": {
-                      "value": "@variables('v_traversal_error_message')",
-                      "type": "Expression"
-                    },
-                    "errorCode": "FILE_TRAVERSAL_FAILED"
-                  },
-                  "name": "fail_file_traversal",
-                  "dependsOn": [
-                    {
-                      "activity": "sp_finalize_file_traversal_failed",
-                      "dependencyConditions": [
-                        "Succeeded"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "Fail",
-                  "typeProperties": {
-                    "message": {
-                      "value": "@activity('sp_finalize_file_traversal_failed').error.message",
-                      "type": "Expression"
-                    },
-                    "errorCode": "FINALIZATION_FAILED"
-                  },
-                  "name": "fail_file_traversal_finalization",
-                  "dependsOn": [
-                    {
-                      "activity": "sp_finalize_file_traversal_failed",
-                      "dependencyConditions": [
-                        "Failed"
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ],
-          "defaultActivities": [
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": "Unexpected SFTP traversal outcome.",
-                "errorCode": "UNEXPECTED_TRAVERSAL_OUTCOME"
+            "batch_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_batch_id",
+                "type": "Expression"
               },
-              "name": "fail_unexpected_traversal_outcome",
-              "dependsOn": []
+              "type": "Guid"
+            },
+            "end_time": {
+              "value": {
+                "value": "@utcNow()",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "error_code": {
+              "value": "LANDING_WRITE_FAILED",
+              "type": "String"
+            },
+            "error_message": {
+              "value": {
+                "value": "@activity('copy_sftp_to_landing').error.message",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "ingestion_config_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_ingestion_config_id",
+                "type": "Expression"
+              },
+              "type": "Int32"
+            },
+            "load_strategy": {
+              "value": {
+                "value": "@pipeline().parameters.p_load_strategy",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_name": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "processing_lower_bound": {
+              "value": {
+                "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "processing_upper_bound": {
+              "value": {
+                "value": "@variables('v_processing_upper_bound')",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "run_type": {
+              "value": {
+                "value": "@pipeline().parameters.p_run_type",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_object": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_object",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_row_count": {
+              "value": null,
+              "type": "Int64"
+            },
+            "source_schema": {
+              "value": null,
+              "type": "String"
+            },
+            "source_system": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_system",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "start_time": {
+              "value": {
+                "value": "@pipeline().parameters.p_start_time",
+                "type": "Expression"
+              },
+              "type": "DateTime"
+            },
+            "status": {
+              "value": "FAILED",
+              "type": "String"
+            },
+            "landing_path": {
+              "value": {
+                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_row_count": {
+              "value": null,
+              "type": "Int64"
+            },
+            "watermark_field": {
+              "value": {
+                "value": "@pipeline().parameters.p_watermark_field",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_schema": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_table": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_table",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "source_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_source_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "target_conn_ref": {
+              "value": {
+                "value": "@pipeline().parameters.p_target_conn_ref",
+                "type": "Expression"
+              },
+              "type": "String"
             }
-          ]
+          }
         },
-        "name": "sw_traversal_outcome",
+        "connectionSettings": {
+          "name": "sqldb_ingestion_control",
+          "properties": {
+            "type": "FabricSqlDatabase",
+            "typeProperties": {
+              "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+              "workspaceId": "00000000-0000-0000-0000-000000000000"
+            },
+            "externalReferences": {
+              "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "sp_finalize_landing_write_failed",
         "dependsOn": [
           {
-            "activity": "until_sftp_folders",
+            "activity": "copy_sftp_to_landing",
             "dependencyConditions": [
-              "Completed"
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@activity('copy_sftp_to_landing').error.message",
+            "type": "Expression"
+          },
+          "errorCode": "LANDING_WRITE_FAILED"
+        },
+        "name": "fail_landing_write",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_landing_write_failed",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "@activity('sp_finalize_landing_write_failed').error.message",
+            "type": "Expression"
+          },
+          "errorCode": "FINALIZATION_FAILED"
+        },
+        "name": "fail_landing_write_finalization",
+        "dependsOn": [
+          {
+            "activity": "sp_finalize_landing_write_failed",
+            "dependencyConditions": [
+              "Failed"
             ]
           }
         ]
@@ -1518,49 +1837,11 @@
       "v_processing_upper_bound": {
         "type": "String"
       },
-      "v_folder_queue": {
-        "type": "Array",
-        "defaultValue": []
+      "v_ingestion_timestamp": {
+        "type": "String"
       },
-      "v_folder_queue_temp": {
-        "type": "Array",
-        "defaultValue": []
-      },
-      "v_folder_index": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_folder_index_temp": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_candidate_file_count": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_candidate_file_count_temp": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_source_row_count": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_source_row_count_temp": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_target_row_count": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_target_row_count_temp": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_traversal_error_message": {
-        "type": "String",
-        "defaultValue": ""
+      "v_landing_relative_path": {
+        "type": "String"
       }
     }
   }
