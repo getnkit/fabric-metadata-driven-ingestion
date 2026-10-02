@@ -1,8 +1,6 @@
 # Pipeline Activity Naming Standard
 
-Microsoft defines syntax and length rules for activity names, but does not
-prescribe a semantic naming convention for Fail or Stored Procedure activities.
-This project therefore uses a readable project convention. Activity-type prefixes are explicit where practical; Copy uses `copy_` rather than an abbreviation.
+Microsoft defines syntax and length rules for activity names, but does not prescribe a semantic naming convention for pipeline activities. This project therefore uses a readable project convention.
 
 ## Prefixes
 
@@ -18,8 +16,11 @@ This project therefore uses a readable project convention. Activity-type prefixe
 | If Condition | `if_` |
 | Switch | `sw_` |
 | Invoke Pipeline | `inv_` |
+| Notebook | `nb_` |
 | Stored Procedure | `sp_` |
 | Fail | `fail_` |
+
+Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activities describe the data-layer effect rather than the implementation primitive, so target mutation failures use `write` / `post_write`.
 
 ## Finalization
 
@@ -30,31 +31,27 @@ sp_finalize_success
 sp_finalize_skipped
 ```
 
-For Copy failures, identify the destination layer rather than spelling out the
-entire source-to-target path:
+For target-write failures:
 
 ```text
-sp_finalize_<target>_copy_failed
-fail_<target>_copy
-fail_<target>_copy_finalization
+sp_finalize_<target>_write_failed
+fail_<target>_write
+fail_<target>_write_finalization
 ```
 
 Examples:
 
 ```text
-sp_finalize_landing_copy_failed
-fail_landing_copy
-fail_landing_copy_finalization
+sp_finalize_landing_write_failed
+fail_landing_write
+fail_landing_write_finalization
 
-sp_finalize_bronze_copy_failed
-fail_bronze_copy
-fail_bronze_copy_finalization
+sp_finalize_bronze_write_failed
+fail_bronze_write
+fail_bronze_write_finalization
 ```
 
-This stays short while distinguishing pipelines that contain more than one Copy
-activity.
-
-For non-Copy failures, use the operation name:
+For non-write failures, use the failing operation/stage name:
 
 ```text
 sp_finalize_source_query_failed
@@ -62,19 +59,81 @@ fail_source_query
 fail_source_query_finalization
 ```
 
-The Fail activity error codes remain semantic and stable across connectors:
+## Bronze compensating cleanup
+
+The reusable notebook item is:
 
 ```text
-COPY_FAILED
-SOURCE_QUERY_FAILED
+nb_cleanup_bronze_batch_rows
+```
+
+It deletes Bronze rows for exactly one `_batch_id` and verifies that no rows for that batch remain.
+
+Notebook activity names identify why cleanup was invoked:
+
+```text
+nb_cleanup_bronze_write_failed
+nb_cleanup_bronze_post_write_failed
+nb_cleanup_bronze_candidate_files_failed
+```
+
+The distinction is intentional:
+
+```text
+write_failed
+= the Bronze write activity itself failed and may have left partial rows
+
+post_write_failed
+= the Bronze write succeeded, but a later control step failed before successful finalization
+
+candidate_files_failed
+= the FILE incremental candidate-file loop failed after one or more child loads may have written Bronze rows
+```
+
+Cleanup-failure branches retain the same context:
+
+```text
+sp_finalize_bronze_write_cleanup_failed
+fail_bronze_write_cleanup
+fail_bronze_write_cleanup_finalization
+
+sp_finalize_bronze_post_write_cleanup_failed
+fail_bronze_post_write_cleanup
+fail_bronze_post_write_cleanup_finalization
+
+sp_finalize_candidate_files_cleanup_failed
+fail_candidate_files_cleanup
+fail_candidate_files_cleanup_finalization
+```
+
+The original candidate-file failure branch is:
+
+```text
+sp_finalize_candidate_files_failed
+fail_candidate_files
+fail_candidate_files_finalization
+```
+
+Audit/error codes mirror the semantic failure boundary:
+
+```text
+LANDING_WRITE_FAILED
+BRONZE_WRITE_FAILED
+BRONZE_POST_WRITE_FAILED
+FILE_PROCESSING_FAILED
+BRONZE_CLEANUP_FAILED
 FINALIZATION_FAILED
 ```
 
+## Safety boundary
+
+Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
+
+Do not automatically delete Bronze rows after `sp_finalize_success` itself fails. That stored procedure may have committed the audit/watermark transaction before the client observed the failure; deleting Bronze after an ambiguous successful finalization could create data loss.
+
 ## Legacy exception
 
-`pl_ingest_full_legacy` is retained as a reference artifact and is not
-refactored to this convention. New and active pipelines follow this standard.
-
+`pl_ingest_full_legacy` is retained as a reference artifact and is not refactored to this convention. New and active pipelines follow this standard.
 
 ## Pipeline names
 
@@ -101,4 +160,4 @@ pl_load_azure_sql_incremental
 pl_load_sftp_incremental
 ```
 
-The `load` verb is preferred over `process` for these workers because their responsibility is ingestion data movement into Landing/Bronze, not downstream transformation. Granularity suffixes such as `_file` or `_object` are omitted unless they become necessary to distinguish multiple workers with otherwise identical names.
+The `load` verb is preferred over `process` for workers because their responsibility is ingestion data movement into Landing/Bronze, not downstream transformation. Granularity suffixes such as `_file` or `_object` are omitted unless they become necessary to distinguish multiple workers with otherwise identical names.
