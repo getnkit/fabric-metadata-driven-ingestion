@@ -1303,7 +1303,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_cleanup_bronze_processing_failed",
+        "name": "nb_cleanup_bronze_candidate_files_failed",
         "dependsOn": [
           {
             "activity": "fe_candidate_files",
@@ -1498,10 +1498,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_file_processing_failed",
+        "name": "sp_finalize_candidate_files_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_bronze_processing_failed",
+            "activity": "nb_cleanup_bronze_candidate_files_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1537,7 +1537,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_processing_failed').error.message)",
+                "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_candidate_files_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1693,10 +1693,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_file_cleanup_failed",
+        "name": "sp_finalize_candidate_files_cleanup_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_bronze_processing_failed",
+            "activity": "nb_cleanup_bronze_candidate_files_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -1707,15 +1707,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_processing_failed').error.message)",
+            "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_candidate_files_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
         },
-        "name": "fail_file_cleanup",
+        "name": "fail_candidate_files_cleanup",
         "dependsOn": [
           {
-            "activity": "sp_finalize_file_cleanup_failed",
+            "activity": "sp_finalize_candidate_files_cleanup_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1726,15 +1726,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_file_cleanup_failed').error.message",
+            "value": "@activity('sp_finalize_candidate_files_cleanup_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_file_cleanup_finalization",
+        "name": "fail_candidate_files_cleanup_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_file_cleanup_failed",
+            "activity": "sp_finalize_candidate_files_cleanup_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -1750,10 +1750,10 @@
           },
           "errorCode": "FILE_PROCESSING_FAILED"
         },
-        "name": "fail_file_processing",
+        "name": "fail_candidate_files",
         "dependsOn": [
           {
-            "activity": "sp_finalize_file_processing_failed",
+            "activity": "sp_finalize_candidate_files_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1764,15 +1764,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_file_processing_failed').error.message",
+            "value": "@activity('sp_finalize_candidate_files_failed').error.message",
             "type": "Expression"
           },
           "errorCode": "FINALIZATION_FAILED"
         },
-        "name": "fail_file_processing_finalization",
+        "name": "fail_candidate_files_finalization",
         "dependsOn": [
           {
-            "activity": "sp_finalize_file_processing_failed",
+            "activity": "sp_finalize_candidate_files_failed",
             "dependencyConditions": [
               "Failed"
             ]
