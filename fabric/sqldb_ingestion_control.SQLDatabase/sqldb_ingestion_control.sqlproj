@@ -13,6 +13,7 @@
     <DefaultFilegroup>PRIMARY</DefaultFilegroup>
     <DSP>Microsoft.Data.Tools.Schema.Sql.SqlDbFabricDatabaseSchemaProvider</DSP>
     <FileStreamDirectoryName></FileStreamDirectoryName>
+    <IsChangeTrackingOn>False</IsChangeTrackingOn>
     <IsQueryStoreOn>True</IsQueryStoreOn>
     <ModelCollation>1033, CI</ModelCollation>
     <Name>sqldb_ingestion_control</Name>
