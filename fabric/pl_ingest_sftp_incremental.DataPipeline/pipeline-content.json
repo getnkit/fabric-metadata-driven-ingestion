@@ -1303,7 +1303,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_cleanup_failed_batch",
+        "name": "nb_cleanup_bronze_processing_failed",
         "dependsOn": [
           {
             "activity": "fe_candidate_files",
@@ -1501,7 +1501,7 @@
         "name": "sp_finalize_file_processing_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_failed_batch",
+            "activity": "nb_cleanup_bronze_processing_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1537,7 +1537,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_failed_batch').error.message)",
+                "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_processing_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1696,7 +1696,7 @@
         "name": "sp_finalize_file_cleanup_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_failed_batch",
+            "activity": "nb_cleanup_bronze_processing_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -1707,7 +1707,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_failed_batch').error.message)",
+            "value": "@concat('Original FILE processing failure: ', activity('fe_candidate_files').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_processing_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
