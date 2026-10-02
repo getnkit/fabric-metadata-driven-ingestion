@@ -263,20 +263,48 @@ LOW  = current last_watermark_value
 HIGH = ingestion run start time
 ```
 
-and asks the SFTP connector to return child files in the Last Modified window:
+and selects source files whose Last Modified value is in:
 
 ```text
 LOW <= LastModified < HIGH
 ```
 
-The configured `file_name_pattern` is then applied to the returned child file
-names. Every matching file is copied to the batch-specific Landing folder and
-then appended to Bronze. If the scan completes successfully, the pipeline
-watermark advances to `HIGH`.
+SFTP incremental discovery supports arbitrary nested subfolders beneath
+`source_path`. The orchestration pipeline keeps a queue of folders and processes
+one folder per iteration. A dedicated one-folder scanner lists immediate child
+folders without a modified-time filter, lists candidate files in the current
+folder with the LOW/HIGH modified-time filter, applies `file_name_pattern`,
+and invokes the existing per-file load worker.
 
-A scan with no matching files is recorded as `SKIPPED` but can still advance
-the Last Modified checkpoint to `HIGH`; this avoids repeatedly rescanning the
-same empty time window.
+This two-level design is intentional: Fabric/ADF nested-activity rules do not
+allow a ForEach directly inside an Until loop, so the Until remains in
+`pl_ingest_sftp_incremental` while the per-folder ForEach work is isolated in
+`pl_scan_sftp_folder_incremental`.
+
+The traversal is breadth-first and does not hard-code year/month/day depth. Child
+folders are appended to a de-duplicated queue until the queue is exhausted.
+
+Every matching file is copied to the batch-specific Landing folder and then
+appended to Bronze. The file's relative source-folder hierarchy is preserved
+under the batch root, for example:
+
+```text
+source:
+  /outbound/inventory/movements/2026/10/file.csv
+
+landing:
+  Files/landing/logistics_vendor/inventory_movement/
+    ingestion_date=YYYY-MM-DD/
+      batch_id=<batch_id>/
+        2026/
+          10/
+            file.csv
+```
+
+If traversal completes successfully, the pipeline watermark advances to
+`HIGH`. A traversal with no matching files is recorded as `SKIPPED` but can
+still advance the Last Modified checkpoint to `HIGH`; this avoids repeatedly
+rescanning the same empty time window.
 
 The source filename remains evidence and lineage metadata in Bronze
 (`_source_file_name`, `_source_file_path`) but is not used as the checkpoint.
@@ -287,6 +315,7 @@ fixtures use delivery timestamps only to keep the example files unique:
 ```text
 inventory_movement_20260927T081500Z.csv
 inventory_movement_20260927T131500Z.csv
+2026/10/inventory_movement_20261002T150000Z.csv
 ```
 
 This strategy assumes the SFTP server exposes a reliable UTC Last Modified value
