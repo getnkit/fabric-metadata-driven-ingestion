@@ -145,7 +145,7 @@ SELECT
     *,
     <technical metadata columns>
 FROM <schema>.<table>
-WHERE ?DfDynamicRangePartitionCondition;
+WHERE ?DfDynamicRangePartitionCondition
 ```
 
 The WHERE clause is added only for `DYNAMIC_RANGE`.
@@ -159,10 +159,17 @@ SELECT
 FROM <schema>.<table>
 WHERE ?DfDynamicRangePartitionCondition
   AND <watermark_field> > LOW
-  AND <watermark_field> <= HIGH;
+  AND <watermark_field> <= HIGH
 ```
 
 For `NONE`, only the normal watermark predicate is generated.
+
+The custom-query templates deliberately omit a terminal semicolon. For
+`DYNAMIC_RANGE`, Fabric can wrap the source query as a derived table while
+discovering partition bounds. A terminal `;` inside that wrapper can make the
+wrapped SQL invalid even though the same standalone query is valid SQL. The
+static copy-tuning validator therefore rejects DynamicRange-capable query
+fragments that end in a semicolon.
 
 Dynamic-range bounds are intentionally not stored as permanent metadata in the
 current framework. Fabric can derive the range for the configured partition
