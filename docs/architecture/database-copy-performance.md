@@ -66,11 +66,19 @@ Optional benchmark-backed override:
 }
 ```
 
-Current supported values:
+Current Azure SQL support:
 
 ```text
-partition_option = NONE | DYNAMIC_RANGE
+FULL:
+  partition_option = NONE | DYNAMIC_RANGE | PHYSICAL_PARTITIONS
+
+INCREMENTAL:
+  partition_option = NONE | DYNAMIC_RANGE
 ```
+
+`PHYSICAL_PARTITIONS` is currently a FULL-load capability in this project. It
+uses a native table source so Fabric can discover the physical partition
+definition directly.
 
 `DYNAMIC_RANGE` requires an explicit `partition_column`. The current adapter
 does not silently auto-select a PK/index because an explicit column makes the
@@ -181,14 +189,81 @@ for the normal non-partitioned path.
 
 ## Physical partitions
 
-Azure SQL/SQL Server connectors also expose `PhysicalPartitionsOfTable`. That
-connector capability is intentionally not advertised as implemented by this
-project yet.
+Azure SQL FULL ingestion now supports:
 
-The current adapter adds technical columns through a custom source query, and the
-project does not currently include a physically partitioned source-table fixture.
-Physical-partition support should be added only with a real source definition and
-acceptance test rather than claimed from connector capability alone.
+```json
+{
+  "partition_option": "PHYSICAL_PARTITIONS"
+}
+```
+
+The physical-partition branch deliberately does not use `sqlReaderQuery`.
+Instead it points the Azure SQL dataset at the configured source schema/table and
+sets:
+
+```text
+partitionOption = PhysicalPartitionsOfTable
+```
+
+Fabric therefore discovers the source table's physical partition definition
+rather than receiving a custom-query range predicate.
+
+The framework still preserves its three relational Bronze technical columns by
+using Copy Activity `additionalColumns`:
+
+```text
+_batch_id
+_pipeline_run_id
+_ingestion_timestamp
+```
+
+AUTO and explicit `parallel_copies` modes are both supported. As with Dynamic
+Range, omitted `parallel_copies` means service-managed parallelism.
+
+Physical partitions are intentionally not enabled for the current INCREMENTAL
+adapter. The benchmark and the initial implementation use the connector's
+documented full-load physical-partition scenario; incremental semantics continue
+to use the existing LOW/HIGH custom query with NONE or DYNAMIC_RANGE.
+
+### Permanent benchmark fixture
+
+The project now includes a dedicated Azure SQL database:
+
+```text
+sql_ingestion_benchmark
+```
+
+with two permanent tables containing the same deterministic logical rows:
+
+```text
+benchmark.copy_source_unpartitioned
+benchmark.copy_source_partitioned
+```
+
+Default scale:
+
+```text
+10,000,000 rows per table
+CHAR(512) payload per row
+same logical schema and generated values
+```
+
+The partitioned table uses monthly `event_date` partitions for 2026. Both tables
+remain in the source database after setup; benchmark scenarios change only
+metadata/runtime strategy, not the source data.
+
+The benchmark scenarios are:
+
+```text
+UNPARTITIONED_NONE
+UNPARTITIONED_DYNAMIC
+PARTITIONED_NONE
+PARTITIONED_PHYSICAL
+```
+
+This separates physical-layout effects from Copy Activity execution strategy and
+avoids inflating the e-commerce business fixture only to manufacture a scale
+test.
 
 ## Benchmark procedure
 
@@ -218,9 +293,11 @@ python scripts/validation/validate_copy_tuning_contract.py
 ```
 
 The validator checks that both Azure SQL workers keep separate AUTO and tuned
-copy branches, that AUTO omits `parallelCopies`, that tuned mode binds the
+query-copy branches, that AUTO omits `parallelCopies`, that tuned mode binds the
 metadata override, and that the dynamic-range placeholder/partition-column
-contract is present.
+contract is present. For the FULL worker it also verifies the dedicated native
+table-source physical-partition branch, its `PhysicalPartitionsOfTable` setting,
+and the technical `additionalColumns` contract.
 
 This is static validation only. Fabric Git sync plus a non-empty pipeline run is
 still required to acceptance-test the runtime expression shape and connector
