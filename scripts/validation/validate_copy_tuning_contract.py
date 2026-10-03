@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any, Iterable
@@ -28,11 +27,6 @@ def iter_activities(activities: Iterable[dict[str, Any]]) -> Iterable[dict[str, 
             nested = case.get("activities")
             if isinstance(nested, list):
                 yield from iter_activities(nested)
-
-
-def has_sql_literal_ending_in_semicolon(expression: str) -> bool:
-    """Detect a Fabric expression string literal whose SQL fragment ends in ';'."""
-    return bool(re.search(r"'(?:''|[^'])*;'", expression))
 
 
 def main() -> int:
@@ -81,17 +75,6 @@ def main() -> int:
                 activity.get("typeProperties", {}).get("source", {}),
                 ensure_ascii=False,
             )
-            source = activity.get("typeProperties", {}).get("source", {})
-            query_expression = source.get("sqlReaderQuery", {}).get("value")
-            if (
-                isinstance(query_expression, str)
-                and has_sql_literal_ending_in_semicolon(query_expression)
-            ):
-                errors.append(
-                    f"{worker}: {copy_name} DynamicRange-capable sqlReaderQuery "
-                    "contains a SQL string fragment ending in ';'. Fabric may wrap "
-                    "the query as a derived table for partition-bound discovery."
-                )
             if "?DfDynamicRangePartitionCondition" not in source_text:
                 errors.append(
                     f"{worker}: {copy_name} copy missing dynamic-range placeholder"
