@@ -86,7 +86,7 @@ The master page loop is sequential to avoid multiplying concurrency by page coun
 
 The active ingestion framework no longer depends on Get Metadata for recursive SFTP discovery. The SFTP Copy connector performs recursive discovery natively.
 
-The retained legacy pipeline may still contain Get Metadata. It is intentionally excluded from active architecture refactoring.
+The equivalent Azure Data Factory orchestration documentation caps returned Get Metadata payload at 4 MB. The retained legacy pipeline may still contain Get Metadata, but it is intentionally excluded from active architecture refactoring and is not used for scalable source-tree enumeration.
 
 ### Copy
 
@@ -98,6 +98,8 @@ SFTP -> Landing
 ```
 
 Notebook is used only when Spark/Delta processing adds value, such as recursive Landing parsing, technical metadata enrichment, or compensating Delta cleanup.
+
+For SFTP incremental ingestion, Microsoft notes that Last Modified filtering can affect data-movement performance when a source contains very large numbers of files. This is a scale consideration rather than a hard correctness limit. If that becomes material, prefer source-side partitioning or a manifest/receipt-state pattern instead of rebuilding recursive traversal in pipeline control flow.
 
 ## Validation
 
