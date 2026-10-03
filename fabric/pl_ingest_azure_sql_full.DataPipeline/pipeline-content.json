@@ -21,7 +21,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(\n    greaterOrEquals(pipeline().parameters.p_copy_parallel_copies, 0),\n    or(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'NONE'\n        ),\n        and(\n            equals(\n                toUpper(pipeline().parameters.p_copy_partition_option),\n                'DYNAMIC_RANGE'\n            ),\n            not(empty(pipeline().parameters.p_copy_partition_column))\n        )\n    )\n)",
+            "value": "@and(\n    greaterOrEquals(pipeline().parameters.p_copy_parallel_copies, 0),\n    or(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'NONE'\n        ),\n        or(\n            and(\n                equals(\n                    toUpper(pipeline().parameters.p_copy_partition_option),\n                    'DYNAMIC_RANGE'\n                ),\n                not(empty(pipeline().parameters.p_copy_partition_column))\n            ),\n            equals(\n                toUpper(pipeline().parameters.p_copy_partition_option),\n                'PHYSICAL_PARTITIONS'\n            )\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -30,7 +30,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid Azure SQL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE and DYNAMIC_RANGE; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                  "value": "@concat(\n    'Invalid Azure SQL FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_COPY_OPTIONS"
@@ -54,295 +54,641 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@greater(pipeline().parameters.p_copy_parallel_copies, 0)",
+            "value": "@equals(\n    toUpper(pipeline().parameters.p_copy_partition_option),\n    'PHYSICAL_PARTITIONS'\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [
             {
-              "type": "Copy",
+              "type": "IfCondition",
               "typeProperties": {
-                "source": {
-                  "type": "AzureSqlSource",
-                  "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    ),\n    ';'\n)",
-                    "type": "Expression"
-                  },
-                  "partitionOption": {
-                    "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
-                    "type": "Expression"
-                  },
-                  "queryTimeout": "02:00:00",
-                  "datasetSettings": {
-                    "type": "AzureSqlTable",
-                    "typeProperties": {
-                      "database": {
-                        "value": "@json(pipeline().parameters.p_source_connection_settings).database",
-                        "type": "Expression"
-                      }
-                    },
-                    "schema": [],
-                    "externalReferences": {
-                      "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
-                    },
-                    "annotations": []
-                  },
-                  "partitionSettings": {
-                    "partitionColumnName": {
-                      "value": "@pipeline().parameters.p_copy_partition_column",
-                      "type": "Expression"
-                    }
-                  }
+                "expression": {
+                  "value": "@greater(pipeline().parameters.p_copy_parallel_copies, 0)",
+                  "type": "Expression"
                 },
-                "sink": {
-                  "type": "LakehouseTableSink",
-                  "tableActionOption": "Append",
-                  "applyVOrder": false,
-                  "enableTimestampNtz": false,
-                  "partitionOption": "None",
-                  "datasetSettings": {
-                    "type": "LakehouseTable",
+                "ifTrueActivities": [
+                  {
+                    "type": "Copy",
                     "typeProperties": {
-                      "schema": {
-                        "value": "@pipeline().parameters.p_target_schema",
-                        "type": "Expression"
+                      "source": {
+                        "type": "AzureSqlSource",
+                        "partitionOption": "PhysicalPartitionsOfTable",
+                        "queryTimeout": "02:00:00",
+                        "additionalColumns": [
+                          {
+                            "name": "_batch_id",
+                            "value": {
+                              "value": "@pipeline().parameters.p_batch_id",
+                              "type": "Expression"
+                            }
+                          },
+                          {
+                            "name": "_pipeline_run_id",
+                            "value": {
+                              "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                              "type": "Expression"
+                            }
+                          },
+                          {
+                            "name": "_ingestion_timestamp",
+                            "value": {
+                              "value": "@variables('v_ingestion_timestamp')",
+                              "type": "Expression"
+                            }
+                          }
+                        ],
+                        "datasetSettings": {
+                          "type": "AzureSqlTable",
+                          "typeProperties": {
+                            "database": {
+                              "value": "@json(pipeline().parameters.p_source_connection_settings).database",
+                              "type": "Expression"
+                            },
+                            "schema": {
+                              "value": "@pipeline().parameters.p_source_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_source_object",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "externalReferences": {
+                            "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+                          },
+                          "annotations": []
+                        }
                       },
-                      "table": {
-                        "value": "@pipeline().parameters.p_target_table",
+                      "sink": {
+                        "type": "LakehouseTableSink",
+                        "tableActionOption": "Append",
+                        "applyVOrder": false,
+                        "enableTimestampNtz": false,
+                        "partitionOption": "None",
+                        "datasetSettings": {
+                          "type": "LakehouseTable",
+                          "typeProperties": {
+                            "schema": {
+                              "value": "@pipeline().parameters.p_target_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_target_table",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "connectionSettings": {
+                            "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                            "properties": {
+                              "type": "Lakehouse",
+                              "typeProperties": {
+                                "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "rootFolder": "Tables"
+                              },
+                              "externalReferences": {
+                                "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                              },
+                              "annotations": []
+                            }
+                          },
+                          "annotations": []
+                        }
+                      },
+                      "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                          "allowDataTruncation": true,
+                          "treatBooleanAsNumber": false
+                        }
+                      },
+                      "enableStaging": false,
+                      "parallelCopies": {
+                        "value": "@pipeline().parameters.p_copy_parallel_copies",
                         "type": "Expression"
                       }
                     },
-                    "schema": [],
-                    "connectionSettings": {
-                      "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                      "properties": {
-                        "type": "Lakehouse",
-                        "typeProperties": {
-                          "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                          "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                          "rootFolder": "Tables"
-                        },
-                        "externalReferences": {
-                          "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                        },
-                        "annotations": []
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 0,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "copy_physical_partitions_to_bronze_tuned",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_source_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_physical_partitions_to_bronze_tuned').output.rowsRead)",
+                        "type": "Expression"
                       }
                     },
-                    "annotations": []
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_source_row_count_physical_tuned",
+                    "dependsOn": [
+                      {
+                        "activity": "copy_physical_partitions_to_bronze_tuned",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_target_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_physical_partitions_to_bronze_tuned').output.rowsCopied)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_target_row_count_physical_tuned",
+                    "dependsOn": [
+                      {
+                        "activity": "set_source_row_count_physical_tuned",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
                   }
-                },
-                "translator": {
-                  "type": "TabularTranslator",
-                  "typeConversion": true,
-                  "typeConversionSettings": {
-                    "allowDataTruncation": true,
-                    "treatBooleanAsNumber": false
+                ],
+                "ifFalseActivities": [
+                  {
+                    "type": "Copy",
+                    "typeProperties": {
+                      "source": {
+                        "type": "AzureSqlSource",
+                        "partitionOption": "PhysicalPartitionsOfTable",
+                        "queryTimeout": "02:00:00",
+                        "additionalColumns": [
+                          {
+                            "name": "_batch_id",
+                            "value": {
+                              "value": "@pipeline().parameters.p_batch_id",
+                              "type": "Expression"
+                            }
+                          },
+                          {
+                            "name": "_pipeline_run_id",
+                            "value": {
+                              "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                              "type": "Expression"
+                            }
+                          },
+                          {
+                            "name": "_ingestion_timestamp",
+                            "value": {
+                              "value": "@variables('v_ingestion_timestamp')",
+                              "type": "Expression"
+                            }
+                          }
+                        ],
+                        "datasetSettings": {
+                          "type": "AzureSqlTable",
+                          "typeProperties": {
+                            "database": {
+                              "value": "@json(pipeline().parameters.p_source_connection_settings).database",
+                              "type": "Expression"
+                            },
+                            "schema": {
+                              "value": "@pipeline().parameters.p_source_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_source_object",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "externalReferences": {
+                            "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+                          },
+                          "annotations": []
+                        }
+                      },
+                      "sink": {
+                        "type": "LakehouseTableSink",
+                        "tableActionOption": "Append",
+                        "applyVOrder": false,
+                        "enableTimestampNtz": false,
+                        "partitionOption": "None",
+                        "datasetSettings": {
+                          "type": "LakehouseTable",
+                          "typeProperties": {
+                            "schema": {
+                              "value": "@pipeline().parameters.p_target_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_target_table",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "connectionSettings": {
+                            "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                            "properties": {
+                              "type": "Lakehouse",
+                              "typeProperties": {
+                                "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "rootFolder": "Tables"
+                              },
+                              "externalReferences": {
+                                "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                              },
+                              "annotations": []
+                            }
+                          },
+                          "annotations": []
+                        }
+                      },
+                      "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                          "allowDataTruncation": true,
+                          "treatBooleanAsNumber": false
+                        }
+                      },
+                      "enableStaging": false
+                    },
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 0,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "copy_physical_partitions_to_bronze_auto",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_source_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_physical_partitions_to_bronze_auto').output.rowsRead)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_source_row_count_physical_auto",
+                    "dependsOn": [
+                      {
+                        "activity": "copy_physical_partitions_to_bronze_auto",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_target_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_physical_partitions_to_bronze_auto').output.rowsCopied)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_target_row_count_physical_auto",
+                    "dependsOn": [
+                      {
+                        "activity": "set_source_row_count_physical_auto",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
                   }
-                },
-                "enableStaging": false,
-                "parallelCopies": {
-                  "value": "@pipeline().parameters.p_copy_parallel_copies",
-                  "type": "Expression"
-                }
+                ]
               },
-              "policy": {
-                "timeout": "0.12:00:00",
-                "retry": 0,
-                "retryIntervalInSeconds": 30,
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "copy_source_to_bronze_tuned",
+              "name": "if_physical_parallel_copy_override",
               "dependsOn": []
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_source_row_count",
-                "value": {
-                  "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsRead)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_source_row_count_tuned",
-              "dependsOn": [
-                {
-                  "activity": "copy_source_to_bronze_tuned",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_target_row_count",
-                "value": {
-                  "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsCopied)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_target_row_count_tuned",
-              "dependsOn": [
-                {
-                  "activity": "set_source_row_count_tuned",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
             }
           ],
           "ifFalseActivities": [
             {
-              "type": "Copy",
+              "type": "IfCondition",
               "typeProperties": {
-                "source": {
-                  "type": "AzureSqlSource",
-                  "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    ),\n    ';'\n)",
-                    "type": "Expression"
-                  },
-                  "partitionOption": {
-                    "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
-                    "type": "Expression"
-                  },
-                  "queryTimeout": "02:00:00",
-                  "datasetSettings": {
-                    "type": "AzureSqlTable",
-                    "typeProperties": {
-                      "database": {
-                        "value": "@json(pipeline().parameters.p_source_connection_settings).database",
-                        "type": "Expression"
-                      }
-                    },
-                    "schema": [],
-                    "externalReferences": {
-                      "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
-                    },
-                    "annotations": []
-                  },
-                  "partitionSettings": {
-                    "partitionColumnName": {
-                      "value": "@pipeline().parameters.p_copy_partition_column",
-                      "type": "Expression"
-                    }
-                  }
+                "expression": {
+                  "value": "@greater(pipeline().parameters.p_copy_parallel_copies, 0)",
+                  "type": "Expression"
                 },
-                "sink": {
-                  "type": "LakehouseTableSink",
-                  "tableActionOption": "Append",
-                  "applyVOrder": false,
-                  "enableTimestampNtz": false,
-                  "partitionOption": "None",
-                  "datasetSettings": {
-                    "type": "LakehouseTable",
+                "ifTrueActivities": [
+                  {
+                    "type": "Copy",
                     "typeProperties": {
-                      "schema": {
-                        "value": "@pipeline().parameters.p_target_schema",
-                        "type": "Expression"
+                      "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": {
+                          "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    ),\n    ';'\n)",
+                          "type": "Expression"
+                        },
+                        "partitionOption": {
+                          "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
+                          "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "datasetSettings": {
+                          "type": "AzureSqlTable",
+                          "typeProperties": {
+                            "database": {
+                              "value": "@json(pipeline().parameters.p_source_connection_settings).database",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "externalReferences": {
+                            "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+                          },
+                          "annotations": []
+                        },
+                        "partitionSettings": {
+                          "partitionColumnName": {
+                            "value": "@pipeline().parameters.p_copy_partition_column",
+                            "type": "Expression"
+                          }
+                        }
                       },
-                      "table": {
-                        "value": "@pipeline().parameters.p_target_table",
+                      "sink": {
+                        "type": "LakehouseTableSink",
+                        "tableActionOption": "Append",
+                        "applyVOrder": false,
+                        "enableTimestampNtz": false,
+                        "partitionOption": "None",
+                        "datasetSettings": {
+                          "type": "LakehouseTable",
+                          "typeProperties": {
+                            "schema": {
+                              "value": "@pipeline().parameters.p_target_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_target_table",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "connectionSettings": {
+                            "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                            "properties": {
+                              "type": "Lakehouse",
+                              "typeProperties": {
+                                "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "rootFolder": "Tables"
+                              },
+                              "externalReferences": {
+                                "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                              },
+                              "annotations": []
+                            }
+                          },
+                          "annotations": []
+                        }
+                      },
+                      "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                          "allowDataTruncation": true,
+                          "treatBooleanAsNumber": false
+                        }
+                      },
+                      "enableStaging": false,
+                      "parallelCopies": {
+                        "value": "@pipeline().parameters.p_copy_parallel_copies",
                         "type": "Expression"
                       }
                     },
-                    "schema": [],
-                    "connectionSettings": {
-                      "name": "1b08f434_4523_476f_9698_96d53331bb5a",
-                      "properties": {
-                        "type": "Lakehouse",
-                        "typeProperties": {
-                          "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
-                          "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
-                          "rootFolder": "Tables"
-                        },
-                        "externalReferences": {
-                          "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
-                        },
-                        "annotations": []
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 0,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "copy_source_to_bronze_tuned",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_source_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsRead)",
+                        "type": "Expression"
                       }
                     },
-                    "annotations": []
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_source_row_count_tuned",
+                    "dependsOn": [
+                      {
+                        "activity": "copy_source_to_bronze_tuned",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_target_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsCopied)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_target_row_count_tuned",
+                    "dependsOn": [
+                      {
+                        "activity": "set_source_row_count_tuned",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
                   }
-                },
-                "translator": {
-                  "type": "TabularTranslator",
-                  "typeConversion": true,
-                  "typeConversionSettings": {
-                    "allowDataTruncation": true,
-                    "treatBooleanAsNumber": false
+                ],
+                "ifFalseActivities": [
+                  {
+                    "type": "Copy",
+                    "typeProperties": {
+                      "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": {
+                          "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    ),\n    ';'\n)",
+                          "type": "Expression"
+                        },
+                        "partitionOption": {
+                          "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
+                          "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "datasetSettings": {
+                          "type": "AzureSqlTable",
+                          "typeProperties": {
+                            "database": {
+                              "value": "@json(pipeline().parameters.p_source_connection_settings).database",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "externalReferences": {
+                            "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
+                          },
+                          "annotations": []
+                        },
+                        "partitionSettings": {
+                          "partitionColumnName": {
+                            "value": "@pipeline().parameters.p_copy_partition_column",
+                            "type": "Expression"
+                          }
+                        }
+                      },
+                      "sink": {
+                        "type": "LakehouseTableSink",
+                        "tableActionOption": "Append",
+                        "applyVOrder": false,
+                        "enableTimestampNtz": false,
+                        "partitionOption": "None",
+                        "datasetSettings": {
+                          "type": "LakehouseTable",
+                          "typeProperties": {
+                            "schema": {
+                              "value": "@pipeline().parameters.p_target_schema",
+                              "type": "Expression"
+                            },
+                            "table": {
+                              "value": "@pipeline().parameters.p_target_table",
+                              "type": "Expression"
+                            }
+                          },
+                          "schema": [],
+                          "connectionSettings": {
+                            "name": "1b08f434_4523_476f_9698_96d53331bb5a",
+                            "properties": {
+                              "type": "Lakehouse",
+                              "typeProperties": {
+                                "artifactId": "@json(pipeline().parameters.p_target_connection_settings).itemId",
+                                "workspaceId": "@json(pipeline().parameters.p_target_connection_settings).workspaceId",
+                                "rootFolder": "Tables"
+                              },
+                              "externalReferences": {
+                                "connection": "@json(pipeline().parameters.p_target_connection_settings).connectionId"
+                              },
+                              "annotations": []
+                            }
+                          },
+                          "annotations": []
+                        }
+                      },
+                      "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                          "allowDataTruncation": true,
+                          "treatBooleanAsNumber": false
+                        }
+                      },
+                      "enableStaging": false
+                    },
+                    "policy": {
+                      "timeout": "0.12:00:00",
+                      "retry": 0,
+                      "retryIntervalInSeconds": 30,
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "copy_source_to_bronze_auto",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_source_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_source_to_bronze_auto').output.rowsRead)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_source_row_count_auto",
+                    "dependsOn": [
+                      {
+                        "activity": "copy_source_to_bronze_auto",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "v_target_row_count",
+                      "value": {
+                        "value": "@string(activity('copy_source_to_bronze_auto').output.rowsCopied)",
+                        "type": "Expression"
+                      }
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "set_target_row_count_auto",
+                    "dependsOn": [
+                      {
+                        "activity": "set_source_row_count_auto",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
                   }
-                },
-                "enableStaging": false
+                ]
               },
-              "policy": {
-                "timeout": "0.12:00:00",
-                "retry": 0,
-                "retryIntervalInSeconds": 30,
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "copy_source_to_bronze_auto",
+              "name": "if_parallel_copy_override",
               "dependsOn": []
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_source_row_count",
-                "value": {
-                  "value": "@string(activity('copy_source_to_bronze_auto').output.rowsRead)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_source_row_count_auto",
-              "dependsOn": [
-                {
-                  "activity": "copy_source_to_bronze_auto",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "SetVariable",
-              "typeProperties": {
-                "variableName": "v_target_row_count",
-                "value": {
-                  "value": "@string(activity('copy_source_to_bronze_auto').output.rowsCopied)",
-                  "type": "Expression"
-                }
-              },
-              "policy": {
-                "secureInput": false,
-                "secureOutput": false
-              },
-              "name": "set_target_row_count_auto",
-              "dependsOn": [
-                {
-                  "activity": "set_source_row_count_auto",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
             }
           ]
         },
-        "name": "if_parallel_copy_override",
+        "name": "if_physical_partition_strategy",
         "dependsOn": [
           {
             "activity": "if_valid_copy_options",
@@ -534,7 +880,7 @@
         "name": "sp_finalize_success",
         "dependsOn": [
           {
-            "activity": "if_parallel_copy_override",
+            "activity": "if_physical_partition_strategy",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -594,7 +940,7 @@
         "name": "nb_cleanup_bronze_write_failed",
         "dependsOn": [
           {
-            "activity": "if_parallel_copy_override",
+            "activity": "if_physical_partition_strategy",
             "dependencyConditions": [
               "Failed"
             ]
@@ -630,7 +976,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('if_parallel_copy_override').error.message",
+                "value": "@activity('if_physical_partition_strategy').error.message",
                 "type": "Expression"
               },
               "type": "String"
@@ -816,7 +1162,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original Bronze write failure: ', activity('if_parallel_copy_override').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                "value": "@concat('Original Bronze write failure: ', activity('if_physical_partition_strategy').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -977,7 +1323,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original Bronze write failure: ', activity('if_parallel_copy_override').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+            "value": "@concat('Original Bronze write failure: ', activity('if_physical_partition_strategy').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
@@ -1015,7 +1361,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('if_parallel_copy_override').error.message",
+            "value": "@activity('if_physical_partition_strategy').error.message",
             "type": "Expression"
           },
           "errorCode": "BRONZE_WRITE_FAILED"
