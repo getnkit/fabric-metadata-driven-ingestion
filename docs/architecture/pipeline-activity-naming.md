@@ -108,6 +108,24 @@ BRONZE_CLEANUP_FAILED
 FINALIZATION_FAILED
 ```
 
+## Pipeline vs Notebook Boundary
+
+Use Data Factory pipeline activities for orchestration, connector-native movement, metadata lookup, validation, routing, and audit/finalization.
+
+Use a Notebook when the responsibility is a reusable Spark/Delta data operation that would otherwise require duplicated format-specific or stateful pipeline mechanics.
+
+Current reusable notebooks:
+
+```text
+nb_cleanup_bronze_batch_rows
+= idempotent Delta cleanup scoped by _batch_id
+
+nb_load_landing_to_bronze
+= batch-scoped recursive Landing parse + technical metadata + Bronze Delta append
+```
+
+Do not replace a simple connector-native Copy activity with a Notebook just to make the implementation uniform. In particular, relational DATABASE -> Bronze ingestion remains a Copy activity because Fabric already provides the required source connector, filtering, row movement, and monitoring without introducing Spark compute or source-driver/authentication logic into a Notebook.
+
 ## Safety boundary
 
 Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
