@@ -24,6 +24,8 @@ Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activi
 
 ## Finalization
 
+Object-level terminal outcomes use a single audit policy: once an ingestion configuration has been resolved and the run has a batch/config identity, terminal outcomes are finalized to the ingestion audit as `SUCCESS`, `SKIPPED`, or `FAILED` before the pipeline terminates. Framework-level request validation that occurs before an ingestion object/configuration is resolved may fail without creating an ingestion audit record.
+
 Successful terminal states use:
 
 ```text
