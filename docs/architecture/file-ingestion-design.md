@@ -27,6 +27,7 @@ The generic columns continue to own routing and execution metadata:
 - `ingestion_pattern`
 - `file_format`
 - `source_options`
+- `copy_options`
 - `landing_path`
 - `target_conn_ref`
 - `target_schema`
@@ -55,7 +56,7 @@ For FILE ingestion, both fields are first-class metadata.
 
 `source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds use `file_name_pattern`, `delimiter`, `has_header`, and `encoding`.
 
-Current DATABASE configs use `file_format = NULL` and `source_options = NULL`.
+Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
 
 ## FILE flow
 
