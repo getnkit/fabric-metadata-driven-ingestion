@@ -63,16 +63,15 @@ Current DATABASE configs use `file_format = NULL` and `source_options = NULL`.
 Source connection + source_path
   -> Binary copy
   -> Landing + landing_path
-  -> file_format router
-       -> DELIMITED_TEXT parser
-       -> PARQUET parser (future)
-       -> JSON parser    (future)
-  -> Bronze Delta table
+  -> nb_load_landing_to_bronze
+       -> format-specific reader
+       -> common technical metadata
+       -> Bronze Delta table
 ```
 
 The source-to-Landing step is intentionally Binary so the delivered file is preserved byte-for-byte. Parsing starts only after the raw artifact reaches Landing.
 
-The current implementation contains the `DELIMITED_TEXT` branch. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT`; adding another format means adding another parser branch after Landing rather than duplicating the SFTP source-copy logic.
+The reusable `nb_load_landing_to_bronze` notebook owns format-specific reader dispatch. The current reader registry supports `DELIMITED_TEXT` only. `PARQUET` and `JSON` remain future readers rather than pipeline branches. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT` before raw Landing work starts.
 
 Landing is retained for FILE ingestion because the delivered file is itself the raw ingestion artifact and can be reused for troubleshooting or reprocessing.
 
@@ -277,7 +276,7 @@ source root to the batch-specific Landing folder. It applies the configured
 `file_name_pattern` together with the LOW/HIGH Last Modified window and uses
 `PreserveHierarchy`, so the connector itself handles arbitrary folder depth.
 
-After Landing succeeds, `nb_load_landing_to_bronze_delimited_text` recursively
+After Landing succeeds, `nb_load_landing_to_bronze` recursively
 reads only that batch's Landing folder, parses the delimited files, adds the
 technical lineage columns, and appends the result to the Bronze Delta table.
 
@@ -318,15 +317,17 @@ The current SFTP incremental physical flow is therefore:
 
 ```text
 pl_ingest_sftp_incremental
+  -> if_supported_file_format
   -> copy_sftp_to_landing
        recursive = true
        wildcard file_name_pattern
        LOW <= LastModified < HIGH
        PreserveHierarchy
   -> if_files_found
-       -> DELIMITED_TEXT
-            -> nb_load_landing_to_bronze_delimited_text
-            -> sp_finalize_success
+       -> nb_load_landing_to_bronze
+            p_file_format
+            p_source_options
+       -> sp_finalize_success
        -> no files
             -> sp_finalize_skipped
 ```
@@ -374,10 +375,9 @@ For the current SFTP adapter:
 ```text
 SFTP
   -> Binary copy to Landing
-  -> Switch(file_format)
-       -> DELIMITED_TEXT
-            -> DelimitedText reader
-            -> Bronze
+  -> nb_load_landing_to_bronze(p_file_format, p_source_options)
+       -> DELIMITED_TEXT reader
+       -> common Bronze write
 ```
 
-The routing boundary is implemented now, while only the delimited-text parser is implemented. This avoids hard-coding CSV semantics into the metadata model and avoids prematurely multiplying pipelines by connector x format.
+The pipeline performs only a supported-format guard; it does not route to a different pipeline branch per file format. Reader selection lives inside the reusable notebook so future `PARQUET` or `JSON` support can reuse the same Landing, lineage, Bronze-write, row-count, and recovery behavior.
