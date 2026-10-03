@@ -23,7 +23,8 @@ Microsoft defines syntax and length rules for activity names, but does not presc
 Set Variable activity names mirror the variable they set, dropping the variable's `v_` prefix:
 
 ```text
-v_advance_watermark -> set_advance_watermark
+v_run_type -> set_run_type
+v_lower_bound -> set_lower_bound
 ```
 
 Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activities describe the data-layer effect rather than the implementation primitive, so target mutation failures use `write` / `post_write`.
@@ -178,6 +179,8 @@ pl_ingest_orchestrator
 ```
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
+
+Platform Retry/Rerun is treated as execution recovery and is not encoded as a framework `run_type`. Direct manual reruns of internal child pipelines are not part of the supported operational contract; recovery enters through the top-level orchestrator.
 
 `config_page` is deliberate terminology: the dispatcher reads a deterministic SQL page of configuration IDs using `ORDER BY ... OFFSET ... FETCH NEXT ...`, keeping each Lookup result within the platform row limit. `page` is kept distinct from the framework's ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 

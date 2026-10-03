@@ -246,29 +246,6 @@
         ]
       },
       {
-        "type": "SetVariable",
-        "typeProperties": {
-          "variableName": "v_advance_watermark",
-          "value": {
-            "value": "@or(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    and(\n        equals(\n            pipeline().parameters.p_run_type,\n            'RERUN'\n        ),\n        equals(\n            ticks(pipeline().parameters.p_current_watermark),\n            ticks(pipeline().parameters.p_lower_bound)\n        )\n    )\n)",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_advance_watermark",
-        "dependsOn": [
-          {
-            "activity": "if_valid_copy_options",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
@@ -563,7 +540,7 @@
         "name": "if_parallel_copy_override",
         "dependsOn": [
           {
-            "activity": "set_advance_watermark",
+            "activity": "if_valid_copy_options",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -577,7 +554,7 @@
           "storedProcedureParameters": {
             "advance_watermark": {
               "value": {
-                "value": "@variables('v_advance_watermark')",
+                "value": "@equals(pipeline().parameters.p_run_type, 'REGULAR')",
                 "type": "Expression"
               },
               "type": "Boolean"
@@ -1306,9 +1283,6 @@
       "p_watermark_field": {
         "type": "string"
       },
-      "p_current_watermark": {
-        "type": "string"
-      },
       "p_source_conn_ref": {
         "type": "string"
       },
@@ -1335,9 +1309,6 @@
       }
     },
     "variables": {
-      "v_advance_watermark": {
-        "type": "Boolean"
-      },
       "v_ingestion_timestamp": {
         "type": "String"
       },

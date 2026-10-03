@@ -21,7 +21,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@or(\n    and(\n        equals(\n            toUpper(pipeline().parameters.p_run_type),\n            'REGULAR'\n        ),\n        greaterOrEquals(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    ),\n    and(\n        or(\n            equals(\n                toUpper(pipeline().parameters.p_run_type),\n                'RERUN'\n            ),\n            equals(\n                toUpper(pipeline().parameters.p_run_type),\n                'BACKFILL'\n            )\n        ),\n        greater(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    )\n)",
+            "value": "@or(\n    and(\n        equals(\n            toUpper(pipeline().parameters.p_run_type),\n            'REGULAR'\n        ),\n        greaterOrEquals(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    ),\n    and(\n        equals(\n            toUpper(pipeline().parameters.p_run_type),\n            'BACKFILL'\n        ),\n        greater(\n            pipeline().parameters.p_config_id,\n            0\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -30,7 +30,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid run request: run_type=',\n    pipeline().parameters.p_run_type,\n    ', config_id=',\n    string(pipeline().parameters.p_config_id),\n    '. REGULAR supports config_id >= 0; RERUN and BACKFILL require config_id > 0.'\n)",
+                  "value": "@concat(\n    'Invalid run request: run_type=',\n    pipeline().parameters.p_run_type,\n    ', config_id=',\n    string(pipeline().parameters.p_config_id),\n    '. REGULAR supports config_id >= 0; BACKFILL requires config_id > 0.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"

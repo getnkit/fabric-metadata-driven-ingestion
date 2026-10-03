@@ -73,7 +73,7 @@ REGULAR:
   upper = lower  -> valid no-new-data window -> SKIPPED
   upper < lower  -> invalid boundary -> FAILED
 
-RERUN / BACKFILL:
+BACKFILL:
   upper > lower  -> process
   upper <= lower -> invalid boundary -> FAILED
 ```
@@ -125,3 +125,26 @@ insert atomic inside the control SQL database.
 A no-data FILE scan can finish as `SKIPPED` and still advance its Last Modified
 window. In that case the previous last-successful-data batch/run references are
 preserved.
+
+## Run types and recovery
+
+The framework run-type contract is intentionally small:
+
+```text
+REGULAR
+= forward processing from the currently committed watermark
+
+BACKFILL
+= explicit historical LOW/HIGH processing that does not advance the operational watermark
+```
+
+Fabric Retry/Rerun is an execution-recovery mechanism, not a framework run type.
+A failed REGULAR ingestion can be recovered by starting another top-level REGULAR
+execution; the committed watermark remains the source of truth for the next
+forward window.
+
+BACKFILL may overlap a historical interval that was processed successfully before.
+The framework does not delete or replace a previously successful Bronze batch when
+that happens. Bronze remains append-oriented and each execution is distinguished by
+its batch/run lineage. A future replace/reprocess mode should be added only if a
+real downstream requirement needs replacement or deduplication semantics.

@@ -215,7 +215,7 @@ CREATE TABLE audit.ingestion_log
         UNIQUE (pipeline_run_id),
 
     CONSTRAINT CK_ingestion_log_run_type
-        CHECK (run_type IN ('REGULAR','RERUN','BACKFILL')),
+        CHECK (run_type IN ('REGULAR','BACKFILL')),
 
     CONSTRAINT CK_ingestion_log_status
         CHECK (status IN ('SUCCESS','FAILED','WARN','SKIPPED','CANCELLED')),

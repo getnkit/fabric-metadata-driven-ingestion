@@ -29,7 +29,7 @@ CREATE TABLE [audit].[ingestion_log] (
     CONSTRAINT [PK_ingestion_log] PRIMARY KEY CLUSTERED ([ingestion_log_id] ASC),
     CONSTRAINT [CK_ingestion_log_counts] CHECK (([source_row_count] IS NULL OR [source_row_count]>=(0)) AND ([target_row_count] IS NULL OR [target_row_count]>=(0))),
     CONSTRAINT [CK_ingestion_log_duration] CHECK ([duration_seconds]>=(0)),
-    CONSTRAINT [CK_ingestion_log_run_type] CHECK ([run_type]='BACKFILL' OR [run_type]='RERUN' OR [run_type]='REGULAR'),
+    CONSTRAINT [CK_ingestion_log_run_type] CHECK ([run_type]='BACKFILL' OR [run_type]='REGULAR'),
     CONSTRAINT [CK_ingestion_log_status] CHECK ([status]='CANCELLED' OR [status]='SKIPPED' OR [status]='WARN' OR [status]='FAILED' OR [status]='SUCCESS'),
     CONSTRAINT [CK_ingestion_log_time] CHECK ([end_time]>=[start_time]),
     CONSTRAINT [UQ_ingestion_log_pipeline_run] UNIQUE NONCLUSTERED ([pipeline_run_id] ASC)

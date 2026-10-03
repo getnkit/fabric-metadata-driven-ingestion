@@ -106,6 +106,12 @@ For a live control database created before database copy tuning metadata was add
 
 `scripts/control/migrations/006_add_copy_options.sql`
 
+To remove the retired framework-level `RERUN` run type from an existing control database, also run:
+
+`scripts/control/migrations/007_remove_rerun_run_type.sql`
+
+The migration refuses to rewrite historical `RERUN` audit rows automatically. If any exist, review them explicitly before applying the tighter constraint.
+
 Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pipeline artifacts are synced.
 
 After creating Fabric connection `cn_sftp_logistics_vendor`, run

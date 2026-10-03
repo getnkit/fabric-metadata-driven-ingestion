@@ -406,7 +406,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. File replay is controlled by file identity rather than relational LOW/HIGH boundaries.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
+                      "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. Historical file backfill/reprocessing requires separate file-identity semantics.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -563,7 +563,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. File replay is controlled by file identity rather than relational LOW/HIGH boundaries.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
+                  "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. Historical file backfill/reprocessing requires separate file-identity semantics.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"
@@ -594,7 +594,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@if(\n    and(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                'DATABASE'\n            ),\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'INCREMENTAL'\n            )\n        ),\n        or(\n            equals(variables('v_run_type'), 'RERUN'),\n            equals(variables('v_run_type'), 'BACKFILL')\n        )\n    ),\n    and(\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    ),\n    and(\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    )\n)",
+            "value": "@if(\n    and(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                'DATABASE'\n            ),\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'INCREMENTAL'\n            )\n        ),\n        equals(variables('v_run_type'), 'BACKFILL')\n    ),\n    and(\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    ),\n    and(\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -628,7 +628,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL RERUN/BACKFILL require both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
+                      "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL BACKFILL requires both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -785,7 +785,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL RERUN/BACKFILL require both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
+                  "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL BACKFILL requires both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"

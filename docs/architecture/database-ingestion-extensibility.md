@@ -28,7 +28,7 @@ to keep physical database technology out of the pattern-level object router.
 
 The framework owns semantics that must stay consistent across database vendors:
 
-- REGULAR / RERUN / BACKFILL behavior
+- REGULAR / BACKFILL behavior
 - processing boundary semantics
 - current watermark state
 - no-new-data behavior

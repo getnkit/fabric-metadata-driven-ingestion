@@ -858,7 +858,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; RERUN/BACKFILL require upper_bound > lower_bound.'\n)",
+                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; BACKFILL requires upper_bound > lower_bound.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1021,7 +1021,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; RERUN/BACKFILL require upper_bound > lower_bound.'\n)",
+                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; BACKFILL requires upper_bound > lower_bound.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_PROCESSING_BOUNDARY"
@@ -1297,10 +1297,6 @@
                   },
                   "p_watermark_field": {
                     "value": "@pipeline().parameters.p_watermark_field",
-                    "type": "Expression"
-                  },
-                  "p_current_watermark": {
-                    "value": "@activity('lkp_current_watermark').output.value[0].last_watermark_value",
                     "type": "Expression"
                   },
                   "p_target_table": {
