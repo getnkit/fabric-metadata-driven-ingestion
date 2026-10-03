@@ -54,33 +54,43 @@ table_path = (
 
 batch_predicate = F.col("_batch_id") == F.lit(batch_id)
 
-rows_before = (
-    spark.read.format("delta")
-    .load(table_path)
-    .where(batch_predicate)
-    .count()
-)
+def _cleanup_batch_rows():
+    try:
+        target_df = spark.read.format("delta").load(table_path)
+    except Exception as exc:
+        error_message = str(exc)
+        if "[PATH_NOT_FOUND]" in error_message or "Path does not exist:" in error_message:
+            print(
+                f"BRONZE_CLEANUP_NOOP batch_id={batch_id} "
+                f"target={table_relative_path} reason=TARGET_NOT_FOUND"
+            )
+            return
+        raise
 
-if rows_before > 0:
-    DeltaTable.forPath(spark, table_path).delete(batch_predicate)
+    rows_before = target_df.where(batch_predicate).count()
 
-rows_after = (
-    spark.read.format("delta")
-    .load(table_path)
-    .where(batch_predicate)
-    .count()
-)
+    if rows_before > 0:
+        DeltaTable.forPath(spark, table_path).delete(batch_predicate)
 
-if rows_after != 0:
-    raise RuntimeError(
-        f"BRONZE_CLEANUP_INCOMPLETE: batch_id={batch_id} still has {rows_after} row(s) "
-        f"in {table_relative_path}."
+    rows_after = (
+        spark.read.format("delta")
+        .load(table_path)
+        .where(batch_predicate)
+        .count()
     )
 
-print(
-    f"BRONZE_CLEANUP_SUCCESS batch_id={batch_id} "
-    f"target={table_relative_path} rows_removed={rows_before}"
-)
+    if rows_after != 0:
+        raise RuntimeError(
+            f"BRONZE_CLEANUP_INCOMPLETE: batch_id={batch_id} still has {rows_after} row(s) "
+            f"in {table_relative_path}."
+        )
+
+    print(
+        f"BRONZE_CLEANUP_SUCCESS batch_id={batch_id} "
+        f"target={table_relative_path} rows_removed={rows_before}"
+    )
+
+_cleanup_batch_rows()
 
 # METADATA ********************
 
