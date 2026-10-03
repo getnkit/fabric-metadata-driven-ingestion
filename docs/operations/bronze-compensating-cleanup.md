@@ -30,19 +30,23 @@ The notebook resolves the target Delta table, counts rows for the supplied `_bat
 
 The notebook is idempotent: a retry against an already-clean batch succeeds with zero rows removed.
 
+If the target Delta path does not exist because the failed write never created the
+Bronze table/path, cleanup is also a successful no-op. The notebook emits
+`BRONZE_CLEANUP_NOOP ... reason=TARGET_NOT_FOUND` and returns successfully. Other
+read/Delta errors are rethrown rather than treated as absence.
+
 ## Automatic trigger contexts
 
-Current active append paths use the same notebook in two failure contexts:
+Current active append paths invoke the notebook when a Bronze write activity or
+Bronze-writing notebook fails and may have left partial rows:
 
 ```text
 nb_cleanup_bronze_write_failed
-= a Bronze write activity or Bronze-writing notebook failed and may have left partial rows
-
-nb_cleanup_bronze_post_write_failed
-= Bronze write succeeded, but a later control step failed before successful finalization
 ```
 
-The same cleanup notebook logical item is reused; only the calling activity name describes the failure boundary.
+Control-only decisions that do not depend on Bronze output are evaluated before
+Bronze mutation. If one of those decisions fails, the run is finalized as a
+pre-write control failure and no Bronze cleanup is required.
 
 ## Success and failure behavior
 
