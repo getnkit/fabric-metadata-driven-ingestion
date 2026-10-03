@@ -170,7 +170,6 @@
         "type": "ForEach",
         "typeProperties": {
           "isSequential": true,
-          "batchCount": 1,
           "items": {
             "value": "@range(0, int(activity('lkp_config_page_info').output.firstRow.page_count))",
             "type": "Expression"
