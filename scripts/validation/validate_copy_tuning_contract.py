@@ -32,7 +32,7 @@ def iter_activities(activities: Iterable[dict[str, Any]]) -> Iterable[dict[str, 
 
 def has_sql_literal_ending_in_semicolon(expression: str) -> bool:
     """Detect a Fabric expression string literal whose SQL fragment ends in ';'."""
-    return bool(re.search(r"'(?:''|[^'])*;\\s*'", expression))
+    return bool(re.search(r"'(?:''|[^'])*;[ \\t\\r\\n]*'", expression))
 
 
 def main() -> int:
