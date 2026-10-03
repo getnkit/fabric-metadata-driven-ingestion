@@ -5,6 +5,10 @@
              state for all INCREMENTAL source objects. DATABASE, FILE, and future
              API patterns share control.pipeline_watermarks.
 
+             sales.order_items demonstrates metadata-driven Azure SQL
+             DYNAMIC_RANGE partitioning. parallel_copies is intentionally omitted
+             so Fabric keeps service-managed parallelism by default.
+
     Re-run behavior:
       - Existing config rows are updated.
       - Missing config rows are inserted.
