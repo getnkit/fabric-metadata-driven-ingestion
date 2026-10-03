@@ -69,33 +69,23 @@ nb_cleanup_bronze_batch_rows
 
 It deletes Bronze rows for exactly one `_batch_id` and verifies that no rows for that batch remain.
 
-Notebook activity names identify why cleanup was invoked:
+The active automatic-cleanup activity name is:
 
 ```text
 nb_cleanup_bronze_write_failed
-nb_cleanup_bronze_post_write_failed
 ```
 
-The distinction is intentional:
+`write_failed` means the Bronze write activity itself failed and may have left
+partial rows. Control-only decisions that can be evaluated before the write stay
+before the Bronze mutation boundary; failures there are finalized without Delta
+cleanup.
 
-```text
-write_failed
-= the Bronze write activity itself failed and may have left partial rows
-
-post_write_failed
-= the Bronze write succeeded, but a later control step failed before successful finalization
-```
-
-Cleanup-failure branches retain the same context:
+Cleanup-failure branches retain the write context:
 
 ```text
 sp_finalize_bronze_write_cleanup_failed
 fail_bronze_write_cleanup
 fail_bronze_write_cleanup_finalization
-
-sp_finalize_bronze_post_write_cleanup_failed
-fail_bronze_post_write_cleanup
-fail_bronze_post_write_cleanup_finalization
 ```
 
 Audit/error codes mirror the semantic failure boundary:
