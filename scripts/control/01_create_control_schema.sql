@@ -63,6 +63,7 @@ CREATE TABLE control.ingestion_config
     ingestion_pattern    VARCHAR(20) NOT NULL,
     file_format          VARCHAR(30) NULL,
     source_options       NVARCHAR(MAX) NULL,
+    copy_options         NVARCHAR(MAX) NULL,
 
     landing_path         NVARCHAR(1000) NULL,
     target_conn_ref      NVARCHAR(100) NOT NULL,
@@ -97,6 +98,9 @@ CREATE TABLE control.ingestion_config
 
     CONSTRAINT CK_ingestion_config_source_options_json
         CHECK (source_options IS NULL OR ISJSON(source_options) = 1),
+
+    CONSTRAINT CK_ingestion_config_copy_options_json
+        CHECK (copy_options IS NULL OR ISJSON(copy_options) = 1),
 
     CONSTRAINT CK_ingestion_config_source_schema
         CHECK
