@@ -1,0 +1,137 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "FabricSqlDatabaseSource",
+            "sqlReaderQuery": {
+              "value": "@concat(\n    'SELECT ingestion_config_id ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ') ',\n    'ORDER BY ingestion_config_id ',\n    'OFFSET ',\n        string(mul(pipeline().parameters.p_page_index, pipeline().parameters.p_page_size)),\n        ' ROWS ',\n    'FETCH NEXT ',\n        string(pipeline().parameters.p_page_size),\n        ' ROWS ONLY;'\n)",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "FabricSqlDatabaseTable",
+            "schema": [],
+            "connectionSettings": {
+              "name": "sqldb_ingestion_control",
+              "properties": {
+                "type": "FabricSqlDatabase",
+                "typeProperties": {
+                  "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                  "workspaceId": "00000000-0000-0000-0000-000000000000"
+                },
+                "externalReferences": {
+                  "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "lkp_config_page",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": false,
+          "batchCount": 3,
+          "items": {
+            "value": "@activity('lkp_config_page').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "p_batch_id": {
+                    "value": "@pipeline().parameters.p_batch_id",
+                    "type": "Expression"
+                  },
+                  "p_ingestion_config_id": {
+                    "value": "@item().ingestion_config_id",
+                    "type": "Expression"
+                  },
+                  "p_run_type": {
+                    "value": "@pipeline().parameters.p_run_type",
+                    "type": "Expression"
+                  },
+                  "p_requested_lower_bound": {
+                    "value": "@pipeline().parameters.p_lower_bound",
+                    "type": "Expression"
+                  },
+                  "p_requested_upper_bound": {
+                    "value": "@pipeline().parameters.p_upper_bound",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "f6fd3c6d-b1f0-847c-4fc5-924a2d95b546",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "inv_ingest_object",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "fe_ingestion_configs",
+        "dependsOn": [
+          {
+            "activity": "lkp_config_page",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "p_batch_id": {
+        "type": "string"
+      },
+      "p_run_type": {
+        "type": "string"
+      },
+      "p_config_id": {
+        "type": "int"
+      },
+      "p_lower_bound": {
+        "type": "string"
+      },
+      "p_upper_bound": {
+        "type": "string"
+      },
+      "p_page_index": {
+        "type": "int"
+      },
+      "p_page_size": {
+        "type": "int"
+      }
+    }
+  }
+}
