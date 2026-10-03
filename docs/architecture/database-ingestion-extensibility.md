@@ -50,6 +50,19 @@ the source technology, including:
 - extraction predicate syntax
 - source type mapping
 - connector-specific partition/pushdown options
+- connector-specific Copy parallelism overrides when benchmark evidence justifies them
+
+## Copy performance metadata
+
+Connector-native performance hints are stored in the optional
+`control.ingestion_config.copy_options` JSON envelope. The current Azure SQL
+adapter supports `NONE` and `DYNAMIC_RANGE` partition strategies plus an
+optional benchmark-backed `parallel_copies` override.
+
+See [Database Copy Performance Strategy](database-copy-performance.md).
+
+The router passes normalized execution metadata to the connector adapter; it does
+not interpret connector-specific partition semantics itself.
 
 ## Extension rule
 
