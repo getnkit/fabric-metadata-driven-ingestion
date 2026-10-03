@@ -92,6 +92,65 @@ def main() -> int:
         if guard is None:
             errors.append(f"{worker}: missing copy-option validation guard")
 
+        if worker == "pl_ingest_azure_sql_full":
+            physical_auto = by_name.get("copy_physical_partitions_to_bronze_auto")
+            physical_tuned = by_name.get("copy_physical_partitions_to_bronze_tuned")
+
+            if physical_auto is None:
+                errors.append(f"{worker}: missing physical AUTO copy")
+            if physical_tuned is None:
+                errors.append(f"{worker}: missing physical tuned copy")
+
+            for label, activity in (
+                ("physical AUTO", physical_auto),
+                ("physical tuned", physical_tuned),
+            ):
+                if activity is None:
+                    continue
+                source = activity.get("typeProperties", {}).get("source", {})
+                if source.get("partitionOption") != "PhysicalPartitionsOfTable":
+                    errors.append(
+                        f"{worker}: {label} must use PhysicalPartitionsOfTable"
+                    )
+                if "sqlReaderQuery" in source:
+                    errors.append(
+                        f"{worker}: {label} must use native table source, not query"
+                    )
+                additional = source.get("additionalColumns", [])
+                names = {column.get("name") for column in additional}
+                required = {
+                    "_batch_id",
+                    "_pipeline_run_id",
+                    "_ingestion_timestamp",
+                }
+                if not required.issubset(names):
+                    errors.append(
+                        f"{worker}: {label} missing technical additionalColumns"
+                    )
+                dataset = source.get("datasetSettings", {}).get(
+                    "typeProperties", {}
+                )
+                if "schema" not in dataset or "table" not in dataset:
+                    errors.append(
+                        f"{worker}: {label} missing dynamic source schema/table"
+                    )
+
+            if physical_auto is not None and "parallelCopies" in physical_auto.get(
+                "typeProperties", {}
+            ):
+                errors.append(
+                    f"{worker}: physical AUTO copy must omit parallelCopies"
+                )
+
+            if physical_tuned is not None:
+                parallel = physical_tuned.get("typeProperties", {}).get(
+                    "parallelCopies", {}
+                )
+                if parallel.get("value") != "@pipeline().parameters.p_copy_parallel_copies":
+                    errors.append(
+                        f"{worker}: physical tuned copy must use p_copy_parallel_copies"
+                    )
+
     if errors:
         print("ERRORS")
         for error in errors:
