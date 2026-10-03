@@ -51,12 +51,45 @@
         ]
       },
       {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@and(greaterOrEquals(pipeline().parameters.p_config_page_size, 1), lessOrEquals(pipeline().parameters.p_config_page_size, 5000))",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat('Invalid config page size: ', string(pipeline().parameters.p_config_page_size), '. Supported range is 1..5000; default is 1000.')",
+                  "type": "Expression"
+                },
+                "errorCode": "INVALID_CONFIG_PAGE_SIZE"
+              },
+              "name": "fail_invalid_config_page_size",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_valid_config_page_size",
+        "dependsOn": [
+          {
+            "activity": "if_valid_master_request",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
         "type": "Lookup",
         "typeProperties": {
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'CAST(COUNT_BIG(1) AS bigint) AS config_count, ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(int(variables('v_config_page_size')), 1)),\n        ') / ',\n        variables('v_config_page_size'),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ');'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'CAST(COUNT_BIG(1) AS bigint) AS config_count, ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ');'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -93,7 +126,7 @@
         "name": "lkp_config_page_info",
         "dependsOn": [
           {
-            "activity": "if_valid_master_request",
+            "activity": "if_valid_config_page_size",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -172,7 +205,7 @@
                     "type": "Expression"
                   },
                   "p_page_size": {
-                    "value": "@int(variables('v_config_page_size'))",
+                    "value": "@pipeline().parameters.p_config_page_size",
                     "type": "Expression"
                   }
                 },
@@ -221,15 +254,15 @@
       },
       "p_upper_bound": {
         "type": "string"
+      },
+      "p_config_page_size": {
+        "type": "int",
+        "defaultValue": 1000
       }
     },
     "variables": {
       "v_batch_id": {
         "type": "String"
-      },
-      "v_config_page_size": {
-        "type": "String",
-        "defaultValue": "1000"
       }
     },
     "concurrency": 1
