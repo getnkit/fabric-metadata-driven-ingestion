@@ -19,12 +19,12 @@ Official references:
 |---|---|---|
 | Lookup rows | 5,000 rows | Master metadata enumeration is paged. Default page size is 1,000 and requests are rejected above 5,000. |
 | Lookup output | 4 MB | Each config page returns only `ingestion_config_id`, keeping payload small. Other active lookups are single-config or scalar queries. |
-| Activities per pipeline | 120 including inner container activities | Keep connector/routing responsibilities separated into bounded child pipelines and validate activity counts statically. |
-| Pipeline parameters | 50 | Current pipelines remain well below the limit; static validation checks the count. |
+| Activities per pipeline | 120 including inner container activities | Keep connector/routing responsibilities separated into bounded child pipelines and review pipeline size when extending the framework. |
+| Pipeline parameters | 50 | Current pipelines remain well below the limit; keep parameter contracts bounded when extending adapters. |
 | ForEach items | 100,000 | Config page worker receives at most 5,000 items and defaults to 1,000. |
 | ForEach parallelism | default 20, maximum 50 | `fe_ingestion_configs` intentionally uses `batchCount = 3` to bound downstream concurrency. |
 | Nested ForEach / Until pattern | ADF orchestration guidance does not allow direct ForEach nesting in another ForEach or Until | Two-level pipeline pattern is used when paging is required. |
-| Expression length | 8,192 characters | Static validation checks expression length. |
+| Expression length | 8,192 characters | Keep dynamic expressions focused and review long generated expressions before release. |
 | Activity-run payload | 896 KB | Pipelines pass metadata, IDs, paths, and connection references rather than row-level datasets between activities. |
 | Concurrent Lookup / GetMetadata / Delete per workspace | 100 | Master pagination is sequential across pages and inner config parallelism is bounded. |
 | Maximum queued runs per pipeline | 100 | `pl_master_ingestion` keeps `concurrency = 1`; trigger cadence should be managed operationally. |
@@ -100,21 +100,3 @@ SFTP -> Landing
 Notebook is used only when Spark/Delta processing adds value, such as recursive Landing parsing, technical metadata enrichment, or compensating Delta cleanup.
 
 For SFTP incremental ingestion, Microsoft notes that Last Modified filtering can affect data-movement performance when a source contains very large numbers of files. This is a scale consideration rather than a hard correctness limit. If that becomes material, prefer source-side partitioning or a manifest/receipt-state pattern instead of rebuilding recursive traversal in pipeline control flow.
-
-## Validation
-
-Run:
-
-```bash
-python scripts/validation/validate_fabric_pipeline_limits.py
-```
-
-The validator checks static limits that can be detected from Git artifacts:
-
-- activities per pipeline
-- parameters per pipeline
-- ForEach `batchCount`
-- expression length
-- master config page-size default
-
-Runtime/data-dependent limits such as Lookup result size still require design-time bounded queries and acceptance testing.
