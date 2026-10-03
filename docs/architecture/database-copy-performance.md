@@ -209,6 +209,23 @@ Do not infer the number from row count alone. Row width, source indexes, skew,
 database compute, network capacity, sink throughput, concurrent workloads, and
 the selected partition column all affect the useful parallelism.
 
+## Static validation
+
+Run:
+
+```bash
+python scripts/validation/validate_copy_tuning_contract.py
+```
+
+The validator checks that both Azure SQL workers keep separate AUTO and tuned
+copy branches, that AUTO omits `parallelCopies`, that tuned mode binds the
+metadata override, and that the dynamic-range placeholder/partition-column
+contract is present.
+
+This is static validation only. Fabric Git sync plus a non-empty pipeline run is
+still required to acceptance-test the runtime expression shape and connector
+behavior.
+
 ## Extension boundary
 
 `copy_options` is a shared metadata envelope, but the keys an adapter supports
