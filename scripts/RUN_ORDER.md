@@ -77,7 +77,7 @@ are hosted in the same Microsoft Entra tenant.
 - `audit.ingestion_log` stores one terminal row per child pipeline execution.
 - `pipeline_run_id` is unique because one Fabric child RunId maps to one terminal audit row.
 - No custom ingestion-lock table is used in the core implementation.
-- Normal operational execution must enter through `pl_master_ingestion`, configured with pipeline concurrency = 1.
+- Normal operational execution must enter through `pl_ingest_orchestrator`, configured with pipeline concurrency = 1.
 - Optimistic watermark comparison remains the state-safety check during finalization.
 
 ## 5) Current relational Bronze target convention
@@ -132,11 +132,11 @@ All changes use the same fresh `SYSUTCDATETIME()` timestamp, making the next inc
 The first FILE route is:
 
 ```text
-pl_ingest_object
+pl_ingest_object_controller
   -> FILE|LAKEHOUSE|FULL
-  -> pl_ingest_file_full
+  -> pl_ingest_file_full_router
   -> SFTP
-  -> pl_ingest_sftp_full
+  -> pl_ingest_sftp_full_adapter
 ```
 
 The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
@@ -173,11 +173,11 @@ DATABASE, FILE, and future API adapters; there is no second
 The first FILE incremental route is:
 
 ```text
-pl_ingest_object
+pl_ingest_object_controller
   -> FILE|LAKEHOUSE|INCREMENTAL
-  -> pl_ingest_file_incremental
+  -> pl_ingest_file_incremental_router
   -> SFTP
-  -> pl_ingest_sftp_incremental
+  -> pl_ingest_sftp_incremental_adapter
   -> recursive Binary copy to Landing
   -> nb_load_landing_to_bronze
 ```

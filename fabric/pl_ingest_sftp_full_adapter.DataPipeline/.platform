@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pl_ingest_sftp_full_adapter"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "91a8fd2c-64dd-4f2f-a9a2-c52bc3d2d1b7"
+  }
+}

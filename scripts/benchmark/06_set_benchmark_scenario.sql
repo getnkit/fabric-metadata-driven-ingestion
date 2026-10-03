@@ -15,7 +15,7 @@
       positive integer = explicit benchmark-backed override
 
     After running a non-DISABLE scenario, use the returned ingestion_config_id
-    as p_config_id in pl_master_ingestion. Run DISABLE after the benchmark.
+    as p_config_id in pl_ingest_orchestrator. Run DISABLE after the benchmark.
 */
 
 SET NOCOUNT ON;

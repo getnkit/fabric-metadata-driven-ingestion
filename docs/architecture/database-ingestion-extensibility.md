@@ -7,18 +7,18 @@ Accepted for the current blueprint.
 ## Current architecture
 
 ```text
-pl_master_ingestion
-  -> pl_ingest_object
+pl_ingest_orchestrator
+  -> pl_ingest_object_controller
       -> DATABASE|LAKEHOUSE|INCREMENTAL
-          -> pl_ingest_database_incremental
+          -> pl_ingest_database_incremental_router
               -> source_connection_type
                   -> AZURE_SQL
-                      -> pl_ingest_azure_sql_incremental
+                      -> pl_ingest_azure_sql_incremental_adapter
       -> DATABASE|LAKEHOUSE|FULL
-          -> pl_ingest_database_full
+          -> pl_ingest_database_full_router
               -> source_connection_type
                   -> AZURE_SQL
-                      -> pl_ingest_azure_sql_full
+                      -> pl_ingest_azure_sql_full_adapter
 ```
 
 The DATABASE pipelines are intentionally thin connector routers. Their purpose is
@@ -76,7 +76,7 @@ shared contract is proven.
 The likely future shape is:
 
 ```text
-pl_ingest_database_incremental
+pl_ingest_database_incremental_router
   -> common database state/boundary orchestration
   -> connector adapter
        -> Azure SQL

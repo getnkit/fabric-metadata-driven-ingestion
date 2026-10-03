@@ -317,7 +317,7 @@ time window.
 The current SFTP incremental physical flow is therefore:
 
 ```text
-pl_ingest_sftp_incremental
+pl_ingest_sftp_incremental_adapter
   -> if_supported_file_format
   -> copy_sftp_to_landing
        recursive = true

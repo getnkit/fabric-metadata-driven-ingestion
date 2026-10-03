@@ -27,7 +27,7 @@ Official references:
 | Expression length | 8,192 characters | Keep dynamic expressions focused and review long generated expressions before release. |
 | Activity-run payload | 896 KB | Pipelines pass metadata, IDs, paths, and connection references rather than row-level datasets between activities. |
 | Concurrent Lookup / GetMetadata / Delete per workspace | 100 | Master pagination is sequential across pages and inner config parallelism is bounded. |
-| Maximum queued runs per pipeline | 100 | `pl_master_ingestion` keeps `concurrency = 1`; trigger cadence should be managed operationally. |
+| Maximum queued runs per pipeline | 100 | `pl_ingest_orchestrator` keeps `concurrency = 1`; trigger cadence should be managed operationally. |
 | Activity timeout | 24 hours in the current pipeline resource-limit table | Current project activity policies remain below the platform ceiling. |
 
 ## Lookup pagination design
@@ -44,18 +44,18 @@ That pattern silently truncates once Lookup returns more than 5,000 rows.
 The production-safe pattern is:
 
 ```text
-pl_master_ingestion
+pl_ingest_orchestrator
   -> lkp_config_page_info
   -> fe_config_pages (sequential)
-       -> inv_ingest_config_page
+       -> inv_ingest_config_page_dispatcher
 
-pl_ingest_config_page
+pl_ingest_config_page_dispatcher
   -> lkp_config_page
        OFFSET page_index * page_size
        FETCH NEXT page_size
   -> fe_ingestion_configs
        batchCount = 3
-       -> inv_ingest_object
+       -> inv_ingest_object_controller
 ```
 
 Default:

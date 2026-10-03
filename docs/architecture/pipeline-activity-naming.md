@@ -130,41 +130,53 @@ Do not automatically delete Bronze rows after `sp_finalize_success` itself fails
 
 ## Pipeline names
 
-Pipeline names distinguish orchestration from the worker that performs the data load:
+Active ingestion pipelines use the `pl_ingest_` workload namespace so that ingestion items remain identifiable when the workspace later contains transformation, data-quality, or maintenance pipelines.
+
+The naming shape is role-oriented:
 
 ```text
-pl_master_ingestion
-= top-level framework entry point
-
-pl_ingest_<pattern>_<strategy>
-= pattern-level ingestion routing/orchestration
-
-pl_ingest_<connector>_<strategy>
-= connector-level ingestion orchestration
-
-pl_load_<connector>_<strategy>
-= worker used only when a separate physical load stage is justified
-
-pl_ingest_config_page
-= bounded metadata-page worker used to keep Lookup enumeration below platform limits
+pl_ingest_<scope>_<role>
 ```
 
-Current incremental worker example:
+The role suffix communicates the pipeline's responsibility in the ingestion hierarchy:
+
+| Role | Responsibility |
+|---|---|
+| `orchestrator` | Top-level ingestion framework entry point; establishes run scope and coordinates config-page execution. |
+| `dispatcher` | Enumerates and dispatches a bounded page of ingestion configurations. |
+| `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
+| `router` | Selects the connector-specific implementation for a generic ingestion pattern such as DATABASE/FULL or FILE/INCREMENTAL. |
+| `adapter` | Converts generic ingestion metadata into connector-specific configuration **and executes the connector-specific ingestion flow**. It is not only a metadata translator. |
+| `loader` | Optional physical load sub-step split from an adapter only when a separate execution boundary is technically justified. |
+
+Current active hierarchy:
 
 ```text
-pl_load_azure_sql_incremental
+pl_ingest_orchestrator
+  -> pl_ingest_config_page_dispatcher
+    -> pl_ingest_object_controller
+      -> pl_ingest_database_full_router
+        -> pl_ingest_azure_sql_full_adapter
+      -> pl_ingest_database_incremental_router
+        -> pl_ingest_azure_sql_incremental_adapter
+          -> pl_ingest_azure_sql_incremental_loader
+      -> pl_ingest_file_full_router
+        -> pl_ingest_sftp_full_adapter
+      -> pl_ingest_file_incremental_router
+        -> pl_ingest_sftp_incremental_adapter
 ```
 
-SFTP incremental stays inside `pl_ingest_sftp_incremental` because the native SFTP Copy activity can recursively land the complete candidate file set in one activity; a separate scanner/loader pipeline would add orchestration without adding a real connector boundary.
+`config_page` is deliberate terminology: the dispatcher reads a deterministic SQL page of configuration IDs using `ORDER BY ... OFFSET ... FETCH NEXT ...`, keeping each Lookup result within the platform row limit. `page` is kept distinct from the framework's ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 
 Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix:
 
 ```text
-pl_ingest_database_incremental -> inv_ingest_database_incremental
-pl_ingest_azure_sql_incremental -> inv_ingest_azure_sql_incremental
-pl_load_azure_sql_incremental -> inv_load_azure_sql_incremental
-pl_ingest_sftp_incremental -> inv_ingest_sftp_incremental
-pl_ingest_config_page -> inv_ingest_config_page
+pl_ingest_config_page_dispatcher          -> inv_ingest_config_page_dispatcher
+pl_ingest_object_controller               -> inv_ingest_object_controller
+pl_ingest_database_incremental_router     -> inv_ingest_database_incremental_router
+pl_ingest_azure_sql_incremental_adapter   -> inv_ingest_azure_sql_incremental_adapter
+pl_ingest_azure_sql_incremental_loader    -> inv_ingest_azure_sql_incremental_loader
+pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter
 ```
 
-The `load` verb is preferred over `process` when a separate worker is needed because its responsibility is ingestion data movement, not downstream transformation. Do not create a worker pipeline solely to break up a flow that a native connector activity can already perform cleanly.
+Do not add a loader merely for naming symmetry. For example, Azure SQL FULL and the SFTP adapters remain single connector-specific adapter pipelines because their native activity structure does not require the additional pipeline boundary. The Azure SQL incremental loader exists because the adapter needs a separate physical-load execution boundary for its nested branching structure.

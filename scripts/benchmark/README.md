@@ -92,7 +92,7 @@ The scenario script disables both benchmark configs, activates exactly one, sets
 its `copy_options`, selects a scenario-specific Bronze target table, and returns
 the `ingestion_config_id`.
 
-Run `pl_master_ingestion` with:
+Run `pl_ingest_orchestrator` with:
 
 ```text
 p_config_id = <returned ingestion_config_id>
