@@ -85,12 +85,53 @@ def main() -> int:
 
         for activity in activities:
             if activity.get("type") == "ForEach":
-                batch_count = activity.get("typeProperties", {}).get("batchCount")
+                type_properties = activity.get("typeProperties", {})
+                batch_count = type_properties.get("batchCount")
+                if type_properties.get("isSequential") is True and "batchCount" in type_properties:
+                    errors.append(
+                        f"{display}/{activity.get('name')}: "
+                        "sequential ForEach must omit batchCount"
+                    )
                 if isinstance(batch_count, int) and batch_count > MAX_FOREACH_BATCH_COUNT:
                     errors.append(
                         f"{display}/{activity.get('name')}: "
                         f"batchCount={batch_count} exceeds {MAX_FOREACH_BATCH_COUNT}"
                     )
+
+        def validate_decision_nesting(
+            nested_activities: Iterable[dict[str, Any]],
+            parent_decision: str | None = None,
+        ) -> None:
+            for nested_activity in nested_activities:
+                activity_type = nested_activity.get("type")
+                activity_name = nested_activity.get("name")
+                is_decision = activity_type in {"IfCondition", "Switch"}
+
+                if is_decision and parent_decision in {"IfCondition", "Switch"}:
+                    errors.append(
+                        f"{display}/{activity_name}: "
+                        f"{activity_type} cannot be nested inside {parent_decision}"
+                    )
+
+                next_parent = activity_type if is_decision else parent_decision
+                tp = nested_activity.get("typeProperties", {})
+
+                for key in (
+                    "activities",
+                    "ifTrueActivities",
+                    "ifFalseActivities",
+                    "defaultActivities",
+                ):
+                    nested = tp.get(key)
+                    if isinstance(nested, list):
+                        validate_decision_nesting(nested, next_parent)
+
+                for case in tp.get("cases", []) or []:
+                    nested = case.get("activities")
+                    if isinstance(nested, list):
+                        validate_decision_nesting(nested, next_parent)
+
+        validate_decision_nesting(properties.get("activities", []))
 
         for expression in iter_expressions(payload):
             length = len(expression)
