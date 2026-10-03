@@ -45,6 +45,7 @@ Expected metadata state after seeding:
 - FILE/FULL `LOGISTICS_VENDOR.inventory_snapshot` is active
 - FILE/INCREMENTAL `LOGISTICS_VENDOR.inventory_movement` is active after the incremental route is synced
 - Current DATABASE configs use `source_path = NULL`, `source_options = NULL`, and `landing_path = NULL`
+- `copy_options` is NULL by default; `sales.order_items` demonstrates `DYNAMIC_RANGE` on `order_item_id` with service-managed copy parallelism
 - `control.pipeline_watermarks` = 6 rows: 5 DATABASE incremental + 1 FILE incremental
 - `catalog.product_categories` is FULL, so it has no watermark row
 - DATABASE incremental objects start at `1900-01-01T00:00:00.000`
@@ -101,6 +102,12 @@ For an existing live control database created before M76, run
 `scripts/control/migrations/001_refine_ingestion_metadata.sql` instead of rerunning
 the destructive bootstrap schema script.
 
+For a live control database created before database copy tuning metadata was added, also run:
+
+`scripts/control/migrations/006_add_copy_options.sql`
+
+Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pipeline artifacts are synced.
+
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
 `scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`, then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh FILE metadata. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
 
@@ -132,7 +139,7 @@ pl_ingest_object
   -> pl_ingest_sftp_full
 ```
 
-The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then routes on `file_format`. The currently implemented `DELIMITED_TEXT` branch reads the Landing file as DelimitedText and appends it to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, and `_ingestion_timestamp`.
+The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
 
 The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
@@ -171,7 +178,8 @@ pl_ingest_object
   -> pl_ingest_file_incremental
   -> SFTP
   -> pl_ingest_sftp_incremental
-  -> pl_load_sftp_incremental
+  -> recursive Binary copy to Landing
+  -> nb_load_landing_to_bronze
 ```
 
 The incremental feed is:
@@ -187,13 +195,12 @@ load_strategy      = INCREMENTAL
 watermark_field    = last_modified_time
 ```
 
-The FILE format is first-class routing metadata. Source-to-Landing remains Binary/raw, then the pipeline routes by `file_format` before parsing into Bronze. The currently implemented parser branch is `DELIMITED_TEXT`; unsupported formats fail explicitly until their parser branch is implemented.
+The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
 The current implementation supports `REGULAR` FILE incremental runs only.
-It asks the SFTP connector for child files in the native Last Modified window
+It asks the SFTP connector to recursively copy all matching files in the native Last Modified window
 `[current watermark, run start time)`, applies the metadata filename pattern,
-and processes matching files sequentially. After a successful scan, the
-checkpoint advances to the run start time.
+and preserves source-relative hierarchy under the batch Landing root. The generic notebook then recursively parses that batch Landing folder. After a successful load, the checkpoint advances to the run start time.
 
 Acceptance fixtures:
 
