@@ -2,32 +2,6 @@
   "properties": {
     "activities": [
       {
-        "type": "IfCondition",
-        "typeProperties": {
-          "expression": {
-            "value": "@and(and(greaterOrEquals(pipeline().parameters.p_page_size, 1), lessOrEquals(pipeline().parameters.p_page_size, 5000)), greaterOrEquals(pipeline().parameters.p_page_index, 0))",
-            "type": "Expression"
-          },
-          "ifTrueActivities": [],
-          "ifFalseActivities": [
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@concat('Invalid config page request: page_index=', string(pipeline().parameters.p_page_index), ', page_size=', string(pipeline().parameters.p_page_size), '. page_index must be >= 0 and page_size must be 1..5000.')",
-                  "type": "Expression"
-                },
-                "errorCode": "INVALID_CONFIG_PAGE_REQUEST"
-              },
-              "name": "fail_invalid_config_page_request",
-              "dependsOn": []
-            }
-          ]
-        },
-        "name": "if_valid_config_page_request",
-        "dependsOn": []
-      },
-      {
         "type": "Lookup",
         "typeProperties": {
           "source": {
@@ -68,14 +42,7 @@
           "secureOutput": false
         },
         "name": "lkp_config_page",
-        "dependsOn": [
-          {
-            "activity": "if_valid_config_page_request",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
+        "dependsOn": []
       },
       {
         "type": "ForEach",

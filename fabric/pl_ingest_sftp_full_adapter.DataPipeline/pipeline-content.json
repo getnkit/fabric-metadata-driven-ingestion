@@ -207,25 +207,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_file_format').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_file_format_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_file_format",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -1112,25 +1093,6 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('sp_finalize_bronze_write_cleanup_failed').error.message",
-            "type": "Expression"
-          },
-          "errorCode": "FINALIZATION_FAILED"
-        },
-        "name": "fail_bronze_write_cleanup_finalization",
-        "dependsOn": [
-          {
-            "activity": "sp_finalize_bronze_write_cleanup_failed",
-            "dependencyConditions": [
-              "Failed"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "Fail",
-        "typeProperties": {
-          "message": {
             "value": "@activity('nb_load_landing_to_bronze').error.message",
             "type": "Expression"
           },
@@ -1142,25 +1104,6 @@
             "activity": "sp_finalize_bronze_write_failed",
             "dependencyConditions": [
               "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "Fail",
-        "typeProperties": {
-          "message": {
-            "value": "@activity('sp_finalize_bronze_write_failed').error.message",
-            "type": "Expression"
-          },
-          "errorCode": "FINALIZATION_FAILED"
-        },
-        "name": "fail_bronze_write_finalization",
-        "dependsOn": [
-          {
-            "activity": "sp_finalize_bronze_write_failed",
-            "dependencyConditions": [
-              "Failed"
             ]
           }
         ]
@@ -1366,25 +1309,6 @@
             "activity": "sp_finalize_landing_write_failed",
             "dependencyConditions": [
               "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "Fail",
-        "typeProperties": {
-          "message": {
-            "value": "@activity('sp_finalize_landing_write_failed').error.message",
-            "type": "Expression"
-          },
-          "errorCode": "FINALIZATION_FAILED"
-        },
-        "name": "fail_landing_write_finalization",
-        "dependsOn": [
-          {
-            "activity": "sp_finalize_landing_write_failed",
-            "dependencyConditions": [
-              "Failed"
             ]
           }
         ]

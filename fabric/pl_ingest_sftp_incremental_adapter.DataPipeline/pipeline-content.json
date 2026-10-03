@@ -253,25 +253,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_state_not_found').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_state_not_found_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_state_not_found",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -476,7 +457,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_unsupported_watermark",
+              "name": "sp_finalize_unsupported_watermark_field",
               "dependsOn": []
             },
             {
@@ -488,38 +469,19 @@
                 },
                 "errorCode": "UNSUPPORTED_FILE_WATERMARK"
               },
-              "name": "fail_unsupported_watermark",
+              "name": "fail_unsupported_watermark_field",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_unsupported_watermark",
+                  "activity": "sp_finalize_unsupported_watermark_field",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_watermark').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_watermark_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_watermark",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
             }
           ]
         },
-        "name": "if_supported_watermark",
+        "name": "if_supported_watermark_field",
         "dependsOn": [
           {
             "activity": "if_state_found",
@@ -545,7 +507,7 @@
         "name": "set_processing_upper_bound",
         "dependsOn": [
           {
-            "activity": "if_supported_watermark",
+            "activity": "if_supported_watermark_field",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -764,25 +726,6 @@
                   "activity": "sp_finalize_unsupported_file_format",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_file_format').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_file_format_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_file_format",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
@@ -1715,25 +1658,6 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@activity('sp_finalize_bronze_write_cleanup_failed').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_bronze_write_cleanup_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_bronze_write_cleanup_failed",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
                   "value": "@activity('nb_load_landing_to_bronze').error.message",
                   "type": "Expression"
                 },
@@ -1745,25 +1669,6 @@
                   "activity": "sp_finalize_bronze_write_failed",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_bronze_write_failed').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_bronze_write_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_bronze_write_failed",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
@@ -2174,25 +2079,6 @@
             "activity": "sp_finalize_landing_write_failed",
             "dependencyConditions": [
               "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "Fail",
-        "typeProperties": {
-          "message": {
-            "value": "@activity('sp_finalize_landing_write_failed').error.message",
-            "type": "Expression"
-          },
-          "errorCode": "FINALIZATION_FAILED"
-        },
-        "name": "fail_landing_write_finalization",
-        "dependsOn": [
-          {
-            "activity": "sp_finalize_landing_write_failed",
-            "dependencyConditions": [
-              "Failed"
             ]
           }
         ]

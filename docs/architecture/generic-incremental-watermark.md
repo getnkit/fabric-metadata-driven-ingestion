@@ -65,6 +65,19 @@ processing_lower_bound   = 2026-09-27T10:00:00.000Z
 processing_upper_bound   = 2026-09-27T11:00:00.000Z
 ```
 
+For DATABASE timestamp-watermark ingestion, boundary semantics are:
+
+```text
+REGULAR:
+  upper > lower  -> process
+  upper = lower  -> valid no-new-data window -> SKIPPED
+  upper < lower  -> invalid boundary -> FAILED
+
+RERUN / BACKFILL:
+  upper > lower  -> process
+  upper <= lower -> invalid boundary -> FAILED
+```
+
 ## FILE incremental choice
 
 The first FILE incremental feed uses:

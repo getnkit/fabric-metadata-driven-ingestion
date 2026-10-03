@@ -20,11 +20,17 @@ Microsoft defines syntax and length rules for activity names, but does not presc
 | Stored Procedure | `sp_` |
 | Fail | `fail_` |
 
+Set Variable activity names mirror the variable they set, dropping the variable's `v_` prefix:
+
+```text
+v_advance_watermark -> set_advance_watermark
+```
+
 Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activities describe the data-layer effect rather than the implementation primitive, so target mutation failures use `write` / `post_write`.
 
 ## Finalization
 
-Object-level terminal outcomes use a single audit policy: once an ingestion configuration has been resolved and the run has a batch/config identity, terminal outcomes are finalized to the ingestion audit as `SUCCESS`, `SKIPPED`, or `FAILED` before the pipeline terminates. Framework-level request validation that occurs before an ingestion object/configuration is resolved may fail without creating an ingestion audit record.
+Expected object-level terminal outcomes use a single audit policy: once an ingestion configuration has been resolved and the run has a batch/config identity, semantic terminal outcomes are finalized to the ingestion audit as `SUCCESS`, `SKIPPED`, or `FAILED` before the pipeline terminates. Framework-level request validation that occurs before an ingestion object/configuration is resolved may fail without creating an ingestion audit record.
 
 Successful terminal states use:
 
@@ -33,12 +39,20 @@ sp_finalize_success
 sp_finalize_skipped
 ```
 
+For expected failure outcomes, the finalization stored procedure records the `FAILED` audit first. A semantic Fail activity runs only after that stored procedure succeeds:
+
+```text
+sp_finalize_<failure>
+fail_<failure>
+```
+
+If a finalization stored procedure itself fails, let that activity failure propagate naturally. Do not add a second `fail_*_finalization` wrapper: it cannot recover or persist the missing audit and only adds orchestration ceremony.
+
 For target-write failures:
 
 ```text
 sp_finalize_<target>_write_failed
 fail_<target>_write
-fail_<target>_write_finalization
 ```
 
 Examples:
@@ -46,11 +60,9 @@ Examples:
 ```text
 sp_finalize_landing_write_failed
 fail_landing_write
-fail_landing_write_finalization
 
 sp_finalize_bronze_write_failed
 fail_bronze_write
-fail_bronze_write_finalization
 ```
 
 For non-write failures, use the failing operation/stage name:
@@ -58,8 +70,9 @@ For non-write failures, use the failing operation/stage name:
 ```text
 sp_finalize_source_query_failed
 fail_source_query
-fail_source_query_finalization
 ```
+
+Unexpected framework/runtime faults in lightweight control activities may bubble naturally when no meaningful recovery or compensating action is added. Do not create a dedicated Stored Procedure + Fail branch around every Set Variable or expression solely for audit completeness.
 
 ## Bronze compensating cleanup
 
@@ -87,7 +100,6 @@ Cleanup-failure branches retain the write context:
 ```text
 sp_finalize_bronze_write_cleanup_failed
 fail_bronze_write_cleanup
-fail_bronze_write_cleanup_finalization
 ```
 
 Audit/error codes mirror the semantic failure boundary:
@@ -97,7 +109,6 @@ LANDING_WRITE_FAILED
 BRONZE_WRITE_FAILED
 BRONZE_POST_WRITE_FAILED
 BRONZE_CLEANUP_FAILED
-FINALIZATION_FAILED
 ```
 
 ## Pipeline vs Notebook Boundary
@@ -165,6 +176,8 @@ pl_ingest_orchestrator
       -> pl_ingest_file_incremental_router
         -> pl_ingest_sftp_incremental_adapter
 ```
+
+`pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
 
 `config_page` is deliberate terminology: the dispatcher reads a deterministic SQL page of configuration IDs using `ORDER BY ... OFFSET ... FETCH NEXT ...`, keeping each Lookup result within the platform row limit. `page` is kept distinct from the framework's ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 

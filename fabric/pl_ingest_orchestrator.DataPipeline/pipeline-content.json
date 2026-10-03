@@ -30,17 +30,17 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid master request: run_type=',\n    pipeline().parameters.p_run_type,\n    ', config_id=',\n    string(pipeline().parameters.p_config_id),\n    '. REGULAR supports config_id >= 0; RERUN and BACKFILL require config_id > 0.'\n)",
+                  "value": "@concat(\n    'Invalid run request: run_type=',\n    pipeline().parameters.p_run_type,\n    ', config_id=',\n    string(pipeline().parameters.p_config_id),\n    '. REGULAR supports config_id >= 0; RERUN and BACKFILL require config_id > 0.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"
               },
-              "name": "fail_invalid_master_request",
+              "name": "fail_invalid_run_request",
               "dependsOn": []
             }
           ]
         },
-        "name": "if_valid_master_request",
+        "name": "if_valid_run_request",
         "dependsOn": [
           {
             "activity": "set_batch_id",
@@ -76,7 +76,7 @@
         "name": "if_valid_config_page_size",
         "dependsOn": [
           {
-            "activity": "if_valid_master_request",
+            "activity": "if_valid_run_request",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -123,7 +123,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "lkp_config_page_info",
+        "name": "lkp_config_pagination_info",
         "dependsOn": [
           {
             "activity": "if_valid_config_page_size",
@@ -137,7 +137,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@greater(int(activity('lkp_config_page_info').output.firstRow.config_count), 0)",
+            "value": "@greater(int(activity('lkp_config_pagination_info').output.firstRow.config_count), 0)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -159,7 +159,7 @@
         "name": "if_configs_found",
         "dependsOn": [
           {
-            "activity": "lkp_config_page_info",
+            "activity": "lkp_config_pagination_info",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -171,7 +171,7 @@
         "typeProperties": {
           "isSequential": true,
           "items": {
-            "value": "@range(0, int(activity('lkp_config_page_info').output.firstRow.page_count))",
+            "value": "@range(0, int(activity('lkp_config_pagination_info').output.firstRow.page_count))",
             "type": "Expression"
           },
           "activities": [

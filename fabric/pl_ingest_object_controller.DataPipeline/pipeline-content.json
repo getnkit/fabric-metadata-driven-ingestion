@@ -41,39 +41,6 @@
         ]
       },
       {
-        "type": "IfCondition",
-        "typeProperties": {
-          "expression": {
-            "value": "@or(\n    or(\n        equals(variables('v_run_type'), 'REGULAR'),\n        equals(variables('v_run_type'), 'RERUN')\n    ),\n    equals(variables('v_run_type'), 'BACKFILL')\n)",
-            "type": "Expression"
-          },
-          "ifTrueActivities": [],
-          "ifFalseActivities": [
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@concat(\n    'Invalid run type: ',\n    variables('v_run_type'),\n    '. Supported values are REGULAR, RERUN, BACKFILL.'\n)",
-                  "type": "Expression"
-                },
-                "errorCode": "INVALID_RUN_REQUEST"
-              },
-              "name": "fail_invalid_run_type",
-              "dependsOn": []
-            }
-          ]
-        },
-        "name": "if_valid_run_type",
-        "dependsOn": [
-          {
-            "activity": "set_run_type",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
         "type": "Lookup",
         "typeProperties": {
           "source": {
@@ -116,7 +83,7 @@
         "name": "lkp_ingestion_config",
         "dependsOn": [
           {
-            "activity": "if_valid_run_type",
+            "activity": "set_run_type",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -388,25 +355,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_config_inactive').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_config_inactive_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_config_inactive",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -629,25 +577,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_run_request').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_run_request_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_run_request",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -867,25 +796,6 @@
                   "activity": "sp_finalize_invalid_boundary_request",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_invalid_boundary_request').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_invalid_boundary_request_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_invalid_boundary_request",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
@@ -1557,25 +1467,6 @@
                   "activity": "sp_finalize_unsupported_ingestion_route",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_ingestion_route').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_ingestion_route_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_ingestion_route",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]

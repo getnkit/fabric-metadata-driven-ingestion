@@ -319,25 +319,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_file_connection').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_file_connection_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_file_connection",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },

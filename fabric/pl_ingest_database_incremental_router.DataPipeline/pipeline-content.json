@@ -327,25 +327,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_unsupported_database_connection').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_unsupported_database_connection_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_unsupported_database_connection",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },

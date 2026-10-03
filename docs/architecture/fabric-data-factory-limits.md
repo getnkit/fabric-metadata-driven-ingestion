@@ -17,7 +17,7 @@ Official references:
 
 | Area | Current documented limit / constraint | Framework handling |
 |---|---|---|
-| Lookup rows | 5,000 rows | Master metadata enumeration is paged. Default page size is 1,000 and requests are rejected above 5,000. |
+| Lookup rows | 5,000 rows | Orchestrator metadata enumeration is paged. Default page size is 1,000 and requests are rejected above 5,000. |
 | Lookup output | 4 MB | Each config page returns only `ingestion_config_id`, keeping payload small. Other active lookups are single-config or scalar queries. |
 | Activities per pipeline | 120 including inner container activities | Keep connector/routing responsibilities separated into bounded child pipelines and review pipeline size when extending the framework. |
 | Pipeline parameters | 50 | Current pipelines remain well below the limit; keep parameter contracts bounded when extending adapters. |
@@ -26,13 +26,13 @@ Official references:
 | Nested ForEach / Until pattern | ADF orchestration guidance does not allow direct ForEach nesting in another ForEach or Until | Two-level pipeline pattern is used when paging is required. |
 | Expression length | 8,192 characters | Keep dynamic expressions focused and review long generated expressions before release. |
 | Activity-run payload | 896 KB | Pipelines pass metadata, IDs, paths, and connection references rather than row-level datasets between activities. |
-| Concurrent Lookup / GetMetadata / Delete per workspace | 100 | Master pagination is sequential across pages and inner config parallelism is bounded. |
+| Concurrent Lookup / GetMetadata / Delete per workspace | 100 | Orchestrator pagination is sequential across pages and inner config parallelism is bounded. |
 | Maximum queued runs per pipeline | 100 | `pl_ingest_orchestrator` keeps `concurrency = 1`; trigger cadence should be managed operationally. |
 | Activity timeout | 24 hours in the current pipeline resource-limit table | Current project activity policies remain below the platform ceiling. |
 
 ## Lookup pagination design
 
-The original master pattern was:
+The original single-lookup pattern was:
 
 ```text
 lkp_active_configs
@@ -45,7 +45,7 @@ The production-safe pattern is:
 
 ```text
 pl_ingest_orchestrator
-  -> lkp_config_page_info
+  -> lkp_config_pagination_info
   -> fe_config_pages (sequential)
        -> inv_ingest_config_page_dispatcher
 
@@ -80,7 +80,7 @@ For acceptance testing, the page size can temporarily be set to a small value su
 
 The framework avoids shared pipeline-variable mutation inside parallel ForEach loops. Variables are pipeline-scoped rather than iteration-scoped, so stateful per-item work belongs in the invoked child pipeline or should run sequentially.
 
-The master page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied only inside the bounded config page worker.
+The orchestrator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied only inside the bounded config page worker.
 
 ### Get Metadata
 

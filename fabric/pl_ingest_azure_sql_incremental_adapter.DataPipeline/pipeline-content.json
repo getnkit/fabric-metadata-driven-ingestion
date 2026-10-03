@@ -253,25 +253,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_state_not_found').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_state_not_found_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_state_not_found",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -491,25 +472,6 @@
                   "activity": "sp_finalize_watermark_field_mismatch",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_watermark_field_mismatch').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_watermark_field_mismatch_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_watermark_field_mismatch",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
@@ -827,25 +789,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_source_query_failed').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_source_query_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_source_query_failed",
-                  "dependencyConditions": [
-                    "Failed"
-                  ]
-                }
-              ]
             }
           ],
           "ifFalseActivities": [
@@ -881,7 +824,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@or(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    greater(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
+            "value": "@if(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    greaterOrEquals(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    ),\n    greater(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -915,7 +858,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. upper_bound must be greater than lower_bound.'\n)",
+                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; RERUN/BACKFILL require upper_bound > lower_bound.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1078,7 +1021,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. upper_bound must be greater than lower_bound.'\n)",
+                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; RERUN/BACKFILL require upper_bound > lower_bound.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_PROCESSING_BOUNDARY"
@@ -1089,25 +1032,6 @@
                   "activity": "sp_finalize_invalid_processing_boundary",
                   "dependencyConditions": [
                     "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@activity('sp_finalize_invalid_processing_boundary').error.message",
-                  "type": "Expression"
-                },
-                "errorCode": "FINALIZATION_FAILED"
-              },
-              "name": "fail_invalid_processing_boundary_finalization",
-              "dependsOn": [
-                {
-                  "activity": "sp_finalize_invalid_processing_boundary",
-                  "dependencyConditions": [
-                    "Failed"
                   ]
                 }
               ]
@@ -1128,7 +1052,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    not(\n        greater(\n            ticks(variables('v_upper_bound')),\n            ticks(variables('v_lower_bound'))\n        )\n    )\n)",
+            "value": "@and(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    equals(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [
