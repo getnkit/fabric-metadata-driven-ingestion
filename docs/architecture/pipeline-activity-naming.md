@@ -152,6 +152,9 @@ pl_ingest_<connector>_<strategy>
 
 pl_load_<connector>_<strategy>
 = worker used only when a separate physical load stage is justified
+
+pl_ingest_config_page
+= bounded metadata-page worker used to keep Lookup enumeration below platform limits
 ```
 
 Current incremental worker example:
@@ -169,6 +172,7 @@ pl_ingest_database_incremental -> inv_ingest_database_incremental
 pl_ingest_azure_sql_incremental -> inv_ingest_azure_sql_incremental
 pl_load_azure_sql_incremental -> inv_load_azure_sql_incremental
 pl_ingest_sftp_incremental -> inv_ingest_sftp_incremental
+pl_ingest_config_page -> inv_ingest_config_page
 ```
 
 The `load` verb is preferred over `process` when a separate worker is needed because its responsibility is ingestion data movement, not downstream transformation. Do not create a worker pipeline solely to break up a flow that a native connector activity can already perform cleanly.
