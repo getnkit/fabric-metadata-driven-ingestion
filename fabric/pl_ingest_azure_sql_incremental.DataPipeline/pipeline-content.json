@@ -7,7 +7,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'c.ingestion_config_id, ',\n    'c.source_system, ',\n    'c.source_conn_ref, ',\n    'sc.connection_type AS source_connection_type, ',\n    'sc.connection_settings AS source_connection_settings, ',\n    'c.source_schema, ',\n    'c.source_object, ',\n    'c.target_conn_ref, ',\n    'tc.connection_type AS target_connection_type, ',\n    'tc.connection_settings AS target_connection_settings, ',\n    'c.target_schema, ',\n    'c.target_table, ',\n    'c.load_strategy, ',\n    'c.watermark_field ',\n    'FROM control.ingestion_config c ',\n    'JOIN control.connection_settings sc ',\n    'ON sc.connection_ref = c.source_conn_ref ',\n    'JOIN control.connection_settings tc ',\n    'ON tc.connection_ref = c.target_conn_ref ',\n    'WHERE c.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'c.ingestion_config_id, ',\n    'c.source_system, ',\n    'c.source_conn_ref, ',\n    'sc.connection_type AS source_connection_type, ',\n    'sc.connection_settings AS source_connection_settings, ',\n    'c.source_schema, ',\n    'c.source_object, ',\n    'COALESCE(JSON_VALUE(c.copy_options, ''$.partition_option''), ''NONE'') AS copy_partition_option, ',\n    'COALESCE(JSON_VALUE(c.copy_options, ''$.partition_column''), '''') AS copy_partition_column, ',\n    'CASE WHEN JSON_VALUE(c.copy_options, ''$.parallel_copies'') IS NULL THEN 0 ',\n    'ELSE CONVERT(int, JSON_VALUE(c.copy_options, ''$.parallel_copies'')) END AS copy_parallel_copies, ',\n    'c.target_conn_ref, ',\n    'tc.connection_type AS target_connection_type, ',\n    'tc.connection_settings AS target_connection_settings, ',\n    'c.target_schema, ',\n    'c.target_table, ',\n    'c.load_strategy, ',\n    'c.watermark_field ',\n    'FROM control.ingestion_config c ',\n    'JOIN control.connection_settings sc ',\n    'ON sc.connection_ref = c.source_conn_ref ',\n    'JOIN control.connection_settings tc ',\n    'ON tc.connection_ref = c.target_conn_ref ',\n    'WHERE c.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -821,6 +821,18 @@
                   },
                   "p_target_connection_settings": {
                     "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                    "type": "Expression"
+                  },
+                  "p_copy_partition_option": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                    "type": "Expression"
+                  },
+                  "p_copy_partition_column": {
+                    "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                    "type": "Expression"
+                  },
+                  "p_copy_parallel_copies": {
+                    "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
                     "type": "Expression"
                   }
                 },
