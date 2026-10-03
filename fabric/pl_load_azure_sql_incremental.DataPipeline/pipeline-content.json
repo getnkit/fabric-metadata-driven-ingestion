@@ -71,6 +71,12 @@
                     "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
                     "type": "Expression"
                   },
+                  "partitionSettings": {
+                    "partitionColumnName": {
+                      "value": "@pipeline().parameters.p_copy_partition_column",
+                      "type": "Expression"
+                    }
+                  },
                   "queryTimeout": "02:00:00",
                   "datasetSettings": {
                     "type": "AzureSqlTable",
@@ -85,12 +91,6 @@
                       "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
                     },
                     "annotations": []
-                  },
-                  "partitionSettings": {
-                    "partitionColumnName": {
-                      "value": "@pipeline().parameters.p_copy_partition_column",
-                      "type": "Expression"
-                    }
                   }
                 },
                 "sink": {
@@ -215,6 +215,12 @@
                     "value": "@if(\n    equals(\n        toUpper(pipeline().parameters.p_copy_partition_option),\n        'DYNAMIC_RANGE'\n    ),\n    'DynamicRange',\n    'None'\n)",
                     "type": "Expression"
                   },
+                  "partitionSettings": {
+                    "partitionColumnName": {
+                      "value": "@pipeline().parameters.p_copy_partition_column",
+                      "type": "Expression"
+                    }
+                  },
                   "queryTimeout": "02:00:00",
                   "datasetSettings": {
                     "type": "AzureSqlTable",
@@ -229,12 +235,6 @@
                       "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
                     },
                     "annotations": []
-                  },
-                  "partitionSettings": {
-                    "partitionColumnName": {
-                      "value": "@pipeline().parameters.p_copy_partition_column",
-                      "type": "Expression"
-                    }
                   }
                 },
                 "sink": {
