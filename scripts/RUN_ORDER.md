@@ -222,3 +222,55 @@ Recommended acceptance sequence:
    `last_watermark_value`.
 
 The actual watermark is a UTC timestamp from the ingestion run, not a filename.
+
+## 9) Optional permanent Azure SQL performance benchmark
+
+The scale benchmark is intentionally isolated from `sql_ecommerce_db`.
+
+Create a separate free Azure SQL database:
+
+```text
+sql_ingestion_benchmark
+```
+
+Then follow `scripts/benchmark/README.md`.
+
+One-time source setup:
+
+```text
+scripts/benchmark/01_create_benchmark_source.sql
+scripts/benchmark/02_generate_benchmark_data.sql
+scripts/benchmark/03_grant_fabric_benchmark_read.sql
+```
+
+The default fixture keeps both source shapes permanently:
+
+```text
+benchmark.copy_source_unpartitioned = 10,000,000 rows
+benchmark.copy_source_partitioned   = 10,000,000 rows
+```
+
+Create Fabric connection `cn_azsql_ingestion_benchmark`, then register it and
+the inactive benchmark configs:
+
+```text
+scripts/benchmark/04_register_benchmark_connection.sql
+scripts/benchmark/05_register_benchmark_configs.sql
+```
+
+Use `06_set_benchmark_scenario.sql` only when benchmarking. The benchmark
+configs stay inactive by default so normal master execution never copies the
+large fixtures accidentally.
+
+Current FULL Azure SQL benchmark strategies:
+
+```text
+NONE
+DYNAMIC_RANGE
+PHYSICAL_PARTITIONS
+```
+
+The current INCREMENTAL Azure SQL adapter supports `NONE` and
+`DYNAMIC_RANGE`; physical partitions are intentionally exercised as a FULL
+source-table strategy.
+
