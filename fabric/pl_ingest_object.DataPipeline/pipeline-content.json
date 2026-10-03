@@ -328,6 +328,62 @@
                       "p_source_connection_type": {
                         "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
                         "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_option": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_column": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                        "type": "Expression"
+                      },
+                      "p_copy_parallel_copies": {
+                        "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
+                        "type": "Expression"
+                      },
+                      "p_watermark_field": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
