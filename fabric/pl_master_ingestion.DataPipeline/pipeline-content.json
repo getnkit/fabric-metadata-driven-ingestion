@@ -56,7 +56,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ingestion_config_id ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ') ',\n    'ORDER BY ingestion_config_id;'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'CAST(COUNT_BIG(1) AS bigint) AS config_count, ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(int(variables('v_config_page_size')), 1)),\n        ') / ',\n        variables('v_config_page_size'),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE (',\n        string(pipeline().parameters.p_config_id),\n        ' = 0 AND is_active = 1',\n    ') OR (',\n        string(pipeline().parameters.p_config_id),\n        ' > 0 AND ingestion_config_id = ',\n        string(pipeline().parameters.p_config_id),\n    ');'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -81,7 +81,7 @@
             },
             "annotations": []
           },
-          "firstRowOnly": false
+          "firstRowOnly": true
         },
         "policy": {
           "timeout": "0.12:00:00",
@@ -90,7 +90,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "lkp_active_configs",
+        "name": "lkp_config_page_info",
         "dependsOn": [
           {
             "activity": "if_valid_master_request",
@@ -104,7 +104,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@greater(\n    int(activity('lkp_active_configs').output.count),\n    0\n)",
+            "value": "@greater(int(activity('lkp_config_page_info').output.firstRow.config_count), 0)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -126,7 +126,7 @@
         "name": "if_configs_found",
         "dependsOn": [
           {
-            "activity": "lkp_active_configs",
+            "activity": "lkp_config_page_info",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -136,10 +136,10 @@
       {
         "type": "ForEach",
         "typeProperties": {
-          "isSequential": false,
-          "batchCount": 3,
+          "isSequential": true,
+          "batchCount": 1,
           "items": {
-            "value": "@activity('lkp_active_configs').output.value",
+            "value": "@range(0, int(activity('lkp_config_page_info').output.firstRow.page_count))",
             "type": "Expression"
           },
           "activities": [
@@ -151,26 +151,34 @@
                     "value": "@variables('v_batch_id')",
                     "type": "Expression"
                   },
-                  "p_ingestion_config_id": {
-                    "value": "@item().ingestion_config_id",
-                    "type": "Expression"
-                  },
                   "p_run_type": {
                     "value": "@pipeline().parameters.p_run_type",
                     "type": "Expression"
                   },
-                  "p_requested_lower_bound": {
+                  "p_config_id": {
+                    "value": "@pipeline().parameters.p_config_id",
+                    "type": "Expression"
+                  },
+                  "p_lower_bound": {
                     "value": "@pipeline().parameters.p_lower_bound",
                     "type": "Expression"
                   },
-                  "p_requested_upper_bound": {
+                  "p_upper_bound": {
                     "value": "@pipeline().parameters.p_upper_bound",
+                    "type": "Expression"
+                  },
+                  "p_page_index": {
+                    "value": "@item()",
+                    "type": "Expression"
+                  },
+                  "p_page_size": {
+                    "value": "@int(variables('v_config_page_size'))",
                     "type": "Expression"
                   }
                 },
                 "waitOnCompletion": true,
                 "workspaceId": "00000000-0000-0000-0000-000000000000",
-                "pipelineId": "f6fd3c6d-b1f0-847c-4fc5-924a2d95b546",
+                "pipelineId": "3b7f2c5e-6a91-4d48-b0e2-7c4f9a1d35b6",
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
@@ -183,12 +191,12 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_ingest_object",
+              "name": "inv_ingest_config_page",
               "dependsOn": []
             }
           ]
         },
-        "name": "fe_ingestion_configs",
+        "name": "fe_config_pages",
         "dependsOn": [
           {
             "activity": "if_configs_found",
@@ -218,6 +226,10 @@
     "variables": {
       "v_batch_id": {
         "type": "String"
+      },
+      "v_config_page_size": {
+        "type": "String",
+        "defaultValue": "1000"
       }
     },
     "concurrency": 1
