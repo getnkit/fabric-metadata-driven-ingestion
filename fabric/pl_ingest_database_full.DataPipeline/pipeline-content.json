@@ -79,6 +79,18 @@
                       "p_target_table": {
                         "value": "@pipeline().parameters.p_target_table",
                         "type": "Expression"
+                      },
+                      "p_copy_partition_option": {
+                        "value": "@pipeline().parameters.p_copy_partition_option",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_column": {
+                        "value": "@pipeline().parameters.p_copy_partition_column",
+                        "type": "Expression"
+                      },
+                      "p_copy_parallel_copies": {
+                        "value": "@pipeline().parameters.p_copy_parallel_copies",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
@@ -172,6 +184,18 @@
       },
       "p_source_connection_type": {
         "type": "string"
+      },
+      "p_copy_partition_option": {
+        "type": "string",
+        "defaultValue": "NONE"
+      },
+      "p_copy_partition_column": {
+        "type": "string",
+        "defaultValue": ""
+      },
+      "p_copy_parallel_copies": {
+        "type": "int",
+        "defaultValue": 0
       }
     }
   }
