@@ -7,49 +7,6 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'c.ingestion_config_id, ',\n    'c.source_system, ',\n    'c.source_conn_ref, ',\n    'sc.connection_type AS source_connection_type, ',\n    'sc.connection_settings AS source_connection_settings, ',\n    'c.source_schema, ',\n    'c.source_object, ',\n    'COALESCE(JSON_VALUE(c.copy_options, ''$.partition_option''), ''NONE'') AS copy_partition_option, ',\n    'COALESCE(JSON_VALUE(c.copy_options, ''$.partition_column''), '''') AS copy_partition_column, ',\n    'CASE WHEN JSON_VALUE(c.copy_options, ''$.parallel_copies'') IS NULL THEN 0 ',\n    'ELSE CONVERT(int, JSON_VALUE(c.copy_options, ''$.parallel_copies'')) END AS copy_parallel_copies, ',\n    'c.target_conn_ref, ',\n    'tc.connection_type AS target_connection_type, ',\n    'tc.connection_settings AS target_connection_settings, ',\n    'c.target_schema, ',\n    'c.target_table, ',\n    'c.load_strategy, ',\n    'c.watermark_field ',\n    'FROM control.ingestion_config c ',\n    'JOIN control.connection_settings sc ',\n    'ON sc.connection_ref = c.source_conn_ref ',\n    'JOIN control.connection_settings tc ',\n    'ON tc.connection_ref = c.target_conn_ref ',\n    'WHERE c.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
-              "type": "Expression"
-            },
-            "partitionOption": "None",
-            "queryTimeout": "02:00:00"
-          },
-          "datasetSettings": {
-            "type": "FabricSqlDatabaseTable",
-            "schema": [],
-            "connectionSettings": {
-              "name": "sqldb_ingestion_control",
-              "properties": {
-                "type": "FabricSqlDatabase",
-                "typeProperties": {
-                  "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                  "workspaceId": "00000000-0000-0000-0000-000000000000"
-                },
-                "externalReferences": {
-                  "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                },
-                "annotations": []
-              }
-            },
-            "annotations": []
-          },
-          "firstRowOnly": false
-        },
-        "policy": {
-          "timeout": "0.12:00:00",
-          "retry": 2,
-          "retryIntervalInSeconds": 30,
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "lkp_ingestion_config",
-        "dependsOn": []
-      },
-      {
-        "type": "Lookup",
-        "typeProperties": {
-          "source": {
-            "type": "FabricSqlDatabaseSource",
-            "sqlReaderQuery": {
               "value": "@concat(\n    'SELECT ',\n    'ingestion_config_id, ',\n    'watermark_field, ',\n    'last_watermark_value, ',\n    'last_successful_batch_id, ',\n    'last_successful_pipeline_run_id ',\n    'FROM control.pipeline_watermarks ',\n    'WHERE ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ';'\n)",
               "type": "Expression"
             },
@@ -85,14 +42,7 @@
           "secureOutput": false
         },
         "name": "lkp_current_watermark",
-        "dependsOn": [
-          {
-            "activity": "lkp_ingestion_config",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
+        "dependsOn": []
       },
       {
         "type": "IfCondition",
@@ -131,7 +81,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    activity('lkp_current_watermark').output.value[0].watermark_field\n)",
+            "value": "@equals(\n    pipeline().parameters.p_watermark_field,\n    activity('lkp_current_watermark').output.value[0].watermark_field\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -140,7 +90,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.value[0].watermark_field,\n    '.'\n)",
+                  "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.value[0].watermark_field,\n    '.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "WATERMARK_FIELD_MISMATCH"
@@ -197,7 +147,7 @@
                 "source": {
                   "type": "AzureSqlSource",
                   "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT MAX([',\n    activity('lkp_ingestion_config').output.value[0].watermark_field,\n    ']) AS upper_bound ',\n    'FROM [',\n    activity('lkp_ingestion_config').output.value[0].source_schema,\n    '].[',\n    activity('lkp_ingestion_config').output.value[0].source_object,\n    '];'\n)",
+                    "value": "@concat(\n    'SELECT MAX([',\n    pipeline().parameters.p_watermark_field,\n    ']) AS upper_bound ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '];'\n)",
                     "type": "Expression"
                   },
                   "partitionOption": "None",
@@ -207,13 +157,13 @@
                   "type": "AzureSqlTable",
                   "typeProperties": {
                     "database": {
-                      "value": "@json(\n    activity('lkp_ingestion_config').output.value[0].source_connection_settings\n).database",
+                      "value": "@json(\n    pipeline().parameters.p_source_connection_settings\n).database",
                       "type": "Expression"
                     }
                   },
                   "schema": [],
                   "externalReferences": {
-                    "connection": "@json(\n    activity('lkp_ingestion_config').output.value[0].source_connection_settings\n).connectionId"
+                    "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
                   },
                   "annotations": []
                 }
@@ -294,7 +244,7 @@
                   },
                   "load_strategy": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                      "value": "@pipeline().parameters.p_load_strategy",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -333,7 +283,7 @@
                   },
                   "source_object": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                      "value": "@pipeline().parameters.p_source_object",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -344,14 +294,14 @@
                   },
                   "source_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                      "value": "@pipeline().parameters.p_source_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_system": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                      "value": "@pipeline().parameters.p_source_system",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -377,35 +327,35 @@
                   },
                   "watermark_field": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                      "value": "@pipeline().parameters.p_watermark_field",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                      "value": "@pipeline().parameters.p_target_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_table": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                      "value": "@pipeline().parameters.p_target_table",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                      "value": "@pipeline().parameters.p_source_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                      "value": "@pipeline().parameters.p_target_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -592,7 +542,7 @@
                   },
                   "load_strategy": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                      "value": "@pipeline().parameters.p_load_strategy",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -634,7 +584,7 @@
                   },
                   "source_object": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                      "value": "@pipeline().parameters.p_source_object",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -645,14 +595,14 @@
                   },
                   "source_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                      "value": "@pipeline().parameters.p_source_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_system": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                      "value": "@pipeline().parameters.p_source_system",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -678,35 +628,35 @@
                   },
                   "watermark_field": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                      "value": "@pipeline().parameters.p_watermark_field",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                      "value": "@pipeline().parameters.p_target_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_table": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                      "value": "@pipeline().parameters.p_target_table",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                      "value": "@pipeline().parameters.p_source_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                      "value": "@pipeline().parameters.p_target_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -776,23 +726,23 @@
                     "type": "Expression"
                   },
                   "p_source_system": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                    "value": "@pipeline().parameters.p_source_system",
                     "type": "Expression"
                   },
                   "p_source_schema": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                    "value": "@pipeline().parameters.p_source_schema",
                     "type": "Expression"
                   },
                   "p_source_object": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                    "value": "@pipeline().parameters.p_source_object",
                     "type": "Expression"
                   },
                   "p_load_strategy": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                    "value": "@pipeline().parameters.p_load_strategy",
                     "type": "Expression"
                   },
                   "p_watermark_field": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                    "value": "@pipeline().parameters.p_watermark_field",
                     "type": "Expression"
                   },
                   "p_current_watermark": {
@@ -800,39 +750,39 @@
                     "type": "Expression"
                   },
                   "p_target_table": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                    "value": "@pipeline().parameters.p_target_table",
                     "type": "Expression"
                   },
                   "p_target_schema": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                    "value": "@pipeline().parameters.p_target_schema",
                     "type": "Expression"
                   },
                   "p_source_conn_ref": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                    "value": "@pipeline().parameters.p_source_conn_ref",
                     "type": "Expression"
                   },
                   "p_source_connection_settings": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                    "value": "@pipeline().parameters.p_source_connection_settings",
                     "type": "Expression"
                   },
                   "p_target_conn_ref": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                    "value": "@pipeline().parameters.p_target_conn_ref",
                     "type": "Expression"
                   },
                   "p_target_connection_settings": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                    "value": "@pipeline().parameters.p_target_connection_settings",
                     "type": "Expression"
                   },
                   "p_copy_partition_option": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                    "value": "@pipeline().parameters.p_copy_partition_option",
                     "type": "Expression"
                   },
                   "p_copy_partition_column": {
-                    "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                    "value": "@pipeline().parameters.p_copy_partition_column",
                     "type": "Expression"
                   },
                   "p_copy_parallel_copies": {
-                    "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
+                    "value": "@int(pipeline().parameters.p_copy_parallel_copies)",
                     "type": "Expression"
                   }
                 },
@@ -893,6 +843,48 @@
       },
       "p_parent_pipeline_name": {
         "type": "string"
+      },
+      "p_source_system": {
+        "type": "string"
+      },
+      "p_source_schema": {
+        "type": "string"
+      },
+      "p_source_object": {
+        "type": "string"
+      },
+      "p_load_strategy": {
+        "type": "string"
+      },
+      "p_watermark_field": {
+        "type": "string"
+      },
+      "p_source_conn_ref": {
+        "type": "string"
+      },
+      "p_source_connection_settings": {
+        "type": "string"
+      },
+      "p_target_conn_ref": {
+        "type": "string"
+      },
+      "p_target_connection_settings": {
+        "type": "string"
+      },
+      "p_target_schema": {
+        "type": "string"
+      },
+      "p_target_table": {
+        "type": "string"
+      },
+      "p_copy_partition_option": {
+        "type": "string"
+      },
+      "p_copy_partition_column": {
+        "type": "string"
+      },
+      "p_copy_parallel_copies": {
+        "type": "int"
       }
     },
     "variables": {
