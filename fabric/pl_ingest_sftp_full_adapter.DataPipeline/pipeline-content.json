@@ -439,7 +439,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_load_landing_to_bronze",
+        "name": "nb_load_file_landing_to_bronze",
         "dependsOn": [
           {
             "activity": "copy_sftp_to_landing",
@@ -532,7 +532,7 @@
             },
             "source_row_count": {
               "value": {
-                "value": "@int(json(activity('nb_load_landing_to_bronze').output.result.exitValue).source_row_count)",
+                "value": "@int(json(activity('nb_load_file_landing_to_bronze').output.result.exitValue).source_row_count)",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -568,7 +568,7 @@
             },
             "target_row_count": {
               "value": {
-                "value": "@int(json(activity('nb_load_landing_to_bronze').output.result.exitValue).target_row_count)",
+                "value": "@int(json(activity('nb_load_file_landing_to_bronze').output.result.exitValue).target_row_count)",
                 "type": "Expression"
               },
               "type": "Int64"
@@ -631,7 +631,7 @@
         "name": "sp_finalize_success",
         "dependsOn": [
           {
-            "activity": "nb_load_landing_to_bronze",
+            "activity": "nb_load_file_landing_to_bronze",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -691,7 +691,7 @@
         "name": "nb_cleanup_bronze_write_failed",
         "dependsOn": [
           {
-            "activity": "nb_load_landing_to_bronze",
+            "activity": "nb_load_file_landing_to_bronze",
             "dependencyConditions": [
               "Failed"
             ]
@@ -727,7 +727,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('nb_load_landing_to_bronze').error.message",
+                "value": "@activity('nb_load_file_landing_to_bronze').error.message",
                 "type": "Expression"
               },
               "type": "String"
@@ -913,7 +913,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original Bronze write failure: ', activity('nb_load_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                "value": "@concat('Original Bronze write failure: ', activity('nb_load_file_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1074,7 +1074,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original Bronze write failure: ', activity('nb_load_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+            "value": "@concat('Original Bronze write failure: ', activity('nb_load_file_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"
@@ -1093,7 +1093,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@activity('nb_load_landing_to_bronze').error.message",
+            "value": "@activity('nb_load_file_landing_to_bronze').error.message",
             "type": "Expression"
           },
           "errorCode": "BRONZE_WRITE_FAILED"

@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "Notebook",
-    "displayName": "nb_load_landing_to_bronze",
-    "description": "Generic batch-scoped Landing-to-Bronze loader with format-specific readers and shared technical metadata."
+    "displayName": "nb_load_file_landing_to_bronze",
+    "description": "Generic FILE batch-scoped Landing-to-Bronze loader with format-specific readers and shared technical metadata."
   },
   "config": {
     "version": "2.0",

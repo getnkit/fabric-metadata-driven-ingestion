@@ -145,7 +145,7 @@ pl_ingest_object_controller
   -> pl_ingest_sftp_full_adapter
 ```
 
-The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
+The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
 
 The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
@@ -185,7 +185,7 @@ pl_ingest_object_controller
   -> SFTP
   -> pl_ingest_sftp_incremental_adapter
   -> recursive Binary copy to Landing
-  -> nb_load_landing_to_bronze
+  -> nb_load_file_landing_to_bronze
 ```
 
 The incremental feed is:
@@ -201,7 +201,7 @@ load_strategy      = INCREMENTAL
 watermark_field    = last_modified_time
 ```
 
-The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
+The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_file_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
 The current implementation supports `REGULAR` FILE incremental runs only.
 It asks the SFTP connector to recursively copy all matching files in the native Last Modified window

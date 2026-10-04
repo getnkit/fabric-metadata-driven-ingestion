@@ -64,7 +64,7 @@ Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `
 Source connection + source_path
   -> Binary copy
   -> Landing + landing_path
-  -> nb_load_landing_to_bronze
+  -> nb_load_file_landing_to_bronze
        -> format-specific reader
        -> common technical metadata
        -> Bronze Delta table
@@ -72,7 +72,7 @@ Source connection + source_path
 
 The source-to-Landing step is intentionally Binary so the delivered file is preserved byte-for-byte. Parsing starts only after the raw artifact reaches Landing.
 
-The reusable `nb_load_landing_to_bronze` notebook owns format-specific reader dispatch. The current reader registry supports `DELIMITED_TEXT` only. `PARQUET` and `JSON` remain future readers rather than pipeline branches. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT` before raw Landing work starts.
+The reusable `nb_load_file_landing_to_bronze` notebook owns format-specific reader dispatch. The current reader registry supports `DELIMITED_TEXT` only. `PARQUET` and `JSON` remain future readers rather than pipeline branches. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT` before raw Landing work starts.
 
 Landing is retained for FILE ingestion because the delivered file is itself the raw ingestion artifact and can be reused for troubleshooting or reprocessing.
 
@@ -279,7 +279,7 @@ source root to the batch-specific Landing folder. It applies the configured
 `file_name_pattern` together with the LOW/HIGH Last Modified window and uses
 `PreserveHierarchy`, so the connector itself handles arbitrary folder depth.
 
-After Landing succeeds, `nb_load_landing_to_bronze` recursively
+After Landing succeeds, `nb_load_file_landing_to_bronze` recursively
 reads only that batch's Landing folder, parses the delimited files, adds the
 technical lineage columns, and appends the result to the Bronze Delta table.
 
@@ -327,7 +327,7 @@ pl_ingest_sftp_incremental_adapter
        LOW <= LastModified < HIGH
        PreserveHierarchy
   -> if_files_found
-       -> nb_load_landing_to_bronze
+       -> nb_load_file_landing_to_bronze
             p_file_format
             p_source_options
        -> sp_finalize_success
@@ -378,7 +378,7 @@ For the current SFTP adapter:
 ```text
 SFTP
   -> Binary copy to Landing
-  -> nb_load_landing_to_bronze(p_file_format, p_source_options)
+  -> nb_load_file_landing_to_bronze(p_file_format, p_source_options)
        -> DELIMITED_TEXT reader
        -> common Bronze write
 ```
