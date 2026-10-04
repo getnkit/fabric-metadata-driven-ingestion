@@ -372,7 +372,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@not(\n    or(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'FULL'\n            ),\n            equals(\n                variables('v_run_type'),\n                'BACKFILL'\n            )\n        ),\n        and(\n            and(\n                equals(\n                    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                    'FILE'\n                ),\n                equals(\n                    activity('lkp_ingestion_config').output.value[0].load_strategy,\n                    'INCREMENTAL'\n                )\n            ),\n            not(\n                equals(\n                    variables('v_run_type'),\n                    'REGULAR'\n                )\n            )\n        )\n    )\n)",
+            "value": "@and(\n    or(\n        equals(variables('v_run_type'), 'REGULAR'),\n        equals(variables('v_run_type'), 'BACKFILL')\n    ),\n    or(\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            not(empty(pipeline().parameters.p_requested_lower_bound)),\n            not(empty(pipeline().parameters.p_requested_upper_bound))\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -406,7 +406,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. Historical file backfill/reprocessing requires separate file-identity semantics.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
+                      "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', lower_bound=',\n    pipeline().parameters.p_requested_lower_bound,\n    ', upper_bound=',\n    pipeline().parameters.p_requested_upper_bound,\n    '. Supported run types are REGULAR and BACKFILL. REGULAR must not provide historical bounds; BACKFILL bounds, when used, must be provided as a complete LOW/HIGH pair.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -556,22 +556,22 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_unsupported_run_request",
+              "name": "sp_finalize_invalid_execution_request",
               "dependsOn": []
             },
             {
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@if(\n    and(\n        equals(\n            activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n            'FILE'\n        ),\n        equals(\n            activity('lkp_ingestion_config').output.value[0].load_strategy,\n            'INCREMENTAL'\n        )\n    ),\n    'FILE INCREMENTAL currently supports REGULAR runs only. Historical file backfill/reprocessing requires separate file-identity semantics.',\n    'BACKFILL is not supported for FULL load strategy.'\n)",
+                  "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    '. REGULAR must not provide LOW/HIGH; BACKFILL must provide both bounds or neither.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"
               },
-              "name": "fail_unsupported_run_request",
+              "name": "fail_invalid_execution_request",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_unsupported_run_request",
+                  "activity": "sp_finalize_invalid_execution_request",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -580,7 +580,7 @@
             }
           ]
         },
-        "name": "if_supported_run_combination",
+        "name": "if_valid_execution_request",
         "dependsOn": [
           {
             "activity": "if_config_active",
@@ -594,7 +594,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@if(\n    and(\n        and(\n            equals(\n                activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n                'DATABASE'\n            ),\n            equals(\n                activity('lkp_ingestion_config').output.value[0].load_strategy,\n                'INCREMENTAL'\n            )\n        ),\n        equals(variables('v_run_type'), 'BACKFILL')\n    ),\n    and(\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    ),\n    and(\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    )\n)",
+            "value": "@and(\n    or(\n        equals(variables('v_run_type'), 'REGULAR'),\n        equals(variables('v_run_type'), 'BACKFILL')\n    ),\n    or(\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            not(empty(pipeline().parameters.p_requested_lower_bound)),\n            not(empty(pipeline().parameters.p_requested_upper_bound))\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -628,7 +628,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL BACKFILL requires both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
+                      "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', lower_bound=',\n    pipeline().parameters.p_requested_lower_bound,\n    ', upper_bound=',\n    pipeline().parameters.p_requested_upper_bound,\n    '. Supported run types are REGULAR and BACKFILL. REGULAR must not provide historical bounds; BACKFILL bounds, when used, must be provided as a complete LOW/HIGH pair.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -778,22 +778,22 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_invalid_boundary_request",
+              "name": "sp_finalize_invalid_execution_request",
               "dependsOn": []
             },
             {
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid boundary parameters for ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    ', run_type=',\n    variables('v_run_type'),\n    '. DATABASE INCREMENTAL BACKFILL requires both LOW and HIGH; all other supported requests must not provide relational boundaries.'\n)",
+                  "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    '. REGULAR must not provide LOW/HIGH; BACKFILL must provide both bounds or neither.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_RUN_REQUEST"
               },
-              "name": "fail_invalid_boundary_request",
+              "name": "fail_invalid_execution_request",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_invalid_boundary_request",
+                  "activity": "sp_finalize_invalid_execution_request",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -802,10 +802,10 @@
             }
           ]
         },
-        "name": "if_valid_boundary_request",
+        "name": "if_valid_execution_request",
         "dependsOn": [
           {
-            "activity": "if_supported_run_combination",
+            "activity": "if_config_active",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1246,6 +1246,14 @@
                       "p_file_format": {
                         "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
                         "type": "Expression"
+                      },
+                      "p_requested_lower_bound": {
+                        "value": "@pipeline().parameters.p_requested_lower_bound",
+                        "type": "Expression"
+                      },
+                      "p_requested_upper_bound": {
+                        "value": "@pipeline().parameters.p_requested_upper_bound",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
@@ -1476,7 +1484,7 @@
         "name": "sw_ingestion_route",
         "dependsOn": [
           {
-            "activity": "if_valid_boundary_request",
+            "activity": "if_valid_execution_request",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1498,11 +1506,11 @@
       },
       "p_requested_lower_bound": {
         "type": "string",
-        "defaultValue": "''"
+        "defaultValue": ""
       },
       "p_requested_upper_bound": {
         "type": "string",
-        "defaultValue": "''"
+        "defaultValue": ""
       }
     },
     "variables": {
