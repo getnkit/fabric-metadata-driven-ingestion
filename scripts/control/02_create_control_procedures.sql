@@ -69,6 +69,10 @@ BEGIN
     SET @ExpectedWatermark = @processing_lower_bound;
     SET @NewWatermark = @processing_upper_bound;
 
+    /* BACKFILL is a run intent with its own historical scope, not a FULL/INCREMENTAL load strategy. */
+    IF UPPER(@run_type) = 'BACKFILL'
+        SET @load_strategy = NULL;
+
     IF @DurationSeconds < 0
         THROW 51000, 'INVALID_AUDIT_TIME_RANGE: end_time is earlier than start_time.', 1;
 
