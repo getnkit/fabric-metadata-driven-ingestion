@@ -2,6 +2,21 @@
 
 This runbook documents the framework's automatic compensating cleanup for append-oriented Bronze ingestion.
 
+## Framework invariant
+
+Bronze ingestion is append-only for every successful ingestion execution, regardless of run type.
+
+```text
+REGULAR  -> append a new Bronze batch
+BACKFILL -> append a new Bronze batch
+```
+
+A successful Bronze batch is never deleted, truncated, overwritten, or replaced merely because a later REGULAR or BACKFILL run processes overlapping source data. Each execution preserves its own `_batch_id` / pipeline-run lineage.
+
+The only ingestion-time deletion allowed by this framework is **compensating cleanup of the current failed batch** when a Bronze write may have partially succeeded. That failed batch is not treated as committed Bronze history.
+
+Retention, legal erasure, or other lifecycle-management policies are separate governance/maintenance concerns and are not part of REGULAR/BACKFILL ingestion semantics.
+
 ## Why it exists
 
 A Bronze write and the control/audit finalization are not one distributed transaction. A pipeline can fail after rows have already reached Bronze while the watermark/control state remains uncommitted. A blind rerun can then append the same logical input again.
