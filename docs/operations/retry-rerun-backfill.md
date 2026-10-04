@@ -18,12 +18,15 @@ watermark. If a REGULAR execution fails before successful finalization, the
 watermark does not advance; the next top-level REGULAR execution starts again
 from the committed state.
 
-`BACKFILL` processes one explicitly requested historical LOW/HIGH interval.
-It never advances the operational watermark.
+`BACKFILL` processes an explicitly requested historical scope. The scope is
+pattern-specific: an incremental source may use LOW/HIGH boundaries, while a
+full snapshot source may use a data date, snapshot identifier, source version,
+or another selector supported by that source.
 
-A BACKFILL interval may overlap an interval that was processed successfully
-before. Bronze is append-oriented, so a new backfill creates a new batch/run
-lineage rather than deleting or replacing an earlier successful batch.
+BACKFILL never advances the operational watermark/checkpoint. A historical
+scope may overlap data processed successfully before. Bronze is append-oriented,
+so a new backfill creates new batch/run lineage rather than deleting or replacing
+an earlier successful batch.
 
 ## Current incremental backfill support
 
