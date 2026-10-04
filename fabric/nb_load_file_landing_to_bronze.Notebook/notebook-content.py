@@ -36,6 +36,7 @@ from pyspark import StorageLevel
 from pyspark.sql import functions as F
 
 
+# Validate pipeline-supplied values before using them in paths or reader options.
 def _require_nonempty(name, value):
     if value is None or str(value).strip() == "":
         raise ValueError(f"{name} is required.")
@@ -76,6 +77,7 @@ def _parse_source_options(raw_value):
 
 # CELL ********************
 
+# Keep format-specific parsing behind a small reader interface so routing stays metadata-driven.
 def _read_delimited_text(path, options):
     delimiter = options.get("delimiter")
     has_header = options.get("has_header")
@@ -155,11 +157,13 @@ target_table_path = (
     f"{lakehouse_id}/Tables/{target_schema}/{target_table}"
 )
 
+# The adapter passes the batch-scoped Landing path; the notebook only parses and appends it to Bronze.
 reader = READERS[file_format]
 df = reader(landing_root_path, source_options)
 
 landing_prefix = landing_root_path.rstrip("/") + "/"
 relative_start = len(landing_prefix) + 1
+# Fabric can expose OneLake file URIs with query metadata; strip it from lineage columns.
 relative_file_path = F.regexp_replace(
     F.substring(F.input_file_name(), relative_start, 1000000),
     r"\?.*$",
@@ -182,9 +186,11 @@ df = (
     .persist(StorageLevel.MEMORY_AND_DISK)
 )
 
+# Count and write reuse the same DataFrame; always release the cache even when the append fails.
 try:
     row_count = df.count()
 
+    # Bronze ingestion is append-oriented; failed batches are compensated by the cleanup notebook.
     (
         df.write
         .format("delta")
