@@ -86,7 +86,7 @@ Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
 - A non-empty array runs exactly the requested configs; each object carries
   `config_id`, `run_type`, `lower_bound`, and `upper_bound`.
 - REGULAR leaves LOW/HIGH empty.
-- BACKFILL is a separate run intent from FULL/INCREMENTAL and requires explicit LOW/HIGH in the current V1 contract.
+- `load_strategy` remains the config's FULL/INCREMENTAL strategy for every run. BACKFILL + FULL uses empty LOW/HIGH and rereads the full current source scope; BACKFILL + INCREMENTAL requires explicit LOW/HIGH and never advances the operational watermark.
 - See `docs/operations/run-request-examples.md` for copy/paste examples.
 
 ## 5) Current relational Bronze target convention
@@ -212,7 +212,7 @@ watermark_field    = last_modified_time
 
 The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_file_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
-The file config's normal REGULAR strategy is INCREMENTAL: it uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL is a separate run intent, uses the explicitly requested LOW/HIGH Last Modified window, and never advances the operational checkpoint. Both execution paths preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
+The file config keeps `load_strategy = INCREMENTAL` for both REGULAR and BACKFILL runs. REGULAR uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL uses explicitly requested LOW/HIGH Last Modified boundaries and never advances the operational checkpoint. Both execution paths preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
 
 Acceptance fixtures:
 
