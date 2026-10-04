@@ -80,6 +80,15 @@ are hosted in the same Microsoft Entra tenant.
 - Normal operational execution must enter through `pl_ingest_orchestrator`, configured with pipeline concurrency = 1.
 - Optimistic watermark comparison remains the state-safety check during finalization.
 
+Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
+
+- `[]` runs all active configurations as REGULAR with pagination.
+- A non-empty array runs exactly the requested configs; each object carries
+  `config_id`, `run_type`, `lower_bound`, and `upper_bound`.
+- REGULAR leaves LOW/HIGH empty.
+- DATABASE/FILE INCREMENTAL BACKFILL requires explicit LOW/HIGH.
+- See `docs/operations/run-request-examples.md` for copy/paste examples.
+
 ## 5) Current relational Bronze target convention
 
 The current DATABASE ingestion path writes relational sources directly to Bronze
@@ -203,10 +212,7 @@ watermark_field    = last_modified_time
 
 The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_file_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
-The current implementation supports `REGULAR` FILE incremental runs only.
-It asks the SFTP connector to recursively copy all matching files in the native Last Modified window
-`[current watermark, run start time)`, applies the metadata filename pattern,
-and preserves source-relative hierarchy under the batch Landing root. The generic notebook then recursively parses that batch Landing folder. After a successful load, the checkpoint advances to the run start time.
+The current implementation supports REGULAR and BACKFILL FILE incremental runs. REGULAR uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL uses the explicitly requested LOW/HIGH Last Modified window and never advances the operational checkpoint. Both modes preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
 
 Acceptance fixtures:
 
