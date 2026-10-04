@@ -61,6 +61,15 @@ def _parse_source_options(raw_value):
     return parsed
 
 
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 def _read_delimited_text(path, options):
     delimiter = options.get("delimiter")
     has_header = options.get("has_header")
@@ -89,6 +98,15 @@ READERS = {
     "DELIMITED_TEXT": _read_delimited_text,
 }
 
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
 
 workspace_id = _require_safe_path_segment("p_workspace_id", p_workspace_id)
 lakehouse_id = _require_safe_path_segment("p_lakehouse_id", p_lakehouse_id)
