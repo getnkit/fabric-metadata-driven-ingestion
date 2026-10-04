@@ -11,37 +11,64 @@ BACKFILL
 
 `RERUN` is not a framework run type.
 
-## Meaning
+## REGULAR
 
-`REGULAR` performs normal forward ingestion from the currently committed
-watermark. If a REGULAR execution fails before successful finalization, the
-watermark does not advance; the next top-level REGULAR execution starts again
-from the committed state.
+`REGULAR` is the normal operational execution mode.
 
-`BACKFILL` processes an explicitly requested historical scope. The scope is
-pattern-specific: an incremental source may use LOW/HIGH boundaries, while a
-full snapshot source may use a data date, snapshot identifier, source version,
-or another selector supported by that source.
+For REGULAR execution, the configuration's `load_strategy` determines how the
+source is read:
 
-BACKFILL never advances the operational watermark/checkpoint. A historical
-scope may overlap data processed successfully before. Bronze is append-oriented,
-so a new backfill creates new batch/run lineage rather than deleting or replacing
-an earlier successful batch.
+```text
+REGULAR + configured FULL
+REGULAR + configured INCREMENTAL
+```
 
-## Current incremental backfill support
+An INCREMENTAL REGULAR run derives its processing window from committed
+operational state. A FULL REGULAR run executes the configured full-load behavior.
 
-The implemented incremental adapters use explicit LOW/HIGH boundaries for
-BACKFILL:
+## BACKFILL
 
-- Azure SQL DATABASE + INCREMENTAL uses the requested relational watermark window.
-- SFTP FILE + INCREMENTAL uses the requested source-file Last Modified window.
+`BACKFILL` is a separate execution intent for an explicitly requested
+historical scope. It is not classified as FULL or INCREMENTAL.
 
-REGULAR runs continue to derive their boundaries from committed operational
-state. BACKFILL runs do not update that state.
+The current V1 runtime contract represents the historical scope with:
 
-FULL + BACKFILL is not rejected by the generic controller. Historical snapshot
-selection is source-specific and must be represented by the source/configuration
-when a true historical snapshot is required.
+```text
+requested lower_bound
+requested upper_bound
+```
+
+Pattern-specific adapters decide how those boundaries are applied. Current
+implementations include:
+
+- DATABASE: historical LOW/HIGH window against the configured watermark field.
+- FILE/SFTP: historical LOW/HIGH window against source file Last Modified time.
+
+A future source may use a different backfill selector such as `data_date`,
+snapshot ID, source version, or another source-specific historical reference.
+That would extend the backfill scope contract rather than create a new
+FULL/INCREMENTAL classification for BACKFILL.
+
+## Processing-state rule
+
+BACKFILL never advances the operational watermark/checkpoint.
+
+Operational state represents forward REGULAR processing. Moving that state
+because of a historical BACKFILL could make the next REGULAR run skip data or
+move backward incorrectly.
+
+A BACKFILL scope may overlap data processed successfully before. Bronze is
+append-oriented, so a new backfill creates new batch/run lineage rather than
+deleting or replacing an earlier successful batch.
+
+## Audit semantics
+
+For REGULAR runs, `audit.ingestion_log.load_strategy` records the configured
+FULL or INCREMENTAL strategy.
+
+For BACKFILL runs, `load_strategy` is stored as NULL because BACKFILL is its own
+run intent. The historical scope is represented by the processing-boundary
+fields and related source metadata.
 
 ## Platform execution recovery
 
