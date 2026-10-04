@@ -361,9 +361,24 @@ that reflects delivery/update time. A source that preserves stale timestamps
 during late delivery or requires strict per-file receipt tracking would need a
 different policy such as a manifest/receipt state model.
 
-FILE + INCREMENTAL initially supports `REGULAR` runs only. Historical file
-backfill/reprocessing semantics will be designed separately around file identity
-rather than reusing relational LOW/HIGH datetime parameters implicitly.
+FILE + INCREMENTAL supports both `REGULAR` and `BACKFILL` execution:
+
+```text
+REGULAR
+LOW  = committed last_modified_time watermark
+HIGH = ingestion run start time
+advance operational watermark = yes
+
+BACKFILL
+LOW  = requested lower_bound
+HIGH = requested upper_bound
+advance operational watermark = no
+```
+
+Both modes filter on the source file Last Modified timestamp. Sources that
+preserve stale timestamps during late delivery or require strict per-file
+receipt tracking still need a different policy such as a manifest/receipt state
+model.
 
 
 ## Format-routing boundary
