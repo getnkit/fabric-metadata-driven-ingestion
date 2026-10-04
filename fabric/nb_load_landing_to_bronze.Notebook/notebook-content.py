@@ -152,9 +152,9 @@ df = (
     .persist(StorageLevel.MEMORY_AND_DISK)
 )
 
-row_count = df.count()
-
 try:
+    row_count = df.count()
+
     (
         df.write
         .format("delta")
