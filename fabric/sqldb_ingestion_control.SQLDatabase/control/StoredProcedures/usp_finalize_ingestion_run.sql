@@ -1,4 +1,5 @@
-CREATE PROCEDURE control.usp_finalize_ingestion_run
+
+CREATE   PROCEDURE control.usp_finalize_ingestion_run
     @ingestion_config_id        INT = NULL,
     @batch_id                   UNIQUEIDENTIFIER,
     @pipeline_run_id            NVARCHAR(100),
