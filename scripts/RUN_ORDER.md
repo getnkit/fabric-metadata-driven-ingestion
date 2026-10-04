@@ -86,7 +86,7 @@ Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
 - A non-empty array runs exactly the requested configs; each object carries
   `config_id`, `run_type`, `lower_bound`, and `upper_bound`.
 - REGULAR leaves LOW/HIGH empty.
-- DATABASE/FILE INCREMENTAL BACKFILL requires explicit LOW/HIGH.
+- BACKFILL is a separate run intent from FULL/INCREMENTAL and requires explicit LOW/HIGH in the current V1 contract.
 - See `docs/operations/run-request-examples.md` for copy/paste examples.
 
 ## 5) Current relational Bronze target convention
@@ -212,7 +212,7 @@ watermark_field    = last_modified_time
 
 The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_file_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
-The current implementation supports REGULAR and BACKFILL FILE incremental runs. REGULAR uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL uses the explicitly requested LOW/HIGH Last Modified window and never advances the operational checkpoint. Both modes preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
+The file config's normal REGULAR strategy is INCREMENTAL: it uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL is a separate run intent, uses the explicitly requested LOW/HIGH Last Modified window, and never advances the operational checkpoint. Both execution paths preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
 
 Acceptance fixtures:
 
