@@ -160,7 +160,11 @@ df = reader(landing_root_path, source_options)
 
 landing_prefix = landing_root_path.rstrip("/") + "/"
 relative_start = len(landing_prefix) + 1
-relative_file_path = F.substring(F.input_file_name(), relative_start, 1000000)
+relative_file_path = F.regexp_replace(
+    F.substring(F.input_file_name(), relative_start, 1000000),
+    r"\?.*$",
+    "",
+)
 
 df = (
     df
