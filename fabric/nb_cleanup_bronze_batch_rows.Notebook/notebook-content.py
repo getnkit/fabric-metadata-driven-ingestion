@@ -28,6 +28,8 @@ p_batch_id = ""
 from delta.tables import DeltaTable
 from pyspark.sql import functions as F
 
+
+# Validate identifiers before constructing the OneLake Delta path.
 def _require_nonempty(name, value):
     if value is None or str(value).strip() == "":
         raise ValueError(f"{name} is required.")
@@ -52,13 +54,16 @@ table_path = (
     f"{lakehouse_id}/Tables/{table_relative_path}"
 )
 
+# Compensating cleanup is intentionally scoped to one failed ingestion batch.
 batch_predicate = F.col("_batch_id") == F.lit(batch_id)
+
 
 def _cleanup_batch_rows():
     try:
         target_df = spark.read.format("delta").load(table_path)
     except Exception as exc:
         error_message = str(exc)
+        # A missing target means the failed write produced nothing to compensate.
         if "[PATH_NOT_FOUND]" in error_message or "Path does not exist:" in error_message:
             print(
                 f"BRONZE_CLEANUP_NOOP batch_id={batch_id} "
@@ -69,6 +74,7 @@ def _cleanup_batch_rows():
 
     rows_before = target_df.where(batch_predicate).count()
 
+    # Delete only this batch, then verify that no partial Bronze rows remain.
     if rows_before > 0:
         DeltaTable.forPath(spark, table_path).delete(batch_predicate)
 
