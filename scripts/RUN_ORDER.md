@@ -93,7 +93,7 @@ FILE ingestion uses the same `control.ingestion_config` table:
 - `source_path` identifies where the source data is located.
 - `landing_path` identifies the platform-owned Landing Zone path.
 - `file_format` selects the Landing-to-Bronze parser for FILE ingestion.
-- `source_options` stores format/source-specific options such as file-name pattern, delimiter, header, and encoding.
+- `source_options` stores format/source-specific options. The current `DELIMITED_TEXT` contract requires file-name pattern, delimiter, header, encoding, quote, and escape.
 
 No separate `file_ingestion_config` table or Quarantine area is used in the
 current project scope.

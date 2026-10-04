@@ -74,6 +74,8 @@ def _read_delimited_text(path, options):
     delimiter = options.get("delimiter")
     has_header = options.get("has_header")
     encoding = options.get("encoding")
+    quote = options.get("quote")
+    escape = options.get("escape")
 
     if not isinstance(delimiter, str) or delimiter == "":
         raise ValueError("source_options.delimiter is required for DELIMITED_TEXT.")
@@ -81,6 +83,10 @@ def _read_delimited_text(path, options):
         raise ValueError("source_options.has_header must be boolean for DELIMITED_TEXT.")
     if not isinstance(encoding, str) or encoding.strip() == "":
         raise ValueError("source_options.encoding is required for DELIMITED_TEXT.")
+    if not isinstance(quote, str) or len(quote) != 1:
+        raise ValueError("source_options.quote must be a single character for DELIMITED_TEXT.")
+    if not isinstance(escape, str) or len(escape) != 1:
+        raise ValueError("source_options.escape must be a single character for DELIMITED_TEXT.")
 
     return (
         spark.read
@@ -88,8 +94,8 @@ def _read_delimited_text(path, options):
         .option("header", str(has_header).lower())
         .option("sep", delimiter)
         .option("encoding", encoding)
-        .option("quote", '"')
-        .option("escape", "\\")
+        .option("quote", quote)
+        .option("escape", escape)
         .csv(path)
     )
 

@@ -54,7 +54,7 @@ For FILE ingestion, both fields are first-class metadata.
 
 `file_format` is first-class FILE routing metadata because it changes how a raw Landing file is parsed into Bronze. The canonical values are `DELIMITED_TEXT`, `PARQUET`, and `JSON`.
 
-`source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds use `file_name_pattern`, `delimiter`, `has_header`, and `encoding`.
+`source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds require `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and `escape`.
 
 Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
 
@@ -212,7 +212,9 @@ watermark_field    = NULL
   "file_name_pattern": "inventory_snapshot.csv",
   "delimiter": ",",
   "has_header": true,
-  "encoding": "UTF-8"
+  "encoding": "UTF-8",
+  "quote": "\"",
+  "escape": "\\"
 }
 ```
 
