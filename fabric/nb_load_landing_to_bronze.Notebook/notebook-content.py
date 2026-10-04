@@ -49,6 +49,12 @@ def _require_safe_path_segment(name, value):
     return value
 
 
+def _require_single_char(name, value):
+    if not isinstance(value, str) or len(value) != 1:
+        raise ValueError(f"{name} must be a single character.")
+    return value
+
+
 def _parse_source_options(raw_value):
     try:
         parsed = json.loads(_require_nonempty("p_source_options", raw_value))
@@ -74,8 +80,8 @@ def _read_delimited_text(path, options):
     delimiter = options.get("delimiter")
     has_header = options.get("has_header")
     encoding = options.get("encoding")
-    quote = options.get("quote")
-    escape = options.get("escape")
+    quote = _require_single_char("source_options.quote", options.get("quote"))
+    escape = _require_single_char("source_options.escape", options.get("escape"))
 
     if not isinstance(delimiter, str) or delimiter == "":
         raise ValueError("source_options.delimiter is required for DELIMITED_TEXT.")
@@ -83,10 +89,6 @@ def _read_delimited_text(path, options):
         raise ValueError("source_options.has_header must be boolean for DELIMITED_TEXT.")
     if not isinstance(encoding, str) or encoding.strip() == "":
         raise ValueError("source_options.encoding is required for DELIMITED_TEXT.")
-    if not isinstance(quote, str) or len(quote) != 1:
-        raise ValueError("source_options.quote must be a single character for DELIMITED_TEXT.")
-    if not isinstance(escape, str) or len(escape) != 1:
-        raise ValueError("source_options.escape must be a single character for DELIMITED_TEXT.")
 
     return (
         spark.read
@@ -144,19 +146,19 @@ source_root_path = (
     else source_root_path + "/"
 )
 
-landing_root = (
+landing_root_path = (
     f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com/"
     f"{lakehouse_id}/Files/{landing_relative_path}"
 )
-target_path = (
+target_table_path = (
     f"abfss://{workspace_id}@onelake.dfs.fabric.microsoft.com/"
     f"{lakehouse_id}/Tables/{target_schema}/{target_table}"
 )
 
 reader = READERS[file_format]
-df = reader(landing_root, source_options)
+df = reader(landing_root_path, source_options)
 
-landing_prefix = landing_root.rstrip("/") + "/"
+landing_prefix = landing_root_path.rstrip("/") + "/"
 relative_start = len(landing_prefix) + 1
 relative_file_path = F.substring(F.input_file_name(), relative_start, 1000000)
 
@@ -183,7 +185,7 @@ try:
         df.write
         .format("delta")
         .mode("append")
-        .save(target_path)
+        .save(target_table_path)
     )
 finally:
     df.unpersist()
