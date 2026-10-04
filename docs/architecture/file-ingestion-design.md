@@ -316,11 +316,18 @@ matching files are found, the run is recorded as `SKIPPED` and the REGULAR
 checkpoint can still advance to `HIGH`; this avoids repeatedly rescanning the
 same empty time window.
 
-BACKFILL is a separate run intent from the config's normal REGULAR load
-strategy. For the current V1 scope, the SFTP path reuses the bounded file
-adapter and applies the explicitly requested LOW/HIGH window to source-file
-Last Modified time instead of the committed operational checkpoint. A
-successful or skipped BACKFILL does not advance the operational watermark.
+`run_type` and `load_strategy` are independent. The FILE config keeps its
+configured FULL or INCREMENTAL strategy for every execution.
+
+For an INCREMENTAL FILE config, BACKFILL reuses the bounded SFTP adapter and
+applies the explicitly requested LOW/HIGH window to source-file Last Modified
+time instead of the committed operational checkpoint. A successful or skipped
+INCREMENTAL BACKFILL does not advance the operational watermark.
+
+For a FULL FILE config, BACKFILL rereads the same full currently available
+source scope as FULL REGULAR execution. The distinction is execution intent and
+lineage; each successful run still appends a new batch-specific Landing/Bronze
+copy.
 
 The current SFTP incremental physical flow is therefore:
 
@@ -374,20 +381,24 @@ HIGH = ingestion run start time
 advance operational watermark = yes
 ```
 
-A BACKFILL request is not classified as FULL or INCREMENTAL. The current V1
-backfill scope is:
+For the current INCREMENTAL FILE config, BACKFILL uses:
 
 ```text
-BACKFILL
+BACKFILL + INCREMENTAL
 LOW  = requested lower_bound
 HIGH = requested upper_bound
 advance operational watermark = no
 ```
 
-The current SFTP implementation applies that historical scope to source-file
-Last Modified time. Sources that preserve stale timestamps during late delivery
-or require strict per-file receipt tracking still need a different policy such
-as a manifest/receipt state model.
+For a FULL FILE config, BACKFILL uses no LOW/HIGH and rereads the configured
+full current source scope. A future historical FULL-snapshot requirement would
+need an explicit selector such as data_date, snapshot ID, source version, or a
+historical file reference.
+
+The current SFTP INCREMENTAL implementation applies LOW/HIGH to source-file Last
+Modified time. Sources that preserve stale timestamps during late delivery or
+require strict per-file receipt tracking still need a different policy such as
+a manifest/receipt state model.
 
 
 ## Format-routing boundary
