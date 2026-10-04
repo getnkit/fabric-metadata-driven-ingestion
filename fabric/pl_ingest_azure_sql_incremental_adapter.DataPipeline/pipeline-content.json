@@ -493,7 +493,7 @@
         "typeProperties": {
           "variableName": "v_lower_bound",
           "value": {
-            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.value[0].last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
+            "value": "@concat(\n    formatDateTime(\n        if(\n            equals(pipeline().parameters.p_run_type, 'REGULAR'),\n            string(activity('lkp_current_watermark').output.value[0].last_watermark_value),\n            pipeline().parameters.p_requested_lower_bound\n        ),\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    'Z'\n)",
             "type": "Expression"
           }
         },
@@ -561,7 +561,7 @@
               "typeProperties": {
                 "variableName": "v_upper_bound",
                 "value": {
-                  "value": "@coalesce(\n    activity('lkp_capture_upper_bound').output.firstRow.upper_bound,\n    variables('v_lower_bound')\n)",
+                  "value": "@concat(\n    formatDateTime(\n        coalesce(\n            activity('lkp_capture_upper_bound').output.firstRow.upper_bound,\n            variables('v_lower_bound')\n        ),\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    'Z'\n)",
                   "type": "Expression"
                 }
               },
@@ -797,7 +797,7 @@
               "typeProperties": {
                 "variableName": "v_upper_bound",
                 "value": {
-                  "value": "@pipeline().parameters.p_requested_upper_bound",
+                  "value": "@concat(\n    formatDateTime(\n        pipeline().parameters.p_requested_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    'Z'\n)",
                   "type": "Expression"
                 }
               },
