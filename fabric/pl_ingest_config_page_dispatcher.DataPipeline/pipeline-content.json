@@ -135,15 +135,15 @@
                           "type": "Expression"
                         },
                         "p_run_type": {
-                          "value": "@concat('REGULAR')",
+                          "value": "@string('REGULAR')",
                           "type": "Expression"
                         },
                         "p_requested_lower_bound": {
-                          "value": "@concat('')",
+                          "value": "@string('')",
                           "type": "Expression"
                         },
                         "p_requested_upper_bound": {
-                          "value": "@concat('')",
+                          "value": "@string('')",
                           "type": "Expression"
                         }
                       },
