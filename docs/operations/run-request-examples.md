@@ -1,12 +1,12 @@
 # Top-level run request examples
 
-`pl_ingest_orchestrator` has one runtime selection parameter:
+`pl_ingest_orchestrator` accepts:
 
 ```text
 p_run_requests : array
 ```
 
-The default value is an empty array.
+The default is an empty array.
 
 ## Run all active configurations
 
@@ -22,17 +22,13 @@ An empty array means:
 run every active ingestion configuration as REGULAR
 ```
 
-Each REGULAR config then uses its configured `load_strategy` (FULL or
-INCREMENTAL). The orchestrator counts active configurations, applies the
-configured page size, and sends each page to
-`pl_ingest_config_page_dispatcher`.
-
-Do not toggle `control.ingestion_config.is_active` merely to select a temporary
-subset. `is_active` represents whether a configuration is operationally enabled.
+Each config uses its persistent `load_strategy` from `control.ingestion_config`.
 
 ## Run an explicit subset
 
-Pass one object per requested configuration:
+Each request specifies the config and execution intent.
+
+Example:
 
 ```json
 [
@@ -47,40 +43,37 @@ Pass one object per requested configuration:
     "run_type": "BACKFILL",
     "lower_bound": "2026-09-01T00:00:00.000Z",
     "upper_bound": "2026-09-30T23:59:59.999Z"
+  },
+  {
+    "config_id": 3,
+    "run_type": "BACKFILL",
+    "lower_bound": "",
+    "upper_bound": ""
   }
 ]
 ```
 
-The dispatcher fans out exactly the supplied requests. Each object carries its
-own execution intent, so one top-level run can mix normal REGULAR work with
-historical BACKFILL work.
+In the seeded metadata, config 5 is INCREMENTAL and config 3 is FULL. Their BACKFILL requests therefore have different scope shapes.
 
 ## Request contract
-
-Each request object contains:
 
 | Field | Meaning |
 | --- | --- |
 | `config_id` | `control.ingestion_config.ingestion_config_id` |
 | `run_type` | `REGULAR` or `BACKFILL` |
-| `lower_bound` | Historical LOW boundary for BACKFILL |
-| `upper_bound` | Historical HIGH boundary for BACKFILL |
+| `lower_bound` | Requested historical LOW boundary when required |
+| `upper_bound` | Requested historical HIGH boundary when required |
 
 Rules:
 
-- REGULAR must leave `lower_bound` and `upper_bound` empty.
-- BACKFILL requires both `lower_bound` and `upper_bound` in the current V1
-  contract.
-- BACKFILL is not labeled FULL or INCREMENTAL. It is a separate run intent with
-  its own historical scope.
-- Current DATABASE backfill applies LOW/HIGH to a configured watermark field.
-- Current FILE/SFTP backfill applies LOW/HIGH to source file Last Modified time.
-- BACKFILL never advances the operational watermark/checkpoint.
-- An explicitly requested inactive configuration is recorded as `SKIPPED`; it
-  does not move data or advance processing state.
-- For the current V1 contract, include a given `config_id` at most once in one
-  `p_run_requests` array. Use separate top-level runs for multiple windows of
-  the same configuration.
+- `load_strategy` is read from the ingestion config; callers do not override it.
+- REGULAR + FULL: LOW/HIGH must be empty.
+- REGULAR + INCREMENTAL: LOW/HIGH must be empty; the pipeline derives its normal operational range from state.
+- BACKFILL + FULL: LOW/HIGH must be empty; V1 rereads the full currently available source scope.
+- BACKFILL + INCREMENTAL: both LOW and HIGH are required.
+- BACKFILL never advances an INCREMENTAL config's operational watermark/checkpoint.
+- Every successful REGULAR/BACKFILL execution appends a new Bronze batch.
+- An explicitly requested inactive configuration is recorded as `SKIPPED`; it does not move data or advance processing state.
+- For the current V1 contract, include a given `config_id` at most once in one `p_run_requests` array.
 
-The array is a runtime pipeline parameter. It is not loaded from a YAML or JSON
-configuration file. This document is the reusable reference/template.
+A future historical FULL-snapshot requirement should add an explicit selector such as `data_date`, snapshot ID, or source version. Do not reinterpret LOW/HIGH as a historical snapshot identifier.
