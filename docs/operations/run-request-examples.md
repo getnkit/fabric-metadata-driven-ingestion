@@ -22,8 +22,10 @@ An empty array means:
 run every active ingestion configuration as REGULAR
 ```
 
-The orchestrator counts the active configurations, applies the configured page
-size, and sends each page to `pl_ingest_config_page_dispatcher`.
+Each REGULAR config then uses its configured `load_strategy` (FULL or
+INCREMENTAL). The orchestrator counts active configurations, applies the
+configured page size, and sends each page to
+`pl_ingest_config_page_dispatcher`.
 
 Do not toggle `control.ingestion_config.is_active` merely to select a temporary
 subset. `is_active` represents whether a configuration is operationally enabled.
@@ -50,7 +52,8 @@ Pass one object per requested configuration:
 ```
 
 The dispatcher fans out exactly the supplied requests. Each object carries its
-own execution intent, so one top-level run can mix REGULAR and BACKFILL work.
+own execution intent, so one top-level run can mix normal REGULAR work with
+historical BACKFILL work.
 
 ## Request contract
 
@@ -60,19 +63,21 @@ Each request object contains:
 | --- | --- |
 | `config_id` | `control.ingestion_config.ingestion_config_id` |
 | `run_type` | `REGULAR` or `BACKFILL` |
-| `lower_bound` | Optional historical LOW boundary |
-| `upper_bound` | Optional historical HIGH boundary |
+| `lower_bound` | Historical LOW boundary for BACKFILL |
+| `upper_bound` | Historical HIGH boundary for BACKFILL |
 
 Rules:
 
-- An explicitly requested inactive configuration is recorded as `SKIPPED` with `CONFIG_INACTIVE`; it does not move data or advance processing state.
 - REGULAR must leave `lower_bound` and `upper_bound` empty.
-- BACKFILL may use a pattern-specific historical scope.
-- DATABASE + INCREMENTAL BACKFILL requires both LOW and HIGH.
-- FILE + INCREMENTAL BACKFILL requires both LOW and HIGH and applies them to the
-  source file Last Modified window.
-- FULL + BACKFILL is not rejected by the generic controller. Historical snapshot
-  selection, when required, is source-specific.
+- BACKFILL requires both `lower_bound` and `upper_bound` in the current V1
+  contract.
+- BACKFILL is not labeled FULL or INCREMENTAL. It is a separate run intent with
+  its own historical scope.
+- Current DATABASE backfill applies LOW/HIGH to a configured watermark field.
+- Current FILE/SFTP backfill applies LOW/HIGH to source file Last Modified time.
+- BACKFILL never advances the operational watermark/checkpoint.
+- An explicitly requested inactive configuration is recorded as `SKIPPED`; it
+  does not move data or advance processing state.
 - For the current V1 contract, include a given `config_id` at most once in one
   `p_run_requests` array. Use separate top-level runs for multiple windows of
   the same configuration.
