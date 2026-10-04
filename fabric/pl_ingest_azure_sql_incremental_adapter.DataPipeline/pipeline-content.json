@@ -1124,7 +1124,7 @@
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@variables('v_upper_bound')",
+                      "value": "@variables('v_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
