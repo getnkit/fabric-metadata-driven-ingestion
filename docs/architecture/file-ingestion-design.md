@@ -316,6 +316,11 @@ matching files, the run is recorded as `SKIPPED` and can still advance the Last
 Modified checkpoint to `HIGH`; this avoids repeatedly rescanning the same empty
 time window.
 
+For BACKFILL, the same SFTP adapter uses the explicitly requested LOW/HIGH
+window as the Last Modified filter instead of the committed operational
+checkpoint. A successful or skipped BACKFILL does not advance the operational
+watermark.
+
 The current SFTP incremental physical flow is therefore:
 
 ```text
