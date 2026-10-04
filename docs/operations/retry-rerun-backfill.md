@@ -25,6 +25,21 @@ A BACKFILL interval may overlap an interval that was processed successfully
 before. Bronze is append-oriented, so a new backfill creates a new batch/run
 lineage rather than deleting or replacing an earlier successful batch.
 
+## Current incremental backfill support
+
+The implemented incremental adapters use explicit LOW/HIGH boundaries for
+BACKFILL:
+
+- Azure SQL DATABASE + INCREMENTAL uses the requested relational watermark window.
+- SFTP FILE + INCREMENTAL uses the requested source-file Last Modified window.
+
+REGULAR runs continue to derive their boundaries from committed operational
+state. BACKFILL runs do not update that state.
+
+FULL + BACKFILL is not rejected by the generic controller. Historical snapshot
+selection is source-specific and must be represented by the source/configuration
+when a true historical snapshot is required.
+
 ## Platform execution recovery
 
 Microsoft Fabric Retry/Rerun is an execution-control feature and is separate
