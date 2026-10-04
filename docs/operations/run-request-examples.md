@@ -65,6 +65,7 @@ Each request object contains:
 
 Rules:
 
+- An explicitly requested inactive configuration is recorded as `SKIPPED` with `CONFIG_INACTIVE`; it does not move data or advance processing state.
 - REGULAR must leave `lower_bound` and `upper_bound` empty.
 - BACKFILL may use a pattern-specific historical scope.
 - DATABASE + INCREMENTAL BACKFILL requires both LOW and HIGH.
