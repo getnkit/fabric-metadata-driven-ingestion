@@ -316,10 +316,11 @@ matching files are found, the run is recorded as `SKIPPED` and the REGULAR
 checkpoint can still advance to `HIGH`; this avoids repeatedly rescanning the
 same empty time window.
 
-For BACKFILL, the same SFTP adapter uses the explicitly requested LOW/HIGH
-window as the Last Modified filter instead of the committed operational
-checkpoint. A successful or skipped BACKFILL does not advance the operational
-watermark.
+BACKFILL is a separate run intent from the config's normal REGULAR load
+strategy. For the current V1 scope, the SFTP path reuses the bounded file
+adapter and applies the explicitly requested LOW/HIGH window to source-file
+Last Modified time instead of the committed operational checkpoint. A
+successful or skipped BACKFILL does not advance the operational watermark.
 
 The current SFTP incremental physical flow is therefore:
 
@@ -364,24 +365,29 @@ that reflects delivery/update time. A source that preserves stale timestamps
 during late delivery or requires strict per-file receipt tracking would need a
 different policy such as a manifest/receipt state model.
 
-FILE + INCREMENTAL supports both `REGULAR` and `BACKFILL` execution:
+The file config's normal REGULAR strategy is INCREMENTAL:
 
 ```text
 REGULAR
 LOW  = committed last_modified_time watermark
 HIGH = ingestion run start time
 advance operational watermark = yes
+```
 
+A BACKFILL request is not classified as FULL or INCREMENTAL. The current V1
+backfill scope is:
+
+```text
 BACKFILL
 LOW  = requested lower_bound
 HIGH = requested upper_bound
 advance operational watermark = no
 ```
 
-Both modes filter on the source file Last Modified timestamp. Sources that
-preserve stale timestamps during late delivery or require strict per-file
-receipt tracking still need a different policy such as a manifest/receipt state
-model.
+The current SFTP implementation applies that historical scope to source-file
+Last Modified time. Sources that preserve stale timestamps during late delivery
+or require strict per-file receipt tracking still need a different policy such
+as a manifest/receipt state model.
 
 
 ## Format-routing boundary
