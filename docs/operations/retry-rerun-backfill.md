@@ -9,91 +9,86 @@ REGULAR
 BACKFILL
 ```
 
-`RERUN` is not a framework run type.
+`RERUN` is not a framework run type. Microsoft Fabric Retry/Rerun is an execution-recovery feature and is separate from framework data-processing intent.
+
+Two independent dimensions are preserved for every run:
+
+```text
+load_strategy = FULL | INCREMENTAL   # persistent dataset/config metadata
+run_type      = REGULAR | BACKFILL   # per-execution intent
+```
+
+A BACKFILL does not change the configured `load_strategy`.
 
 ## REGULAR
 
 `REGULAR` is the normal operational execution mode.
 
-For REGULAR execution, the configuration's `load_strategy` determines how the
-source is read:
-
 ```text
-REGULAR + configured FULL
-REGULAR + configured INCREMENTAL
-```
+REGULAR + FULL
+  -> read the configured full current source scope
+  -> no requested LOW/HIGH
 
-An INCREMENTAL REGULAR run derives its processing window from committed
-operational state. A FULL REGULAR run executes the configured full-load behavior.
+REGULAR + INCREMENTAL
+  -> LOW  = committed operational watermark
+  -> HIGH = source/run boundary captured for this execution
+  -> advance operational state only after successful finalization
+```
 
 ## BACKFILL
 
-`BACKFILL` is a separate execution intent for an explicitly requested
-historical scope. It is not classified as FULL or INCREMENTAL.
+`BACKFILL` is an intentional recovery/repopulation execution rather than the normal processing cycle.
 
-The current V1 runtime contract represents the historical scope with:
+Current V1 semantics are:
 
 ```text
-requested lower_bound
-requested upper_bound
+BACKFILL + FULL
+  -> reread the full currently available source scope
+  -> no requested LOW/HIGH
+  -> append a new Bronze batch
+
+BACKFILL + INCREMENTAL
+  -> process an explicitly requested historical LOW/HIGH range
+  -> never advance the operational watermark/checkpoint
+  -> append a new Bronze batch
 ```
 
-Pattern-specific adapters decide how those boundaries are applied. Current
-implementations include:
+A FULL BACKFILL may physically read the same source rows as a REGULAR FULL run. The difference is execution intent and lineage: the BACKFILL run is performed to repopulate/recover data and is audited as BACKFILL.
 
-- DATABASE: historical LOW/HIGH window against the configured watermark field.
-- FILE/SFTP: historical LOW/HIGH window against source file Last Modified time.
+The current V1 FULL BACKFILL does not select a historical point-in-time snapshot. If a future source requires a historical full snapshot, add an explicit source-appropriate selector such as `data_date`, snapshot ID, source version, or timestamp rather than overloading LOW/HIGH.
 
-A future source may use a different backfill selector such as `data_date`,
-snapshot ID, source version, or another source-specific historical reference.
-That would extend the backfill scope contract rather than create a new
-FULL/INCREMENTAL classification for BACKFILL.
+## Bronze invariant
 
-## Processing-state rule
+Bronze is append-only for every successful REGULAR or BACKFILL execution.
 
-BACKFILL never advances the operational watermark/checkpoint.
+A later run never deletes, truncates, overwrites, or replaces a previously successful Bronze batch merely because the source scope overlaps. Each execution preserves its own `_batch_id` and pipeline-run lineage.
 
-Operational state represents forward REGULAR processing. Moving that state
-because of a historical BACKFILL could make the next REGULAR run skip data or
-move backward incorrectly.
-
-A BACKFILL scope may overlap data processed successfully before. Bronze is
-append-oriented, so a new backfill creates new batch/run lineage rather than
-deleting or replacing an earlier successful batch.
+The only ingestion-time deletion allowed is compensating cleanup of the current failed batch when a Bronze write may have partially succeeded.
 
 ## Audit semantics
 
-For REGULAR runs, `audit.ingestion_log.load_strategy` records the configured
-FULL or INCREMENTAL strategy.
+`audit.ingestion_log` keeps both dimensions:
 
-For BACKFILL runs, `load_strategy` is stored as NULL because BACKFILL is its own
-run intent. The historical scope is represented by the processing-boundary
-fields and related source metadata.
+```text
+run_type      = REGULAR | BACKFILL
+load_strategy = FULL | INCREMENTAL
+```
+
+Examples:
+
+```text
+REGULAR  + FULL
+REGULAR  + INCREMENTAL
+BACKFILL + FULL
+BACKFILL + INCREMENTAL
+```
+
+Processing-boundary fields are populated only when relevant to the selected scope. In the current V1 contract, BACKFILL + INCREMENTAL records requested LOW/HIGH while BACKFILL + FULL does not.
 
 ## Platform execution recovery
 
-Microsoft Fabric Retry/Rerun is an execution-control feature and is separate
-from framework data-processing intent:
+The supported operational entry point remains `pl_ingest_orchestrator`. Direct manual execution/retry of dispatcher, controller, router, adapter, or loader pipelines is not part of the supported contract.
 
-```text
-Fabric Retry/Rerun
-!= framework run_type
-```
+For deterministic recovery from a failed REGULAR run, prefer a new top-level REGULAR execution unless the operator intentionally needs BACKFILL semantics.
 
-The supported operational entry point remains `pl_ingest_orchestrator`.
-Direct manual execution/retry of dispatcher, controller, router, adapter, or
-loader pipelines is not part of the supported contract.
-
-For deterministic recovery, prefer a new top-level REGULAR execution after a
-failed REGULAR run. The committed watermark remains the source of truth.
-
-The framework keeps batch-scoped compensating cleanup for failed Bronze writes.
-It does not perform destructive LOW/HIGH window cleanup against previously
-successful batches.
-
-## Future reprocessing
-
-Do not add `REPROCESS` until a concrete requirement needs intentional
-replacement/deduplication of data that was already processed successfully.
-That behavior requires an explicit target policy rather than another synonym
-for execution retry.
+Do not add a framework `REPROCESS` type until a concrete requirement needs a distinct data-replacement policy.
