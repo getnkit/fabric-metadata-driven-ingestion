@@ -71,7 +71,7 @@
                     "type": "Expression"
                   },
                   "p_page_index": {
-                    "value": "0",
+                    "value": "@int('0')",
                     "type": "Expression"
                   },
                   "p_page_size": {
