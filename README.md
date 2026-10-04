@@ -12,4 +12,5 @@
 
 - [Bronze compensating cleanup](docs/operations/bronze-compensating-cleanup.md) — automatic batch-scoped compensation and recovery boundary for failed append-oriented Bronze writes.
 - [Retry, rerun, and backfill semantics](docs/operations/retry-rerun-backfill.md) — separates Fabric execution recovery from framework REGULAR/BACKFILL data-processing intent.
+- [Top-level run request examples](docs/operations/run-request-examples.md) — run all active configs or submit an explicit mixed REGULAR/BACKFILL request array.
 - [Orchestrator failure alerting](docs/operations/orchestrator-failure-alerting.md) — one pipeline-level failure notification boundary without notification activities in every child pipeline.
