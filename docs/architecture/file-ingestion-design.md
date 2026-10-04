@@ -310,11 +310,11 @@ landing:
             file.csv
 ```
 
-If the recursive Landing copy finds matching files and the Bronze load succeeds,
-the pipeline watermark advances to `HIGH`. If the recursive copy finds no
-matching files, the run is recorded as `SKIPPED` and can still advance the Last
-Modified checkpoint to `HIGH`; this avoids repeatedly rescanning the same empty
-time window.
+For REGULAR execution, if the recursive Landing copy finds matching files and
+the Bronze load succeeds, the pipeline watermark advances to `HIGH`. If no
+matching files are found, the run is recorded as `SKIPPED` and the REGULAR
+checkpoint can still advance to `HIGH`; this avoids repeatedly rescanning the
+same empty time window.
 
 For BACKFILL, the same SFTP adapter uses the explicitly requested LOW/HIGH
 window as the Last Modified filter instead of the committed operational
@@ -325,6 +325,9 @@ The current SFTP incremental physical flow is therefore:
 
 ```text
 pl_ingest_sftp_incremental_adapter
+  -> if_valid_processing_scope
+  -> resolve LOW/HIGH for REGULAR or BACKFILL
+  -> if_valid_processing_boundary
   -> if_supported_file_format
   -> copy_sftp_to_landing
        recursive = true
