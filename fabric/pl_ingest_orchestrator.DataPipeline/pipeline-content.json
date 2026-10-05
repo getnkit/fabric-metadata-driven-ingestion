@@ -21,39 +21,6 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(greaterOrEquals(pipeline().parameters.p_config_page_size, 1), lessOrEquals(pipeline().parameters.p_config_page_size, 5000))",
-            "type": "Expression"
-          },
-          "ifTrueActivities": [],
-          "ifFalseActivities": [
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "@concat('Invalid config page size: ', string(pipeline().parameters.p_config_page_size), '. Supported range is 1..5000; default is 1000.')",
-                  "type": "Expression"
-                },
-                "errorCode": "INVALID_CONFIG_PAGE_SIZE"
-              },
-              "name": "fail_invalid_config_page_size",
-              "dependsOn": []
-            }
-          ]
-        },
-        "name": "if_valid_config_page_size",
-        "dependsOn": [
-          {
-            "activity": "set_batch_id",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "IfCondition",
-        "typeProperties": {
-          "expression": {
             "value": "@greater(length(pipeline().parameters.p_run_requests), 0)",
             "type": "Expression"
           },
@@ -145,6 +112,32 @@
           ],
           "ifFalseActivities": [
             {
+              "type": "IfCondition",
+              "typeProperties": {
+                "expression": {
+                  "value": "@and(greaterOrEquals(pipeline().parameters.p_config_page_size, 1), lessOrEquals(pipeline().parameters.p_config_page_size, 5000))",
+                  "type": "Expression"
+                },
+                "ifTrueActivities": [],
+                "ifFalseActivities": [
+                  {
+                    "type": "Fail",
+                    "typeProperties": {
+                      "message": {
+                        "value": "@concat('Invalid config page size: ', string(pipeline().parameters.p_config_page_size), '. Supported range is 1..5000; default is 1000.')",
+                        "type": "Expression"
+                      },
+                      "errorCode": "INVALID_CONFIG_PAGE_SIZE"
+                    },
+                    "name": "fail_invalid_config_page_size",
+                    "dependsOn": []
+                  }
+                ]
+              },
+              "name": "if_valid_config_page_size",
+              "dependsOn": []
+            },
+            {
               "type": "Lookup",
               "typeProperties": {
                 "source": {
@@ -185,7 +178,14 @@
                 "secureOutput": false
               },
               "name": "lkp_config_pagination_info",
-              "dependsOn": []
+              "dependsOn": [
+                {
+                  "activity": "if_valid_config_page_size",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
             },
             {
               "type": "IfCondition",
@@ -285,7 +285,7 @@
         "name": "if_explicit_run_requests",
         "dependsOn": [
           {
-            "activity": "if_valid_config_page_size",
+            "activity": "set_batch_id",
             "dependencyConditions": [
               "Succeeded"
             ]
