@@ -258,3 +258,105 @@ GO
 
 PRINT 'control.usp_finalize_ingestion_run created successfully.';
 GO
+
+
+/*
+    Validate the top-level explicit run-request envelope before Dispatcher fan-out.
+
+    This procedure validates only request shape and cross-request safety that can be
+    decided without loading ingestion_config. Config-specific semantics (for example,
+    FULL/INCREMENTAL boundary rules) remain owned by pl_ingest_object_controller.
+*/
+CREATE OR ALTER PROCEDURE control.usp_validate_run_requests
+    @run_requests_json NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF ISJSON(@run_requests_json) <> 1
+       OR LEFT(LTRIM(@run_requests_json), 1) <> '['
+    BEGIN
+        THROW 51010, 'INVALID_RUN_REQUESTS: p_run_requests must be a JSON array.', 1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM OPENJSON(@run_requests_json) AS request_item
+        WHERE request_item.[type] <> 5
+    )
+    BEGIN
+        THROW 51011, 'INVALID_RUN_REQUESTS: every p_run_requests item must be a JSON object.', 1;
+    END;
+
+    /*
+        Required object contract:
+          config_id   : positive integer
+          run_type    : REGULAR | BACKFILL
+          lower_bound : string or null
+          upper_bound : string or null
+
+        Bound semantics are intentionally not checked here because they depend on
+        the config load_strategy and are validated by the Controller.
+    */
+    IF EXISTS
+    (
+        SELECT 1
+        FROM OPENJSON(@run_requests_json) AS request_item
+        WHERE
+            NOT EXISTS
+            (
+                SELECT 1
+                FROM OPENJSON(request_item.[value]) AS property
+                WHERE property.[key] = 'config_id'
+                  AND property.[type] = 2
+                  AND TRY_CONVERT(INT, property.[value]) > 0
+            )
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM OPENJSON(request_item.[value]) AS property
+                WHERE property.[key] = 'run_type'
+                  AND property.[type] = 1
+                  AND UPPER(property.[value]) IN ('REGULAR', 'BACKFILL')
+            )
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM OPENJSON(request_item.[value]) AS property
+                WHERE property.[key] = 'lower_bound'
+                  AND property.[type] IN (0, 1)
+            )
+            OR NOT EXISTS
+            (
+                SELECT 1
+                FROM OPENJSON(request_item.[value]) AS property
+                WHERE property.[key] = 'upper_bound'
+                  AND property.[type] IN (0, 1)
+            )
+    )
+    BEGIN
+        THROW 51012, 'INVALID_RUN_REQUESTS: each request requires positive integer config_id, REGULAR/BACKFILL run_type, and lower_bound/upper_bound as string or null.', 1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT request_values.config_id
+        FROM
+        (
+            SELECT TRY_CONVERT(INT, JSON_VALUE(request_item.[value], '$.config_id')) AS config_id
+            FROM OPENJSON(@run_requests_json) AS request_item
+        ) AS request_values
+        GROUP BY request_values.config_id
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        THROW 51013, 'DUPLICATE_RUN_REQUEST: each config_id may appear at most once in p_run_requests.', 1;
+    END;
+
+    RETURN 0;
+END;
+GO
+
+PRINT 'control.usp_validate_run_requests created successfully.';
+GO
