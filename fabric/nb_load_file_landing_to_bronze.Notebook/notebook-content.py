@@ -174,7 +174,7 @@ df = (
     df
     .withColumn("_batch_id", F.lit(batch_id))
     .withColumn("_pipeline_run_id", F.lit(pipeline_run_id))
-    .withColumn("_ingestion_timestamp", F.lit(ingestion_timestamp))
+    .withColumn("_ingestion_timestamp", F.lit(ingestion_timestamp).cast("timestamp"))
     .withColumn(
         "_source_file_name",
         F.element_at(F.split(relative_file_path, "/"), -1),
