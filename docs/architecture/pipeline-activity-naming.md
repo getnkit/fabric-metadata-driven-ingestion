@@ -124,7 +124,7 @@ Current reusable notebooks:
 nb_cleanup_bronze_batch_rows
 = idempotent Delta cleanup scoped by _batch_id
 
-nb_load_landing_to_bronze
+nb_load_file_landing_to_bronze
 = batch-scoped recursive Landing parse + technical metadata + Bronze Delta append
 ```
 
@@ -135,10 +135,6 @@ Do not replace a simple connector-native Copy activity with a Notebook just to m
 Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
 
 Do not automatically delete Bronze rows after `sp_finalize_success` itself fails. That stored procedure may have committed the audit/watermark transaction before the client observed the failure; deleting Bronze after an ambiguous successful finalization could create data loss.
-
-## Legacy exception
-
-`pl_ingest_full_legacy` is retained as a reference artifact and is not refactored to this convention. New and active pipelines follow this standard.
 
 ## Pipeline names
 
@@ -155,7 +151,7 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 | Role | Responsibility |
 |---|---|
 | `orchestrator` | Top-level ingestion framework entry point; establishes run scope and coordinates config-page execution. |
-| `dispatcher` | Enumerates and dispatches a bounded page of ingestion configurations. |
+| `dispatcher` | Fans out a bounded collection of explicit run requests or metadata-selected ingestion configurations to the per-object controller. |
 | `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
 | `router` | Selects the connector-specific implementation for a generic ingestion pattern such as DATABASE/FULL or FILE/INCREMENTAL. |
 | `adapter` | Converts generic ingestion metadata into connector-specific configuration **and executes the connector-specific ingestion flow**. It is not only a metadata translator. |
@@ -165,7 +161,7 @@ Current active hierarchy:
 
 ```text
 pl_ingest_orchestrator
-  -> pl_ingest_config_page_dispatcher
+  -> pl_ingest_config_dispatcher
     -> pl_ingest_object_controller
       -> pl_ingest_database_full_router
         -> pl_ingest_azure_sql_full_adapter
@@ -182,12 +178,12 @@ pl_ingest_orchestrator
 
 Platform Retry/Rerun is treated as execution recovery and is not encoded as a framework `run_type`. Direct manual reruns of internal child pipelines are not part of the supported operational contract; recovery enters through the top-level orchestrator.
 
-`config_page` is deliberate terminology: the dispatcher reads a deterministic SQL page of configuration IDs using `ORDER BY ... OFFSET ... FETCH NEXT ...`, keeping each Lookup result within the platform row limit. `page` is kept distinct from the framework's ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
+`config_dispatcher` is deliberately broader than `config_page`: the same dispatcher handles either an explicit bounded request collection or one deterministic SQL page of active configuration IDs. Pagination remains an Orchestrator concern for ALL ACTIVE execution, while the Dispatcher owns bounded fan-out in both modes. `page` remains distinct from the ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 
 Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix:
 
 ```text
-pl_ingest_config_page_dispatcher          -> inv_ingest_config_page_dispatcher
+pl_ingest_config_dispatcher          -> inv_ingest_config_dispatcher
 pl_ingest_object_controller               -> inv_ingest_object_controller
 pl_ingest_database_incremental_router     -> inv_ingest_database_incremental_router
 pl_ingest_azure_sql_incremental_adapter   -> inv_ingest_azure_sql_incremental_adapter
