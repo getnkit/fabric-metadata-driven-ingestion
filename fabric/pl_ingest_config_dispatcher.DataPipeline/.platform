@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pl_ingest_config_dispatcher",
+    "description": "Dispatches a bounded collection of explicit run requests or one metadata configuration page to pl_ingest_object_controller."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "3b7f2c5e-6a91-4d48-b0e2-7c4f9a1d35b6"
+  }
+}
