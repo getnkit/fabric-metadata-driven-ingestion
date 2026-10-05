@@ -59,6 +59,44 @@
           },
           "ifTrueActivities": [
             {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[control].[usp_validate_run_requests]",
+                "storedProcedureParameters": {
+                  "run_requests_json": {
+                    "value": {
+                      "value": "@string(pipeline().parameters.p_run_requests)",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  }
+                }
+              },
+              "connectionSettings": {
+                "name": "sqldb_ingestion_control",
+                "properties": {
+                  "type": "FabricSqlDatabase",
+                  "typeProperties": {
+                    "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                  },
+                  "externalReferences": {
+                    "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "sp_validate_run_requests",
+              "dependsOn": []
+            },
+            {
               "type": "InvokePipeline",
               "typeProperties": {
                 "parameters": {
@@ -95,7 +133,14 @@
                 "secureOutput": false
               },
               "name": "inv_ingest_explicit_requests",
-              "dependsOn": []
+              "dependsOn": [
+                {
+                  "activity": "sp_validate_run_requests",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
             }
           ],
           "ifFalseActivities": [
