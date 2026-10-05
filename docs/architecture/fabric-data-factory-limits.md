@@ -47,9 +47,9 @@ The production-safe pattern is:
 pl_ingest_orchestrator
   -> lkp_config_pagination_info
   -> fe_config_pages (sequential)
-       -> inv_ingest_config_page_dispatcher
+       -> inv_ingest_config_dispatcher
 
-pl_ingest_config_page_dispatcher
+pl_ingest_config_dispatcher
   -> lkp_config_page
        OFFSET page_index * page_size
        FETCH NEXT page_size
