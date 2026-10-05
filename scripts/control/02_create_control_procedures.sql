@@ -338,7 +338,13 @@ BEGIN
         THROW 51012, 'INVALID_RUN_REQUESTS: each request requires positive integer config_id, REGULAR/BACKFILL run_type, and lower_bound/upper_bound as string or null.', 1;
     END;
 
-    IF EXISTS
+    DECLARE @DuplicateConfigIds NVARCHAR(MAX);
+    DECLARE @DuplicateMessage NVARCHAR(2048);
+
+    SELECT
+        @DuplicateConfigIds =
+            STRING_AGG(CONVERT(NVARCHAR(MAX), duplicate_requests.config_id), N', ')
+    FROM
     (
         SELECT request_values.config_id
         FROM
@@ -348,9 +354,21 @@ BEGIN
         ) AS request_values
         GROUP BY request_values.config_id
         HAVING COUNT(*) > 1
-    )
+    ) AS duplicate_requests;
+
+    IF @DuplicateConfigIds IS NOT NULL
     BEGIN
-        THROW 51013, 'DUPLICATE_RUN_REQUEST: each config_id may appear at most once in p_run_requests.', 1;
+        SET @DuplicateMessage = CONCAT(
+            'DUPLICATE_RUN_REQUEST: duplicate config_id(s): ',
+            CASE
+                WHEN LEN(@DuplicateConfigIds) > 1800
+                    THEN CONCAT(LEFT(@DuplicateConfigIds, 1800), ' ...')
+                ELSE @DuplicateConfigIds
+            END,
+            '. Each config_id may appear at most once in p_run_requests.'
+        );
+
+        THROW 51013, @DuplicateMessage, 1;
     END;
 
     RETURN 0;
