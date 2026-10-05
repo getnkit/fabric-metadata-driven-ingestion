@@ -38,6 +38,8 @@ Run in this order:
 3. `scripts/control/03_seed_connection_settings.sql`
 4. `scripts/control/04_seed_ingestion_metadata.sql`
 
+`02_create_control_procedures.sql` is idempotent and contains both ingestion finalization and top-level explicit-request validation procedures. Rerun it after pulling framework changes that modify either control procedure.
+
 Expected metadata state after seeding:
 
 - `control.ingestion_config` = 8 rows total: 6 `ECOMMERCE` DATABASE configs + 2 `LOGISTICS_VENDOR` FILE configs
