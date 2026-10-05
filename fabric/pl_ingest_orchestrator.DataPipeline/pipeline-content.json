@@ -265,7 +265,7 @@
                       "secureInput": false,
                       "secureOutput": false
                     },
-                    "name": "inv_ingest_config_page_dispatcher",
+                    "name": "inv_ingest_config_dispatcher",
                     "dependsOn": []
                   }
                 ]
