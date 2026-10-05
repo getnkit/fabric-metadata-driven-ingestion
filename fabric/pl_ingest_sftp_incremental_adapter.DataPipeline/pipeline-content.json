@@ -685,7 +685,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_valid_processing_scope",
+              "name": "sp_finalize_invalid_processing_scope",
               "dependsOn": []
             },
             {
@@ -697,10 +697,10 @@
                 },
                 "errorCode": "INVALID_RUN_REQUEST"
               },
-              "name": "fail_valid_processing_scope",
+              "name": "fail_invalid_processing_scope",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_valid_processing_scope",
+                  "activity": "sp_finalize_invalid_processing_scope",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -959,7 +959,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_valid_processing_boundary",
+              "name": "sp_finalize_invalid_processing_boundary",
               "dependsOn": []
             },
             {
@@ -971,10 +971,10 @@
                 },
                 "errorCode": "INVALID_PROCESSING_BOUNDARY"
               },
-              "name": "fail_valid_processing_boundary",
+              "name": "fail_invalid_processing_boundary",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_valid_processing_boundary",
+                  "activity": "sp_finalize_invalid_processing_boundary",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
