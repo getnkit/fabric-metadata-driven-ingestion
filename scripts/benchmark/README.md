@@ -92,12 +92,21 @@ The scenario script disables both benchmark configs, activates exactly one, sets
 its `copy_options`, selects a scenario-specific Bronze target table, and returns
 the `ingestion_config_id`.
 
-Run `pl_ingest_orchestrator` with:
+Run `pl_ingest_orchestrator` with an explicit request:
 
 ```text
-p_config_id = <returned ingestion_config_id>
-p_run_type  = REGULAR
+p_run_requests = [
+  {
+    "config_id": <returned ingestion_config_id>,
+    "run_type": "REGULAR",
+    "lower_bound": "",
+    "upper_bound": ""
+  }
+]
 ```
+
+The benchmark config remains metadata-driven; `load_strategy` and copy options
+come from `control.ingestion_config`.
 
 After the benchmark session, run the scenario script with:
 
