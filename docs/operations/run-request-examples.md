@@ -74,6 +74,7 @@ Rules:
 - BACKFILL never advances an INCREMENTAL config's operational watermark/checkpoint.
 - Every successful REGULAR/BACKFILL execution appends a new Bronze batch.
 - An explicitly requested inactive configuration is recorded as `SKIPPED`; it does not move data or advance processing state.
-- For the current V1 contract, include a given `config_id` at most once in one `p_run_requests` array.
+- Each explicit request must contain `config_id`, `run_type`, `lower_bound`, and `upper_bound`; malformed request objects are rejected before Dispatcher fan-out.
+- A given `config_id` may appear at most once in one `p_run_requests` array; duplicates are rejected before Dispatcher fan-out.
 
 A future historical FULL-snapshot requirement should add an explicit selector such as `data_date`, snapshot ID, or source version. Do not reinterpret LOW/HIGH as a historical snapshot identifier.
