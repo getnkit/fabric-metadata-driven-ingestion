@@ -200,6 +200,8 @@ try:
 finally:
     df.unpersist()
 
+# source_row_count is the parsed Landing row count. After a successful atomic Delta append,
+# target_row_count reuses that count; it is an audit metric, not an independent Bronze recount.
 result = json.dumps(
     {
         "source_row_count": int(row_count),
