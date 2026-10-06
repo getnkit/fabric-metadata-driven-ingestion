@@ -86,8 +86,8 @@ BEGIN
 
     IF @advance_watermark = 1
     BEGIN
-        IF @status NOT IN ('SUCCESS','SKIPPED')
-            THROW 51003, 'INVALID_WATERMARK_ADVANCE: watermark can advance only for SUCCESS or SKIPPED.', 1;
+        IF @status <> 'SUCCESS'
+            THROW 51003, 'INVALID_WATERMARK_ADVANCE: watermark can advance only for SUCCESS.', 1;
 
         IF @ingestion_config_id IS NULL
            OR @watermark_field IS NULL
