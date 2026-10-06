@@ -70,7 +70,7 @@ For DATABASE timestamp-watermark ingestion, boundary semantics are:
 ```text
 REGULAR:
   upper > lower  -> process
-  upper = lower  -> valid no-new-data window -> SKIPPED
+  upper = lower  -> valid no-new-data window -> SUCCESS with zero rows
   upper < lower  -> invalid boundary -> FAILED
 
 BACKFILL:
@@ -122,9 +122,8 @@ watermark.
 This optimistic comparison keeps the watermark state update and terminal audit
 insert atomic inside the control SQL database.
 
-A no-data FILE scan can finish as `SKIPPED` and still advance its Last Modified
-window. In that case the previous last-successful-data batch/run references are
-preserved.
+A no-data FILE scan finishes as `SUCCESS` with zero rows and may still advance its Last Modified
+window. Because it is a successful operational scan, the committed processing boundary advances normally.
 
 ## Run types and recovery
 
