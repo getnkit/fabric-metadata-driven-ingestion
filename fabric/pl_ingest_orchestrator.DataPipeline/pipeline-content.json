@@ -74,14 +74,6 @@
                   "p_run_requests": {
                     "value": "@pipeline().parameters.p_run_requests",
                     "type": "Expression"
-                  },
-                  "p_page_index": {
-                    "value": "@int('0')",
-                    "type": "Expression"
-                  },
-                  "p_page_size": {
-                    "value": "@pipeline().parameters.p_config_page_size",
-                    "type": "Expression"
                   }
                 },
                 "waitOnCompletion": true,
@@ -99,7 +91,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_ingest_config_dispatcher_explicit",
+              "name": "inv_ingest_config_dispatcher",
               "dependsOn": [
                 {
                   "activity": "sp_validate_run_requests",
@@ -112,173 +104,35 @@
           ],
           "ifFalseActivities": [
             {
-              "type": "IfCondition",
+              "type": "InvokePipeline",
               "typeProperties": {
-                "expression": {
-                  "value": "@and(greaterOrEquals(pipeline().parameters.p_config_page_size, 1), lessOrEquals(pipeline().parameters.p_config_page_size, 5000))",
-                  "type": "Expression"
-                },
-                "ifTrueActivities": [],
-                "ifFalseActivities": [
-                  {
-                    "type": "Fail",
-                    "typeProperties": {
-                      "message": {
-                        "value": "@concat('Invalid config page size: ', string(pipeline().parameters.p_config_page_size), '. Supported range is 1..5000; default is 1000.')",
-                        "type": "Expression"
-                      },
-                      "errorCode": "INVALID_CONFIG_PAGE_SIZE"
-                    },
-                    "name": "fail_invalid_config_page_size",
-                    "dependsOn": []
-                  }
-                ]
-              },
-              "name": "if_valid_config_page_size",
-              "dependsOn": []
-            },
-            {
-              "type": "Lookup",
-              "typeProperties": {
-                "source": {
-                  "type": "FabricSqlDatabaseSource",
-                  "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT ',\n    'CAST(COUNT_BIG(1) AS bigint) AS config_count, ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1;'\n)",
+                "parameters": {
+                  "p_batch_id": {
+                    "value": "@variables('v_batch_id')",
                     "type": "Expression"
                   },
-                  "partitionOption": "None",
-                  "queryTimeout": "02:00:00"
+                  "p_config_page_size": {
+                    "value": "@pipeline().parameters.p_config_page_size",
+                    "type": "Expression"
+                  }
                 },
-                "datasetSettings": {
-                  "type": "FabricSqlDatabaseTable",
-                  "schema": [],
-                  "connectionSettings": {
-                    "name": "sqldb_ingestion_control",
-                    "properties": {
-                      "type": "FabricSqlDatabase",
-                      "typeProperties": {
-                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                        "workspaceId": "00000000-0000-0000-0000-000000000000"
-                      },
-                      "externalReferences": {
-                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                      },
-                      "annotations": []
-                    }
-                  },
-                  "annotations": []
-                },
-                "firstRowOnly": true
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "7c3d9f21-5a84-4eb7-a2d1-6f0c8e93b451",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
               },
               "policy": {
                 "timeout": "0.12:00:00",
-                "retry": 2,
+                "retry": 0,
                 "retryIntervalInSeconds": 30,
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "lkp_config_pagination_info",
-              "dependsOn": [
-                {
-                  "activity": "if_valid_config_page_size",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "IfCondition",
-              "typeProperties": {
-                "expression": {
-                  "value": "@greater(int(activity('lkp_config_pagination_info').output.firstRow.config_count), 0)",
-                  "type": "Expression"
-                },
-                "ifTrueActivities": [],
-                "ifFalseActivities": [
-                  {
-                    "type": "Fail",
-                    "typeProperties": {
-                      "message": {
-                        "value": "No active ingestion configurations were found.",
-                        "type": "Expression"
-                      },
-                      "errorCode": "CONFIG_NOT_FOUND"
-                    },
-                    "name": "fail_no_active_configs",
-                    "dependsOn": []
-                  }
-                ]
-              },
-              "name": "if_active_configs_found",
-              "dependsOn": [
-                {
-                  "activity": "lkp_config_pagination_info",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "ForEach",
-              "typeProperties": {
-                "isSequential": true,
-                "items": {
-                  "value": "@range(0, int(activity('lkp_config_pagination_info').output.firstRow.page_count))",
-                  "type": "Expression"
-                },
-                "activities": [
-                  {
-                    "type": "InvokePipeline",
-                    "typeProperties": {
-                      "parameters": {
-                        "p_batch_id": {
-                          "value": "@variables('v_batch_id')",
-                          "type": "Expression"
-                        },
-                        "p_run_requests": {
-                          "value": "@pipeline().parameters.p_run_requests",
-                          "type": "Expression"
-                        },
-                        "p_page_index": {
-                          "value": "@item()",
-                          "type": "Expression"
-                        },
-                        "p_page_size": {
-                          "value": "@pipeline().parameters.p_config_page_size",
-                          "type": "Expression"
-                        }
-                      },
-                      "waitOnCompletion": true,
-                      "workspaceId": "00000000-0000-0000-0000-000000000000",
-                      "pipelineId": "3b7f2c5e-6a91-4d48-b0e2-7c4f9a1d35b6",
-                      "operationType": "InvokeFabricPipeline"
-                    },
-                    "externalReferences": {
-                      "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
-                    },
-                    "policy": {
-                      "timeout": "0.12:00:00",
-                      "retry": 0,
-                      "retryIntervalInSeconds": 30,
-                      "secureInput": false,
-                      "secureOutput": false
-                    },
-                    "name": "inv_ingest_config_dispatcher_page",
-                    "dependsOn": []
-                  }
-                ]
-              },
-              "name": "fe_config_pages",
-              "dependsOn": [
-                {
-                  "activity": "if_active_configs_found",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
+              "name": "inv_ingest_config_paginator",
+              "dependsOn": []
             }
           ]
         },
