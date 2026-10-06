@@ -52,6 +52,24 @@ the source technology, including:
 - connector-specific partition/pushdown options
 - connector-specific Copy parallelism overrides when benchmark evidence justifies them
 
+## Data consistency policy
+
+Data transfer consistency is a framework requirement, but the physical validation
+mechanism remains connector-aware.
+
+When the actual source-to-sink Copy pair and execution mode support Fabric's
+native Data Consistency Verification, the connector adapter should enable it and
+treat Copy success/failure as the consistency gate. The pipeline should not add a
+second row-count comparison for the same transfer.
+
+When native verification is unsupported or inapplicable, the adapter must use a
+pattern-appropriate framework fallback instead of silently skipping consistency
+validation.
+
+The current Azure SQL FULL and INCREMENTAL Copy paths enable native Data
+Consistency Verification. Future database adapters must confirm support for their
+actual Copy pair and execution mode rather than inheriting this setting blindly.
+
 ## Copy performance metadata
 
 Connector-native performance hints are stored in the optional
