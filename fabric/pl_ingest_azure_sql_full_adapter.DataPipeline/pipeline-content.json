@@ -327,7 +327,8 @@
                         "treatBooleanAsNumber": false
                       }
                     },
-                    "enableStaging": false
+                    "enableStaging": false,
+                    "validateDataConsistency": true
                   },
                   "policy": {
                     "timeout": "0.12:00:00",
@@ -471,6 +472,7 @@
                       }
                     },
                     "enableStaging": false,
+                    "validateDataConsistency": true,
                     "parallelCopies": {
                       "value": "@pipeline().parameters.p_copy_parallel_copies",
                       "type": "Expression"
@@ -635,7 +637,8 @@
                         "treatBooleanAsNumber": false
                       }
                     },
-                    "enableStaging": false
+                    "enableStaging": false,
+                    "validateDataConsistency": true
                   },
                   "policy": {
                     "timeout": "0.12:00:00",
@@ -797,6 +800,7 @@
                       }
                     },
                     "enableStaging": false,
+                    "validateDataConsistency": true,
                     "parallelCopies": {
                       "value": "@pipeline().parameters.p_copy_parallel_copies",
                       "type": "Expression"
