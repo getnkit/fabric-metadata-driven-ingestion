@@ -37,7 +37,6 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    DECLARE @ExistingStatus VARCHAR(20);
     DECLARE @DurationSeconds INT;
     DECLARE @ConflictMessage NVARCHAR(4000);
     DECLARE @ExpectedWatermark NVARCHAR(1000);
@@ -50,22 +49,20 @@ BEGIN
     IF @DurationSeconds < 0
         THROW 51000, 'INVALID_AUDIT_TIME_RANGE: end_time is earlier than start_time.', 1;
 
-    SELECT @ExistingStatus = status
-    FROM audit.ingestion_log
-    WHERE pipeline_run_id = @pipeline_run_id;
-
-    IF @ExistingStatus IS NOT NULL
+    IF EXISTS
+    (
+        SELECT 1
+        FROM audit.ingestion_log
+        WHERE pipeline_run_id = @pipeline_run_id
+    )
     BEGIN
-        IF @ExistingStatus = 'FAILED' AND @status = 'SUCCESS'
-            THROW 51002, 'RUN_ALREADY_FINALIZED_AS_FAILED: this pipeline_run_id already has a FAILED audit record.', 1;
-
         RETURN 0;
     END;
 
     IF @advance_watermark = 1
     BEGIN
-        IF @status NOT IN ('SUCCESS','SKIPPED')
-            THROW 51003, 'INVALID_WATERMARK_ADVANCE: watermark can advance only for SUCCESS or SKIPPED.', 1;
+        IF @status <> 'SUCCESS'
+            THROW 51003, 'INVALID_WATERMARK_ADVANCE: watermark can advance only for SUCCESS.', 1;
 
         IF @ingestion_config_id IS NULL
            OR @watermark_field IS NULL
@@ -85,10 +82,8 @@ BEGIN
             UPDATE control.pipeline_watermarks
             SET
                 last_watermark_value = @NewWatermark,
-                last_successful_batch_id =
-                    CASE WHEN @status = 'SUCCESS' THEN @batch_id ELSE last_successful_batch_id END,
-                last_successful_pipeline_run_id =
-                    CASE WHEN @status = 'SUCCESS' THEN @pipeline_run_id ELSE last_successful_pipeline_run_id END,
+                last_successful_batch_id = @batch_id,
+                last_successful_pipeline_run_id = @pipeline_run_id,
                 watermark_updated_at = SYSUTCDATETIME()
             WHERE ingestion_config_id = @ingestion_config_id
               AND watermark_field = @watermark_field
