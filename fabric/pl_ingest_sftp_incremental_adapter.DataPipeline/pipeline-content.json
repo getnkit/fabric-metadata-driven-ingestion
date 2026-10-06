@@ -2270,7 +2270,7 @@
                     "type": "DateTime"
                   },
                   "status": {
-                    "value": "SKIPPED",
+                    "value": "SUCCESS",
                     "type": "String"
                   },
                   "landing_path": {
@@ -2339,7 +2339,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_skipped",
+              "name": "sp_finalize_no_new_data_success",
               "dependsOn": []
             }
           ]
