@@ -3,7 +3,7 @@
   "metadata": {
     "type": "DataPipeline",
     "displayName": "pl_ingest_config_dispatcher",
-    "description": "Dispatches a bounded collection of explicit run requests or one metadata configuration page to pl_ingest_object_controller."
+    "description": "Dispatches one bounded normalized run-request collection to pl_ingest_object_controller."
   },
   "config": {
     "version": "2.0",
