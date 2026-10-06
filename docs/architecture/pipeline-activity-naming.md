@@ -27,6 +27,25 @@ v_run_type -> set_run_type
 v_lower_bound -> set_lower_bound
 ```
 
+When the same logical operation appears in alternative branches, append the branch/execution context consistently rather than naming only one branch specially:
+
+```text
+set_upper_bound_regular
+set_upper_bound_backfill
+
+copy_source_to_bronze_query_auto
+copy_source_to_bronze_query_tuned
+copy_source_to_bronze_physical_auto
+copy_source_to_bronze_physical_tuned
+```
+
+For sibling fan-out branches, keep the execution context in the same suffix position:
+
+```text
+fe_run_requests_explicit
+fe_ingestion_configs_page
+```
+
 Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activities describe the data-layer effect rather than the implementation primitive, so target mutation failures use `write` / `post_write`.
 
 ## Finalization
@@ -187,15 +206,27 @@ Platform Retry/Rerun is treated as execution recovery and is not encoded as a fr
 
 `config_dispatcher` is deliberately broader than `config_page`: the same dispatcher handles either an explicit bounded request collection or one deterministic SQL page of active configuration IDs. Pagination remains an Orchestrator concern for ALL ACTIVE execution, while the Dispatcher owns bounded fan-out in both modes. `page` remains distinct from the ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 
-Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix:
+Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix by default:
 
 ```text
-pl_ingest_config_dispatcher          -> inv_ingest_config_dispatcher
-pl_ingest_object_controller               -> inv_ingest_object_controller
 pl_ingest_database_incremental_router     -> inv_ingest_database_incremental_router
 pl_ingest_azure_sql_incremental_adapter   -> inv_ingest_azure_sql_incremental_adapter
 pl_ingest_azure_sql_incremental_loader    -> inv_ingest_azure_sql_incremental_loader
 pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter
 ```
+
+When the same child pipeline is invoked from multiple execution contexts in the same parent, append a context suffix consistently to every sibling invocation:
+
+```text
+pl_ingest_config_dispatcher
+  -> inv_ingest_config_dispatcher_explicit
+  -> inv_ingest_config_dispatcher_page
+
+pl_ingest_object_controller
+  -> inv_ingest_object_controller_explicit
+  -> inv_ingest_object_controller_page
+```
+
+The suffix distinguishes why the same child is being invoked; it does not change the child pipeline's responsibility.
 
 Do not add a loader merely for naming symmetry. For example, Azure SQL FULL and the SFTP adapters remain single connector-specific adapter pipelines because their native activity structure does not require the additional pipeline boundary. The Azure SQL incremental loader exists because the adapter needs a separate physical-load execution boundary for its nested branching structure.
