@@ -59,12 +59,12 @@
                       "secureInput": false,
                       "secureOutput": false
                     },
-                    "name": "inv_ingest_requested_object",
+                    "name": "inv_ingest_object_controller_page_explicit",
                     "dependsOn": []
                   }
                 ]
               },
-              "name": "fe_explicit_run_requests",
+              "name": "fe_run_requests_explicit",
               "dependsOn": []
             }
           ],
@@ -162,12 +162,12 @@
                       "secureInput": false,
                       "secureOutput": false
                     },
-                    "name": "inv_ingest_object_controller",
+                    "name": "inv_ingest_object_controller_page",
                     "dependsOn": []
                   }
                 ]
               },
-              "name": "fe_ingestion_configs",
+              "name": "fe_ingestion_configs_page",
               "dependsOn": [
                 {
                   "activity": "lkp_config_page",
