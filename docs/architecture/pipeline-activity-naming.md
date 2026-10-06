@@ -39,11 +39,12 @@ copy_source_to_bronze_physical_auto
 copy_source_to_bronze_physical_tuned
 ```
 
-For sibling fan-out branches, keep the execution context in the same suffix position:
+ForEach activity names should describe the collection being iterated:
 
 ```text
-fe_run_requests_explicit
-fe_ingestion_configs_page
+fe_explicit_run_requests
+fe_config_page_items
+fe_config_pages
 ```
 
 Physical Fabric Copy activities keep the `copy_` prefix. Failure/recovery activities describe the data-layer effect rather than the implementation primitive, so target mutation failures use `write` / `post_write`.
