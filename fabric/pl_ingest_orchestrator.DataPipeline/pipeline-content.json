@@ -205,12 +205,12 @@
                       },
                       "errorCode": "CONFIG_NOT_FOUND"
                     },
-                    "name": "fail_config_not_found",
+                    "name": "fail_no_active_configs",
                     "dependsOn": []
                   }
                 ]
               },
-              "name": "if_configs_found",
+              "name": "if_active_configs_found",
               "dependsOn": [
                 {
                   "activity": "lkp_config_pagination_info",
@@ -273,7 +273,7 @@
               "name": "fe_config_pages",
               "dependsOn": [
                 {
-                  "activity": "if_configs_found",
+                  "activity": "if_active_configs_found",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
