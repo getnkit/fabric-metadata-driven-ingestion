@@ -99,7 +99,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_ingest_explicit_requests",
+              "name": "inv_ingest_config_dispatcher_explicit",
               "dependsOn": [
                 {
                   "activity": "sp_validate_run_requests",
@@ -265,7 +265,7 @@
                       "secureInput": false,
                       "secureOutput": false
                     },
-                    "name": "inv_ingest_config_dispatcher",
+                    "name": "inv_ingest_config_dispatcher_page",
                     "dependsOn": []
                   }
                 ]
