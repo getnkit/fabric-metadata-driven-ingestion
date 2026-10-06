@@ -214,7 +214,7 @@ watermark_field    = last_modified_time
 
 The FILE format is first-class parsing metadata. Source-to-Landing remains Binary/raw, then `nb_load_file_landing_to_bronze` selects the format-specific reader. The currently implemented reader is `DELIMITED_TEXT`; unsupported formats fail explicitly until a reader is implemented.
 
-The file config keeps `load_strategy = INCREMENTAL` for both REGULAR and BACKFILL runs. REGULAR uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful/skipped finalization. BACKFILL uses explicitly requested LOW/HIGH Last Modified boundaries and never advances the operational checkpoint. Both execution paths preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
+The file config keeps `load_strategy = INCREMENTAL` for both REGULAR and BACKFILL runs. REGULAR uses the native Last Modified window `[current watermark, run start time)` and advances the checkpoint after successful finalization. BACKFILL uses explicitly requested LOW/HIGH Last Modified boundaries and never advances the operational checkpoint. Both execution paths preserve source-relative hierarchy under the batch Landing root before the generic notebook parses that batch.
 
 Acceptance fixtures:
 
@@ -229,7 +229,7 @@ Recommended acceptance sequence:
 1. Upload only `inventory_movement_20260927T081500Z.csv`.
 2. Run the FILE incremental config: expect 6 Bronze rows and a
    `last_watermark_value` equal to that run's captured upper time.
-3. Run again with no new file: expect `SKIPPED`, no new Bronze rows, and the
+3. Run again with no new file: expect `SUCCESS` with zero rows, no new Bronze rows, and the
    checkpoint to advance to the second scan's upper time.
 4. Upload `inventory_movement_20260927T131500Z.csv`.
 5. Run again: expect 6 additional Bronze rows and another forward movement of
