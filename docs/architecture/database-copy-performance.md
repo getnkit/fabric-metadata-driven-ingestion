@@ -230,6 +230,34 @@ adapter. The benchmark and the initial implementation use the connector's
 documented full-load physical-partition scenario; incremental semantics continue
 to use the existing LOW/HIGH custom query with NONE or DYNAMIC_RANGE.
 
+This is also consistent with the current Fabric Azure SQL Copy UI behavior
+validated on 2026-10-06: when Source uses `Query`, the available partition
+options are `None` and `Dynamic range`, while `Physical partitions of table`
+is disabled. Incremental ingestion requires a custom watermark query, for example:
+
+```sql
+WHERE <watermark_field> > LOW
+  AND <watermark_field> <= HIGH
+```
+
+Dynamic range has the documented `?DfDynamicRangePartitionCondition`
+placeholder that can be embedded in that custom query. The current connector
+surface does not expose an equivalent custom-query pattern for physical table
+partitions. Therefore the framework contract is:
+
+```text
+FULL:
+  NONE | DYNAMIC_RANGE | PHYSICAL_PARTITIONS
+
+INCREMENTAL:
+  NONE | DYNAMIC_RANGE
+```
+
+This is a framework capability decision based on the documented/custom-query
+surface and observed Fabric UI behavior; it should not be interpreted as a
+general claim that Azure SQL can never combine incremental extraction with a
+physically partitioned source table.
+
 ### Permanent benchmark fixture
 
 The project now includes a dedicated Azure SQL database:
