@@ -147,10 +147,79 @@
         ]
       },
       {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_request_valid",
+          "value": {
+            "value": "@or(\n    and(\n        equals(variables('v_run_type'), 'REGULAR'),\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        )\n    ),\n    or(\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            )\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n                and(\n                    not(empty(pipeline().parameters.p_requested_lower_bound)),\n                    not(empty(pipeline().parameters.p_requested_upper_bound))\n                )\n            )\n        )\n    )\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_request_valid",
+        "dependsOn": [
+          {
+            "activity": "if_config_found",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_route_key",
+          "value": {
+            "value": "@concat(\n    toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_route_key",
+        "dependsOn": [
+          {
+            "activity": "set_request_valid",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "v_execution_decision",
+          "value": {
+            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        variables('v_request_valid'),\n        variables('v_route_key'),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "set_execution_decision",
+        "dependsOn": [
+          {
+            "activity": "set_route_key",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
         "type": "Switch",
         "typeProperties": {
           "on": {
-            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        or(\n            and(\n                equals(variables('v_run_type'), 'REGULAR'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            ),\n            or(\n                and(\n                    equals(variables('v_run_type'), 'BACKFILL'),\n                    and(\n                        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n                        and(\n                            empty(pipeline().parameters.p_requested_lower_bound),\n                            empty(pipeline().parameters.p_requested_upper_bound)\n                        )\n                    )\n                ),\n                and(\n                    equals(variables('v_run_type'), 'BACKFILL'),\n                    and(\n                        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n                        and(\n                            not(empty(pipeline().parameters.p_requested_lower_bound)),\n                            not(empty(pipeline().parameters.p_requested_upper_bound))\n                        )\n                    )\n                )\n            )\n        ),\n        concat(\n            toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n            '|',\n            toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n            '|',\n            toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
+            "value": "@variables('v_execution_decision')",
             "type": "Expression"
           },
           "cases": [
@@ -1208,7 +1277,7 @@
         "name": "sw_execution_decision",
         "dependsOn": [
           {
-            "activity": "if_config_found",
+            "activity": "set_execution_decision",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1245,6 +1314,15 @@
         "type": "String"
       },
       "v_run_type": {
+        "type": "String"
+      },
+      "v_request_valid": {
+        "type": "Boolean"
+      },
+      "v_route_key": {
+        "type": "String"
+      },
+      "v_execution_decision": {
         "type": "String"
       }
     }
