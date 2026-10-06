@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "pl_ingest_config_paginator",
+    "description": "Plans ALL ACTIVE execution into deterministic configuration pages and dispatches each page as a bounded run-request collection."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "7c3d9f21-5a84-4eb7-a2d1-6f0c8e93b451"
+  }
+}
