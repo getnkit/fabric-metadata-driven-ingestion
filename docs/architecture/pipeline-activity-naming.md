@@ -42,8 +42,7 @@ copy_source_to_bronze_physical_tuned
 ForEach activity names should describe the collection being iterated:
 
 ```text
-fe_explicit_run_requests
-fe_config_page_items
+fe_run_requests
 fe_config_pages
 ```
 
@@ -177,8 +176,9 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 
 | Role | Responsibility |
 |---|---|
-| `orchestrator` | Top-level ingestion framework entry point; establishes run scope and coordinates config-page execution. |
-| `dispatcher` | Fans out a bounded collection of explicit run requests or metadata-selected ingestion configurations to the per-object controller. |
+| `orchestrator` | Top-level ingestion framework entry point; establishes run scope and selects Explicit vs All Active execution. |
+| `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. |
+| `dispatcher` | Fans out one bounded normalized run-request collection to the per-object controller. |
 | `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
 | `router` | Selects the connector-specific implementation for a generic ingestion pattern such as DATABASE/FULL or FILE/INCREMENTAL. |
 | `adapter` | Converts generic ingestion metadata into connector-specific configuration **and executes the connector-specific ingestion flow**. It is not only a metadata translator. |
@@ -188,24 +188,26 @@ Current active hierarchy:
 
 ```text
 pl_ingest_orchestrator
-  -> pl_ingest_config_dispatcher
-    -> pl_ingest_object_controller
-      -> pl_ingest_database_full_router
-        -> pl_ingest_azure_sql_full_adapter
-      -> pl_ingest_database_incremental_router
-        -> pl_ingest_azure_sql_incremental_adapter
-          -> pl_ingest_azure_sql_incremental_loader
-      -> pl_ingest_file_full_router
-        -> pl_ingest_sftp_full_adapter
-      -> pl_ingest_file_incremental_router
-        -> pl_ingest_sftp_incremental_adapter
+  ├─ Explicit -> pl_ingest_config_dispatcher
+  └─ All Active -> pl_ingest_config_paginator
+                    -> pl_ingest_config_dispatcher
+                         -> pl_ingest_object_controller
+                              -> pl_ingest_database_full_router
+                                   -> pl_ingest_azure_sql_full_adapter
+                              -> pl_ingest_database_incremental_router
+                                   -> pl_ingest_azure_sql_incremental_adapter
+                                        -> pl_ingest_azure_sql_incremental_loader
+                              -> pl_ingest_file_full_router
+                                   -> pl_ingest_sftp_full_adapter
+                              -> pl_ingest_file_incremental_router
+                                   -> pl_ingest_sftp_incremental_adapter
 ```
 
-`pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
+`pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
 
 Platform Retry/Rerun is treated as execution recovery and is not encoded as a framework `run_type`. Direct manual reruns of internal child pipelines are not part of the supported operational contract; recovery enters through the top-level orchestrator.
 
-`config_dispatcher` is deliberately broader than `config_page`: the same dispatcher handles either an explicit bounded request collection or one deterministic SQL page of active configuration IDs. Pagination remains an Orchestrator concern for ALL ACTIVE execution, while the Dispatcher owns bounded fan-out in both modes. `page` remains distinct from the ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
+`config_dispatcher` receives one normalized bounded request collection regardless of origin. Explicit requests are passed directly by the Orchestrator. ALL ACTIVE execution is normalized by `pl_ingest_config_paginator`, which queries one deterministic metadata page as REGULAR run-request rows before invoking the same Dispatcher. `page` remains distinct from the ingestion `batch_id`, which represents execution/correlation rather than metadata pagination.
 
 Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix by default:
 
@@ -216,18 +218,14 @@ pl_ingest_azure_sql_incremental_loader    -> inv_ingest_azure_sql_incremental_lo
 pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter
 ```
 
-When the same child pipeline is invoked from multiple execution contexts in the same parent, append a context suffix consistently to every sibling invocation:
+When a parent invokes a child only once, use the child-oriented name directly:
 
 ```text
-pl_ingest_config_dispatcher
-  -> inv_ingest_config_dispatcher_explicit
-  -> inv_ingest_config_dispatcher_page
-
-pl_ingest_object_controller
-  -> inv_ingest_object_controller_explicit
-  -> inv_ingest_object_controller_page
+pl_ingest_config_dispatcher -> inv_ingest_config_dispatcher
+pl_ingest_object_controller -> inv_ingest_object_controller
+pl_ingest_config_paginator  -> inv_ingest_config_paginator
 ```
 
-The suffix distinguishes why the same child is being invoked; it does not change the child pipeline's responsibility.
+Add a context suffix only when the same child is invoked more than once inside the same parent and the suffix is needed to distinguish those sibling activities.
 
 Do not add a loader merely for naming symmetry. For example, Azure SQL FULL and the SFTP adapters remain single connector-specific adapter pipelines because their native activity structure does not require the additional pipeline boundary. The Azure SQL incremental loader exists because the adapter needs a separate physical-load execution boundary for its nested branching structure.
