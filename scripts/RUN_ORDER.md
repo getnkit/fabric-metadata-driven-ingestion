@@ -237,7 +237,24 @@ Recommended acceptance sequence:
 
 The actual watermark is a UTC timestamp from the ingestion run, not a filename.
 
-## 9) Optional permanent Azure SQL performance benchmark
+## 9) One-time FILE Bronze timestamp migration
+
+If the FILE Bronze tables were created before the loader normalized
+`_ingestion_timestamp` to Spark `TIMESTAMP`, run:
+
+```text
+scripts/lakehouse/migrations/001_normalize_file_ingestion_timestamp.sql
+```
+
+Run it in a Fabric Notebook SQL cell (Spark SQL) with `lh_ecommerce_bronze`
+attached as the default Lakehouse. Do not run it against the Lakehouse SQL
+analytics endpoint.
+
+The migration rewrites the two current FILE Bronze tables with
+`_ingestion_timestamp` cast to `TIMESTAMP` and is safe to rerun. After it
+completes, rerun the failed FILE ingestion request.
+
+## 10) Optional permanent Azure SQL performance benchmark
 
 The scale benchmark is intentionally isolated from `sql_ecommerce_db`.
 
