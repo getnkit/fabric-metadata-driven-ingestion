@@ -78,6 +78,36 @@ Landing is retained for FILE ingestion because the delivered file is itself the 
 
 DATABASE ingestion remains direct-to-Bronze.
 
+## Transfer consistency
+
+The FILE pattern applies consistency controls per hop rather than forcing one
+mechanism across every connector.
+
+For the current SFTP-to-Landing Binary Copy, the adapter uses a framework-level
+file-count gate after Copy succeeds:
+
+```text
+copy_sftp_to_landing
+  -> filesRead == filesWritten
+       -> true: continue
+       -> false: finalize FAILED (LANDING_FILE_COUNT_MISMATCH) -> Fail
+```
+
+For INCREMENTAL SFTP, this gate runs before the no-new-data decision. Therefore
+`0 filesRead / 0 filesWritten` is a valid consistent transfer and continues to
+the normal no-new-data success path, while a mismatched file count fails the run.
+
+Landing-to-Bronze does not perform a second independent Bronze recount. The
+notebook counts the parsed Landing DataFrame once, reuses that count as the
+source/target audit metric after a successful atomic Delta append, and relies on
+write failure plus the existing compensating-cleanup path for failed Bronze
+writes. The audit count therefore documents rows processed by the successful
+write; it is not an independent target reconciliation.
+
+For future FILE connectors, use native Data Consistency Verification when the
+actual Copy pair and execution mode support it. Otherwise use a
+pattern-appropriate framework fallback such as the current SFTP file-count gate.
+
 ## Failure behavior
 
 The current project does not implement Quarantine.
@@ -312,17 +342,16 @@ landing:
 
 For REGULAR execution, if the recursive Landing copy finds matching files and
 the Bronze load succeeds, the pipeline watermark advances to `HIGH`. If no
-matching files are found, the run is recorded as `SKIPPED` and the REGULAR
-checkpoint can still advance to `HIGH`; this avoids repeatedly rescanning the
-same empty time window.
+matching files are found, the run is finalized as `SUCCESS` with zero rows and
+the REGULAR checkpoint can still advance to `HIGH`; this avoids repeatedly
+rescanning the same empty time window.
 
 `run_type` and `load_strategy` are independent. The FILE config keeps its
 configured FULL or INCREMENTAL strategy for every execution.
 
 For an INCREMENTAL FILE config, BACKFILL reuses the bounded SFTP adapter and
 applies the explicitly requested LOW/HIGH window to source-file Last Modified
-time instead of the committed operational checkpoint. A successful or skipped
-INCREMENTAL BACKFILL does not advance the operational watermark.
+time instead of the committed operational checkpoint. A successful INCREMENTAL BACKFILL does not advance the operational watermark.
 
 For a FULL FILE config, BACKFILL rereads the same full currently available
 source scope as FULL REGULAR execution. The distinction is execution intent and
@@ -342,13 +371,15 @@ pl_ingest_sftp_incremental_adapter
        wildcard file_name_pattern
        LOW <= LastModified < HIGH
        PreserveHierarchy
+  -> if_landing_file_count_consistent
+       filesRead == filesWritten
   -> if_files_found
        -> nb_load_file_landing_to_bronze
             p_file_format
             p_source_options
        -> sp_finalize_success
        -> no files
-            -> sp_finalize_skipped
+            -> sp_finalize_no_new_data_success
 ```
 
 The previous explicit folder-queue / Until / scanner-pipeline design was removed
