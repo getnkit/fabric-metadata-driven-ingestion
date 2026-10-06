@@ -147,909 +147,861 @@
         ]
       },
       {
-        "type": "IfCondition",
+        "type": "Switch",
         "typeProperties": {
-          "expression": {
-            "value": "@bool(\n    activity('lkp_ingestion_config').output.value[0].is_active\n)",
+          "on": {
+            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        or(\n            and(\n                equals(variables('v_run_type'), 'REGULAR'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            ),\n            or(\n                and(\n                    equals(variables('v_run_type'), 'BACKFILL'),\n                    and(\n                        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n                        and(\n                            empty(pipeline().parameters.p_requested_lower_bound),\n                            empty(pipeline().parameters.p_requested_upper_bound)\n                        )\n                    )\n                ),\n                and(\n                    equals(variables('v_run_type'), 'BACKFILL'),\n                    and(\n                        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n                        and(\n                            not(empty(pipeline().parameters.p_requested_lower_bound)),\n                            not(empty(pipeline().parameters.p_requested_upper_bound))\n                        )\n                    )\n                )\n            )\n        ),\n        concat(\n            toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n            '|',\n            toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n            '|',\n            toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
             "type": "Expression"
           },
-          "ifTrueActivities": [
+          "cases": [
             {
-              "type": "IfCondition",
-              "typeProperties": {
-                "expression": {
-                  "value": "@or(\n    and(\n        equals(variables('v_run_type'), 'REGULAR'),\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    ),\n    and(\n        equals(variables('v_run_type'), 'BACKFILL'),\n        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n        empty(pipeline().parameters.p_requested_lower_bound),\n        empty(pipeline().parameters.p_requested_upper_bound)\n    ),\n    and(\n        equals(variables('v_run_type'), 'BACKFILL'),\n        equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n        not(empty(pipeline().parameters.p_requested_lower_bound)),\n        not(empty(pipeline().parameters.p_requested_upper_bound))\n    )\n)",
-                  "type": "Expression"
-                },
-                "ifTrueActivities": [],
-                "ifFalseActivities": [
-                  {
-                    "type": "SqlServerStoredProcedure",
-                    "typeProperties": {
-                      "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                      "storedProcedureParameters": {
-                        "advance_watermark": {
-                          "value": "false",
-                          "type": "Boolean"
-                        },
-                        "batch_id": {
-                          "value": {
-                            "value": "@variables('v_batch_id')",
-                            "type": "Expression"
-                          },
-                          "type": "Guid"
-                        },
-                        "end_time": {
-                          "value": {
-                            "value": "@utcNow()",
-                            "type": "Expression"
-                          },
-                          "type": "DateTime"
-                        },
-                        "error_code": {
-                          "value": "INVALID_RUN_REQUEST",
-                          "type": "String"
-                        },
-                        "error_message": {
-                          "value": {
-                            "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "ingestion_config_id": {
-                          "value": {
-                            "value": "@pipeline().parameters.p_ingestion_config_id",
-                            "type": "Expression"
-                          },
-                          "type": "Int32"
-                        },
-                        "load_strategy": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "pipeline_name": {
-                          "value": {
-                            "value": "@pipeline().PipelineName",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "pipeline_run_id": {
-                          "value": {
-                            "value": "@pipeline().RunId",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "processing_lower_bound": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "processing_upper_bound": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "run_type": {
-                          "value": {
-                            "value": "@variables('v_run_type')",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_object": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_row_count": {
-                          "value": null,
-                          "type": "Int64"
-                        },
-                        "source_schema": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_system": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "start_time": {
-                          "value": {
-                            "value": "@variables('v_start_time')",
-                            "type": "Expression"
-                          },
-                          "type": "DateTime"
-                        },
-                        "status": {
-                          "value": "FAILED",
-                          "type": "String"
-                        },
-                        "landing_path": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "target_row_count": {
-                          "value": null,
-                          "type": "Int64"
-                        },
-                        "watermark_field": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_schema": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_table": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_conn_ref": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_conn_ref": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        }
-                      }
-                    },
-                    "connectionSettings": {
-                      "name": "sqldb_ingestion_control",
-                      "properties": {
-                        "type": "FabricSqlDatabase",
-                        "typeProperties": {
-                          "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                          "workspaceId": "00000000-0000-0000-0000-000000000000"
-                        },
-                        "externalReferences": {
-                          "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                        },
-                        "annotations": []
-                      }
-                    },
-                    "policy": {
-                      "timeout": "0.12:00:00",
-                      "retry": 2,
-                      "retryIntervalInSeconds": 30,
-                      "secureInput": false,
-                      "secureOutput": false
-                    },
-                    "name": "sp_finalize_invalid_execution_request",
-                    "dependsOn": []
-                  },
-                  {
-                    "type": "Fail",
-                    "typeProperties": {
-                      "message": {
-                        "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
-                        "type": "Expression"
+              "value": "INACTIVE",
+              "activities": [
+                {
+                  "type": "SqlServerStoredProcedure",
+                  "typeProperties": {
+                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                    "storedProcedureParameters": {
+                      "advance_watermark": {
+                        "value": "false",
+                        "type": "Boolean"
                       },
-                      "errorCode": "INVALID_RUN_REQUEST"
-                    },
-                    "name": "fail_invalid_execution_request",
-                    "dependsOn": [
-                      {
-                        "activity": "sp_finalize_invalid_execution_request",
-                        "dependencyConditions": [
-                          "Succeeded"
-                        ]
+                      "batch_id": {
+                        "value": {
+                          "value": "@variables('v_batch_id')",
+                          "type": "Expression"
+                        },
+                        "type": "Guid"
+                      },
+                      "end_time": {
+                        "value": {
+                          "value": "@utcNow()",
+                          "type": "Expression"
+                        },
+                        "type": "DateTime"
+                      },
+                      "error_code": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "error_message": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "ingestion_config_id": {
+                        "value": {
+                          "value": "@pipeline().parameters.p_ingestion_config_id",
+                          "type": "Expression"
+                        },
+                        "type": "Int32"
+                      },
+                      "load_strategy": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "pipeline_name": {
+                        "value": {
+                          "value": "@pipeline().PipelineName",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "pipeline_run_id": {
+                        "value": {
+                          "value": "@pipeline().RunId",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "processing_lower_bound": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "processing_upper_bound": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "run_type": {
+                        "value": {
+                          "value": "@variables('v_run_type')",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_object": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_row_count": {
+                        "value": "0",
+                        "type": "Int64"
+                      },
+                      "source_schema": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_system": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "start_time": {
+                        "value": {
+                          "value": "@variables('v_start_time')",
+                          "type": "Expression"
+                        },
+                        "type": "DateTime"
+                      },
+                      "status": {
+                        "value": "SKIPPED",
+                        "type": "String"
+                      },
+                      "landing_path": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "target_row_count": {
+                        "value": "0",
+                        "type": "Int64"
+                      },
+                      "watermark_field": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_schema": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_table": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_conn_ref": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_conn_ref": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                          "type": "Expression"
+                        },
+                        "type": "String"
                       }
-                    ]
-                  }
-                ]
-              },
-              "name": "if_valid_execution_request",
-              "dependsOn": []
+                    }
+                  },
+                  "connectionSettings": {
+                    "name": "sqldb_ingestion_control",
+                    "properties": {
+                      "type": "FabricSqlDatabase",
+                      "typeProperties": {
+                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                        "workspaceId": "00000000-0000-0000-0000-000000000000"
+                      },
+                      "externalReferences": {
+                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                      },
+                      "annotations": []
+                    }
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "sp_finalize_config_inactive",
+                  "dependsOn": []
+                }
+              ]
             },
             {
-              "type": "Switch",
-              "typeProperties": {
-                "on": {
-                  "value": "@concat(\n    toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n    '|',\n    toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy)\n)",
-                  "type": "Expression"
+              "value": "INVALID_REQUEST",
+              "activities": [
+                {
+                  "type": "SqlServerStoredProcedure",
+                  "typeProperties": {
+                    "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
+                    "storedProcedureParameters": {
+                      "advance_watermark": {
+                        "value": "false",
+                        "type": "Boolean"
+                      },
+                      "batch_id": {
+                        "value": {
+                          "value": "@variables('v_batch_id')",
+                          "type": "Expression"
+                        },
+                        "type": "Guid"
+                      },
+                      "end_time": {
+                        "value": {
+                          "value": "@utcNow()",
+                          "type": "Expression"
+                        },
+                        "type": "DateTime"
+                      },
+                      "error_code": {
+                        "value": "INVALID_RUN_REQUEST",
+                        "type": "String"
+                      },
+                      "error_message": {
+                        "value": {
+                          "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "ingestion_config_id": {
+                        "value": {
+                          "value": "@pipeline().parameters.p_ingestion_config_id",
+                          "type": "Expression"
+                        },
+                        "type": "Int32"
+                      },
+                      "load_strategy": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "pipeline_name": {
+                        "value": {
+                          "value": "@pipeline().PipelineName",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "pipeline_run_id": {
+                        "value": {
+                          "value": "@pipeline().RunId",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "processing_lower_bound": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "processing_upper_bound": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "run_type": {
+                        "value": {
+                          "value": "@variables('v_run_type')",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_object": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_row_count": {
+                        "value": null,
+                        "type": "Int64"
+                      },
+                      "source_schema": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_system": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "start_time": {
+                        "value": {
+                          "value": "@variables('v_start_time')",
+                          "type": "Expression"
+                        },
+                        "type": "DateTime"
+                      },
+                      "status": {
+                        "value": "FAILED",
+                        "type": "String"
+                      },
+                      "landing_path": {
+                        "value": null,
+                        "type": "String"
+                      },
+                      "target_row_count": {
+                        "value": null,
+                        "type": "Int64"
+                      },
+                      "watermark_field": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_schema": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_table": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "source_conn_ref": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      },
+                      "target_conn_ref": {
+                        "value": {
+                          "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                          "type": "Expression"
+                        },
+                        "type": "String"
+                      }
+                    }
+                  },
+                  "connectionSettings": {
+                    "name": "sqldb_ingestion_control",
+                    "properties": {
+                      "type": "FabricSqlDatabase",
+                      "typeProperties": {
+                        "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                        "workspaceId": "00000000-0000-0000-0000-000000000000"
+                      },
+                      "externalReferences": {
+                        "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                      },
+                      "annotations": []
+                    }
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "sp_finalize_invalid_execution_request",
+                  "dependsOn": []
                 },
-                "cases": [
-                  {
-                    "value": "DATABASE|LAKEHOUSE|INCREMENTAL",
-                    "activities": [
-                      {
-                        "type": "InvokePipeline",
-                        "typeProperties": {
-                          "parameters": {
-                            "p_batch_id": {
-                              "value": "@variables('v_batch_id')",
-                              "type": "Expression"
-                            },
-                            "p_ingestion_config_id": {
-                              "value": "@pipeline().parameters.p_ingestion_config_id",
-                              "type": "Expression"
-                            },
-                            "p_parent_pipeline_run_id": {
-                              "value": "@pipeline().RunId",
-                              "type": "Expression"
-                            },
-                            "p_start_time": {
-                              "value": "@variables('v_start_time')",
-                              "type": "Expression"
-                            },
-                            "p_run_type": {
-                              "value": "@variables('v_run_type')",
-                              "type": "Expression"
-                            },
-                            "p_requested_lower_bound": {
-                              "value": "@pipeline().parameters.p_requested_lower_bound",
-                              "type": "Expression"
-                            },
-                            "p_requested_upper_bound": {
-                              "value": "@pipeline().parameters.p_requested_upper_bound",
-                              "type": "Expression"
-                            },
-                            "p_parent_pipeline_name": {
-                              "value": "@pipeline().PipelineName",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_type": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
-                              "type": "Expression"
-                            },
-                            "p_source_system": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                              "type": "Expression"
-                            },
-                            "p_source_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
-                              "type": "Expression"
-                            },
-                            "p_source_object": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                              "type": "Expression"
-                            },
-                            "p_load_strategy": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                              "type": "Expression"
-                            },
-                            "p_source_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_target_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                              "type": "Expression"
-                            },
-                            "p_target_table": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                              "type": "Expression"
-                            },
-                            "p_copy_partition_option": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
-                              "type": "Expression"
-                            },
-                            "p_copy_partition_column": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
-                              "type": "Expression"
-                            },
-                            "p_copy_parallel_copies": {
-                              "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
-                              "type": "Expression"
-                            },
-                            "p_watermark_field": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
-                              "type": "Expression"
-                            }
-                          },
-                          "waitOnCompletion": true,
-                          "workspaceId": "00000000-0000-0000-0000-000000000000",
-                          "pipelineId": "d87e87f0-7648-4845-a687-96c54dbda1c1",
-                          "operationType": "InvokeFabricPipeline"
-                        },
-                        "externalReferences": {
-                          "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
-                        },
-                        "policy": {
-                          "timeout": "0.12:00:00",
-                          "retry": 0,
-                          "retryIntervalInSeconds": 30,
-                          "secureInput": false,
-                          "secureOutput": false
-                        },
-                        "name": "inv_ingest_database_incremental_router",
-                        "dependsOn": []
-                      }
-                    ]
-                  },
-                  {
-                    "value": "DATABASE|LAKEHOUSE|FULL",
-                    "activities": [
-                      {
-                        "type": "InvokePipeline",
-                        "typeProperties": {
-                          "parameters": {
-                            "p_batch_id": {
-                              "value": "@variables('v_batch_id')",
-                              "type": "Expression"
-                            },
-                            "p_ingestion_config_id": {
-                              "value": "@pipeline().parameters.p_ingestion_config_id",
-                              "type": "Expression"
-                            },
-                            "p_run_type": {
-                              "value": "@variables('v_run_type')",
-                              "type": "Expression"
-                            },
-                            "p_start_time": {
-                              "value": "@variables('v_start_time')",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_run_id": {
-                              "value": "@pipeline().RunId",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_name": {
-                              "value": "@pipeline().PipelineName",
-                              "type": "Expression"
-                            },
-                            "p_source_system": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                              "type": "Expression"
-                            },
-                            "p_source_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
-                              "type": "Expression"
-                            },
-                            "p_source_object": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                              "type": "Expression"
-                            },
-                            "p_load_strategy": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                              "type": "Expression"
-                            },
-                            "p_source_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_target_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                              "type": "Expression"
-                            },
-                            "p_target_table": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_type": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
-                              "type": "Expression"
-                            },
-                            "p_copy_partition_option": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
-                              "type": "Expression"
-                            },
-                            "p_copy_partition_column": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
-                              "type": "Expression"
-                            },
-                            "p_copy_parallel_copies": {
-                              "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
-                              "type": "Expression"
-                            }
-                          },
-                          "waitOnCompletion": true,
-                          "workspaceId": "00000000-0000-0000-0000-000000000000",
-                          "pipelineId": "fa43cb48-2a1e-45bf-a842-232ba87edf4a",
-                          "operationType": "InvokeFabricPipeline"
-                        },
-                        "externalReferences": {
-                          "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
-                        },
-                        "policy": {
-                          "timeout": "0.12:00:00",
-                          "retry": 0,
-                          "retryIntervalInSeconds": 30,
-                          "secureInput": false,
-                          "secureOutput": false
-                        },
-                        "name": "inv_ingest_database_full_router",
-                        "dependsOn": []
-                      }
-                    ]
-                  },
-                  {
-                    "value": "FILE|LAKEHOUSE|FULL",
-                    "activities": [
-                      {
-                        "type": "InvokePipeline",
-                        "typeProperties": {
-                          "parameters": {
-                            "p_batch_id": {
-                              "value": "@variables('v_batch_id')",
-                              "type": "Expression"
-                            },
-                            "p_ingestion_config_id": {
-                              "value": "@pipeline().parameters.p_ingestion_config_id",
-                              "type": "Expression"
-                            },
-                            "p_run_type": {
-                              "value": "@variables('v_run_type')",
-                              "type": "Expression"
-                            },
-                            "p_start_time": {
-                              "value": "@variables('v_start_time')",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_run_id": {
-                              "value": "@pipeline().RunId",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_name": {
-                              "value": "@pipeline().PipelineName",
-                              "type": "Expression"
-                            },
-                            "p_source_system": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                              "type": "Expression"
-                            },
-                            "p_source_object": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                              "type": "Expression"
-                            },
-                            "p_source_path": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_path",
-                              "type": "Expression"
-                            },
-                            "p_source_options": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_options",
-                              "type": "Expression"
-                            },
-                            "p_landing_path": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].landing_path",
-                              "type": "Expression"
-                            },
-                            "p_load_strategy": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                              "type": "Expression"
-                            },
-                            "p_source_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_target_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                              "type": "Expression"
-                            },
-                            "p_target_table": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_type": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
-                              "type": "Expression"
-                            },
-                            "p_file_format": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
-                              "type": "Expression"
-                            }
-                          },
-                          "waitOnCompletion": true,
-                          "workspaceId": "00000000-0000-0000-0000-000000000000",
-                          "pipelineId": "5b9e4d3a-0f8a-4cc5-9c22-2b6d1b5731f4",
-                          "operationType": "InvokeFabricPipeline"
-                        },
-                        "externalReferences": {
-                          "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
-                        },
-                        "policy": {
-                          "timeout": "0.12:00:00",
-                          "retry": 0,
-                          "retryIntervalInSeconds": 30,
-                          "secureInput": false,
-                          "secureOutput": false
-                        },
-                        "name": "inv_ingest_file_full_router",
-                        "dependsOn": []
-                      }
-                    ]
-                  },
-                  {
-                    "value": "FILE|LAKEHOUSE|INCREMENTAL",
-                    "activities": [
-                      {
-                        "type": "InvokePipeline",
-                        "typeProperties": {
-                          "parameters": {
-                            "p_batch_id": {
-                              "value": "@variables('v_batch_id')",
-                              "type": "Expression"
-                            },
-                            "p_ingestion_config_id": {
-                              "value": "@pipeline().parameters.p_ingestion_config_id",
-                              "type": "Expression"
-                            },
-                            "p_run_type": {
-                              "value": "@variables('v_run_type')",
-                              "type": "Expression"
-                            },
-                            "p_start_time": {
-                              "value": "@variables('v_start_time')",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_run_id": {
-                              "value": "@pipeline().RunId",
-                              "type": "Expression"
-                            },
-                            "p_audit_pipeline_name": {
-                              "value": "@pipeline().PipelineName",
-                              "type": "Expression"
-                            },
-                            "p_source_system": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                              "type": "Expression"
-                            },
-                            "p_source_object": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                              "type": "Expression"
-                            },
-                            "p_source_path": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_path",
-                              "type": "Expression"
-                            },
-                            "p_source_options": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_options",
-                              "type": "Expression"
-                            },
-                            "p_landing_path": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].landing_path",
-                              "type": "Expression"
-                            },
-                            "p_load_strategy": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                              "type": "Expression"
-                            },
-                            "p_source_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_conn_ref": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                              "type": "Expression"
-                            },
-                            "p_target_connection_settings": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
-                              "type": "Expression"
-                            },
-                            "p_target_schema": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                              "type": "Expression"
-                            },
-                            "p_target_table": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                              "type": "Expression"
-                            },
-                            "p_source_connection_type": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
-                              "type": "Expression"
-                            },
-                            "p_watermark_field": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
-                              "type": "Expression"
-                            },
-                            "p_file_format": {
-                              "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
-                              "type": "Expression"
-                            },
-                            "p_requested_lower_bound": {
-                              "value": "@pipeline().parameters.p_requested_lower_bound",
-                              "type": "Expression"
-                            },
-                            "p_requested_upper_bound": {
-                              "value": "@pipeline().parameters.p_requested_upper_bound",
-                              "type": "Expression"
-                            }
-                          },
-                          "waitOnCompletion": true,
-                          "workspaceId": "00000000-0000-0000-0000-000000000000",
-                          "pipelineId": "6d126d69-94a9-4ed7-a7e0-9fa0e166ef33",
-                          "operationType": "InvokeFabricPipeline"
-                        },
-                        "externalReferences": {
-                          "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
-                        },
-                        "policy": {
-                          "timeout": "0.12:00:00",
-                          "retry": 0,
-                          "retryIntervalInSeconds": 30,
-                          "secureInput": false,
-                          "secureOutput": false
-                        },
-                        "name": "inv_ingest_file_incremental_router",
-                        "dependsOn": []
-                      }
-                    ]
-                  }
-                ],
-                "defaultActivities": [
-                  {
-                    "type": "SqlServerStoredProcedure",
-                    "typeProperties": {
-                      "storedProcedureName": "[control].[usp_finalize_ingestion_run]",
-                      "storedProcedureParameters": {
-                        "advance_watermark": {
-                          "value": "false",
-                          "type": "Boolean"
-                        },
-                        "batch_id": {
-                          "value": {
-                            "value": "@variables('v_batch_id')",
-                            "type": "Expression"
-                          },
-                          "type": "Guid"
-                        },
-                        "end_time": {
-                          "value": {
-                            "value": "@utcNow()",
-                            "type": "Expression"
-                          },
-                          "type": "DateTime"
-                        },
-                        "error_code": {
-                          "value": "UNSUPPORTED_INGESTION_ROUTE",
-                          "type": "String"
-                        },
-                        "error_message": {
-                          "value": {
-                            "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "ingestion_config_id": {
-                          "value": {
-                            "value": "@pipeline().parameters.p_ingestion_config_id",
-                            "type": "Expression"
-                          },
-                          "type": "Int32"
-                        },
-                        "load_strategy": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "pipeline_name": {
-                          "value": {
-                            "value": "@pipeline().PipelineName",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "pipeline_run_id": {
-                          "value": {
-                            "value": "@pipeline().RunId",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "processing_lower_bound": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "processing_upper_bound": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "run_type": {
-                          "value": {
-                            "value": "@variables('v_run_type')",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_object": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_row_count": {
-                          "value": null,
-                          "type": "Int64"
-                        },
-                        "source_schema": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_system": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "start_time": {
-                          "value": {
-                            "value": "@variables('v_start_time')",
-                            "type": "Expression"
-                          },
-                          "type": "DateTime"
-                        },
-                        "status": {
-                          "value": "FAILED",
-                          "type": "String"
-                        },
-                        "landing_path": {
-                          "value": null,
-                          "type": "String"
-                        },
-                        "target_row_count": {
-                          "value": null,
-                          "type": "Int64"
-                        },
-                        "watermark_field": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_schema": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_table": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "source_conn_ref": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        },
-                        "target_conn_ref": {
-                          "value": {
-                            "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
-                            "type": "Expression"
-                          },
-                          "type": "String"
-                        }
-                      }
+                {
+                  "type": "Fail",
+                  "typeProperties": {
+                    "message": {
+                      "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
+                      "type": "Expression"
                     },
-                    "connectionSettings": {
-                      "name": "sqldb_ingestion_control",
-                      "properties": {
-                        "type": "FabricSqlDatabase",
-                        "typeProperties": {
-                          "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
-                          "workspaceId": "00000000-0000-0000-0000-000000000000"
-                        },
-                        "externalReferences": {
-                          "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
-                        },
-                        "annotations": []
-                      }
-                    },
-                    "policy": {
-                      "timeout": "0.12:00:00",
-                      "retry": 2,
-                      "retryIntervalInSeconds": 30,
-                      "secureInput": false,
-                      "secureOutput": false
-                    },
-                    "name": "sp_finalize_unsupported_ingestion_route",
-                    "dependsOn": []
+                    "errorCode": "INVALID_RUN_REQUEST"
                   },
-                  {
-                    "type": "Fail",
-                    "typeProperties": {
-                      "message": {
-                        "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                  "name": "fail_invalid_execution_request",
+                  "dependsOn": [
+                    {
+                      "activity": "sp_finalize_invalid_execution_request",
+                      "dependencyConditions": [
+                        "Succeeded"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "value": "DATABASE|LAKEHOUSE|INCREMENTAL",
+              "activities": [
+                {
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@variables('v_batch_id')",
                         "type": "Expression"
                       },
-                      "errorCode": "UNSUPPORTED_INGESTION_ROUTE"
-                    },
-                    "name": "fail_unsupported_ingestion_route",
-                    "dependsOn": [
-                      {
-                        "activity": "sp_finalize_unsupported_ingestion_route",
-                        "dependencyConditions": [
-                          "Succeeded"
-                        ]
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_parent_pipeline_run_id": {
+                        "value": "@pipeline().RunId",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@variables('v_start_time')",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@variables('v_run_type')",
+                        "type": "Expression"
+                      },
+                      "p_requested_lower_bound": {
+                        "value": "@pipeline().parameters.p_requested_lower_bound",
+                        "type": "Expression"
+                      },
+                      "p_requested_upper_bound": {
+                        "value": "@pipeline().parameters.p_requested_upper_bound",
+                        "type": "Expression"
+                      },
+                      "p_parent_pipeline_name": {
+                        "value": "@pipeline().PipelineName",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_option": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_column": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                        "type": "Expression"
+                      },
+                      "p_copy_parallel_copies": {
+                        "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
+                        "type": "Expression"
+                      },
+                      "p_watermark_field": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                        "type": "Expression"
                       }
-                    ]
-                  }
-                ]
-              },
-              "name": "sw_ingestion_route",
-              "dependsOn": [
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "d87e87f0-7648-4845-a687-96c54dbda1c1",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_ingest_database_incremental_router",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "DATABASE|LAKEHOUSE|FULL",
+              "activities": [
                 {
-                  "activity": "if_valid_execution_request",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@variables('v_batch_id')",
+                        "type": "Expression"
+                      },
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@variables('v_run_type')",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@variables('v_start_time')",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_run_id": {
+                        "value": "@pipeline().RunId",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_name": {
+                        "value": "@pipeline().PipelineName",
+                        "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_option": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                        "type": "Expression"
+                      },
+                      "p_copy_partition_column": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                        "type": "Expression"
+                      },
+                      "p_copy_parallel_copies": {
+                        "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "fa43cb48-2a1e-45bf-a842-232ba87edf4a",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_ingest_database_full_router",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "FILE|LAKEHOUSE|FULL",
+              "activities": [
+                {
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@variables('v_batch_id')",
+                        "type": "Expression"
+                      },
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@variables('v_run_type')",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@variables('v_start_time')",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_run_id": {
+                        "value": "@pipeline().RunId",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_name": {
+                        "value": "@pipeline().PipelineName",
+                        "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "type": "Expression"
+                      },
+                      "p_source_path": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_path",
+                        "type": "Expression"
+                      },
+                      "p_source_options": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_options",
+                        "type": "Expression"
+                      },
+                      "p_landing_path": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].landing_path",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
+                      },
+                      "p_file_format": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "5b9e4d3a-0f8a-4cc5-9c22-2b6d1b5731f4",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_ingest_file_full_router",
+                  "dependsOn": []
+                }
+              ]
+            },
+            {
+              "value": "FILE|LAKEHOUSE|INCREMENTAL",
+              "activities": [
+                {
+                  "type": "InvokePipeline",
+                  "typeProperties": {
+                    "parameters": {
+                      "p_batch_id": {
+                        "value": "@variables('v_batch_id')",
+                        "type": "Expression"
+                      },
+                      "p_ingestion_config_id": {
+                        "value": "@pipeline().parameters.p_ingestion_config_id",
+                        "type": "Expression"
+                      },
+                      "p_run_type": {
+                        "value": "@variables('v_run_type')",
+                        "type": "Expression"
+                      },
+                      "p_start_time": {
+                        "value": "@variables('v_start_time')",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_run_id": {
+                        "value": "@pipeline().RunId",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_name": {
+                        "value": "@pipeline().PipelineName",
+                        "type": "Expression"
+                      },
+                      "p_source_system": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "type": "Expression"
+                      },
+                      "p_source_object": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "type": "Expression"
+                      },
+                      "p_source_path": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_path",
+                        "type": "Expression"
+                      },
+                      "p_source_options": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_options",
+                        "type": "Expression"
+                      },
+                      "p_landing_path": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].landing_path",
+                        "type": "Expression"
+                      },
+                      "p_load_strategy": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "type": "Expression"
+                      },
+                      "p_source_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_conn_ref": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "type": "Expression"
+                      },
+                      "p_target_connection_settings": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "type": "Expression"
+                      },
+                      "p_target_schema": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "type": "Expression"
+                      },
+                      "p_target_table": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "type": "Expression"
+                      },
+                      "p_source_connection_type": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "type": "Expression"
+                      },
+                      "p_watermark_field": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                        "type": "Expression"
+                      },
+                      "p_file_format": {
+                        "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
+                        "type": "Expression"
+                      },
+                      "p_requested_lower_bound": {
+                        "value": "@pipeline().parameters.p_requested_lower_bound",
+                        "type": "Expression"
+                      },
+                      "p_requested_upper_bound": {
+                        "value": "@pipeline().parameters.p_requested_upper_bound",
+                        "type": "Expression"
+                      }
+                    },
+                    "waitOnCompletion": true,
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "pipelineId": "6d126d69-94a9-4ed7-a7e0-9fa0e166ef33",
+                    "operationType": "InvokeFabricPipeline"
+                  },
+                  "externalReferences": {
+                    "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                  },
+                  "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureInput": false,
+                    "secureOutput": false
+                  },
+                  "name": "inv_ingest_file_incremental_router",
+                  "dependsOn": []
                 }
               ]
             }
           ],
-          "ifFalseActivities": [
+          "defaultActivities": [
             {
               "type": "SqlServerStoredProcedure",
               "typeProperties": {
@@ -1074,11 +1026,14 @@
                     "type": "DateTime"
                   },
                   "error_code": {
-                    "value": null,
+                    "value": "UNSUPPORTED_INGESTION_ROUTE",
                     "type": "String"
                   },
                   "error_message": {
-                    "value": null,
+                    "value": {
+                      "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                      "type": "Expression"
+                    },
                     "type": "String"
                   },
                   "ingestion_config_id": {
@@ -1132,7 +1087,7 @@
                     "type": "String"
                   },
                   "source_row_count": {
-                    "value": "0",
+                    "value": null,
                     "type": "Int64"
                   },
                   "source_schema": {
@@ -1157,7 +1112,7 @@
                     "type": "DateTime"
                   },
                   "status": {
-                    "value": "SKIPPED",
+                    "value": "FAILED",
                     "type": "String"
                   },
                   "landing_path": {
@@ -1165,7 +1120,7 @@
                     "type": "String"
                   },
                   "target_row_count": {
-                    "value": "0",
+                    "value": null,
                     "type": "Int64"
                   },
                   "watermark_field": {
@@ -1226,12 +1181,31 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_config_inactive",
+              "name": "sp_finalize_unsupported_ingestion_route",
               "dependsOn": []
+            },
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "UNSUPPORTED_INGESTION_ROUTE"
+              },
+              "name": "fail_unsupported_ingestion_route",
+              "dependsOn": [
+                {
+                  "activity": "sp_finalize_unsupported_ingestion_route",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
             }
           ]
         },
-        "name": "if_config_active",
+        "name": "sw_execution_decision",
         "dependsOn": [
           {
             "activity": "if_config_found",
