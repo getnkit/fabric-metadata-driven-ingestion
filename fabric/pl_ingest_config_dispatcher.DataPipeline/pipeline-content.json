@@ -59,7 +59,7 @@
                       "secureInput": false,
                       "secureOutput": false
                     },
-                    "name": "inv_ingest_object_controller_page_explicit",
+                    "name": "inv_ingest_object_controller_explicit",
                     "dependsOn": []
                   }
                 ]
