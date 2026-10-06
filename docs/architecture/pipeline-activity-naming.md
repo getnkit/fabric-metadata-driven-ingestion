@@ -37,8 +37,15 @@ Successful terminal states use:
 
 ```text
 sp_finalize_success
-sp_finalize_skipped
 ```
+
+A successful no-data branch may use a more specific success suffix when the pipeline already contains another success finalizer:
+
+```text
+sp_finalize_no_new_data_success
+```
+
+`SKIPPED` is reserved for work that is intentionally not executed, such as an inactive configuration.
 
 For expected failure outcomes, the finalization stored procedure records the `FAILED` audit first. A semantic Fail activity runs only after that stored procedure succeeds:
 
