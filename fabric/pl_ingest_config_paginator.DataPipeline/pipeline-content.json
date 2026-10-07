@@ -92,7 +92,7 @@
                 "source": {
                   "type": "FabricSqlDatabaseSource",
                   "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT ',\n        'ingestion_config_id AS config_id, ',\n        '''REGULAR'' AS run_type, ',\n        ''''' AS lower_bound, ',\n        ''''' AS upper_bound ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1 ',\n    'ORDER BY ingestion_config_id ',\n    'OFFSET ',\n        string(mul(item(), pipeline().parameters.p_config_page_size)),\n        ' ROWS ',\n    'FETCH NEXT ',\n        string(pipeline().parameters.p_config_page_size),\n        ' ROWS ONLY;'\n)",
+                    "value": "@concat(\n    'SELECT ',\n        'ingestion_config_id AS config_id, ',\n        '''REGULAR'' AS run_type ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1 ',\n    'ORDER BY ingestion_config_id ',\n    'OFFSET ',\n        string(mul(item(), pipeline().parameters.p_config_page_size)),\n        ' ROWS ',\n    'FETCH NEXT ',\n        string(pipeline().parameters.p_config_page_size),\n        ' ROWS ONLY;'\n)",
                     "type": "Expression"
                   },
                   "partitionOption": "None",

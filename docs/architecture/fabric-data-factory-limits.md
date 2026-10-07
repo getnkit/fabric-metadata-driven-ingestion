@@ -62,7 +62,7 @@ pl_ingest_config_dispatcher
        -> inv_ingest_object_controller
 ```
 
-The paginator normalizes each active configuration row into the Dispatcher's canonical request shape (`config_id`, `run_type`, `lower_bound`, `upper_bound`). Explicit callers may omit LOW/HIGH when they are not needed; the Dispatcher normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher mode-agnostic and removes unsupported nested control containers.
+The paginator emits the minimal REGULAR request shape (`config_id`, `run_type`) for each active configuration. Optional LOW/HIGH fields are supplied only when a caller's execution semantics require them; the Dispatcher normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher mode-agnostic and removes unsupported nested control containers.
 
 Default:
 
