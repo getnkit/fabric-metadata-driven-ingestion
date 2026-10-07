@@ -287,11 +287,13 @@ BEGIN
         Required object contract:
           config_id   : positive integer
           run_type    : REGULAR | BACKFILL
+
+        Optional object fields:
           lower_bound : string or null
           upper_bound : string or null
 
-        Bound semantics are intentionally not checked here because they depend on
-        the config load_strategy and are validated by the Controller.
+        Missing bounds are normalized to empty strings by the Dispatcher.
+        Config-specific bound semantics remain owned by the Controller.
     */
     IF EXISTS
     (
@@ -314,23 +316,16 @@ BEGIN
                   AND property.[type] = 1
                   AND UPPER(property.[value]) IN ('REGULAR', 'BACKFILL')
             )
-            OR NOT EXISTS
+            OR EXISTS
             (
                 SELECT 1
                 FROM OPENJSON(request_item.[value]) AS property
-                WHERE property.[key] = 'lower_bound'
-                  AND property.[type] IN (0, 1)
-            )
-            OR NOT EXISTS
-            (
-                SELECT 1
-                FROM OPENJSON(request_item.[value]) AS property
-                WHERE property.[key] = 'upper_bound'
-                  AND property.[type] IN (0, 1)
+                WHERE property.[key] IN ('lower_bound', 'upper_bound')
+                  AND property.[type] NOT IN (0, 1)
             )
     )
     BEGIN
-        THROW 51012, 'INVALID_RUN_REQUESTS: each request requires positive integer config_id, REGULAR/BACKFILL run_type, and lower_bound/upper_bound as string or null.', 1;
+        THROW 51012, 'INVALID_RUN_REQUESTS: each request requires positive integer config_id and REGULAR/BACKFILL run_type; optional lower_bound/upper_bound must be string or null.', 1;
     END;
 
     DECLARE @DuplicateConfigIds NVARCHAR(MAX);

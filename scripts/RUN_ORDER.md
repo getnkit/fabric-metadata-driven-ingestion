@@ -85,9 +85,10 @@ are hosted in the same Microsoft Entra tenant.
 Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
 
 - `[]` runs all active configurations as REGULAR with pagination.
-- A non-empty array runs exactly the requested configs; each object carries
-  `config_id`, `run_type`, `lower_bound`, and `upper_bound`.
-- REGULAR leaves LOW/HIGH empty.
+- A non-empty array runs exactly the requested configs; each object requires
+  `config_id` and `run_type`. `lower_bound` / `upper_bound` are optional
+  request fields and are needed only when the execution semantics require them.
+- REGULAR normally omits LOW/HIGH; omitted bounds are normalized to empty values before object-level validation.
 - `load_strategy` remains the config's FULL/INCREMENTAL strategy for every run. BACKFILL + FULL uses empty LOW/HIGH and rereads the full current source scope; BACKFILL + INCREMENTAL requires explicit LOW/HIGH and never advances the operational watermark.
 - See `docs/operations/run-request-examples.md` for copy/paste examples.
 
