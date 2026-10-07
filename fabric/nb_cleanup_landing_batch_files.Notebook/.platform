@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_cleanup_landing_batch_files",
+    "description": "Idempotent compensating cleanup of Landing files scoped to one ingestion batch path."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "6c4e51d2-9a37-4b2f-8e61-2d7c0a5f9341"
+  }
+}
