@@ -599,7 +599,7 @@
                       },
                       "error_message": {
                         "value": {
-                          "value": "@concat(\n    'Unsupported batch ingestion target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. pl_ingest_* requires target_connection_type=LAKEHOUSE.'\n)",
+                          "value": "@concat(\n    'Unsupported target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Expected target_connection_type=LAKEHOUSE.'\n)",
                           "type": "Expression"
                         },
                         "type": "String"
