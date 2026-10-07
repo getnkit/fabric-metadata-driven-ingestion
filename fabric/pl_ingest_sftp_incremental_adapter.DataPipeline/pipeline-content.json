@@ -729,7 +729,7 @@
         "typeProperties": {
           "variableName": "v_processing_upper_bound",
           "value": {
-            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-ddTHH:mm:ss.fff'),\n    pipeline().parameters.p_requested_upper_bound\n)",
+            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    pipeline().parameters.p_start_time,\n    pipeline().parameters.p_requested_upper_bound\n)",
             "type": "Expression"
           }
         },

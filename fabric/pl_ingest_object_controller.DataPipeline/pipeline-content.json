@@ -6,7 +6,7 @@
         "typeProperties": {
           "variableName": "v_start_time",
           "value": {
-            "value": "@utcNow()",
+            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fff'\n)",
             "type": "Expression"
           }
         },

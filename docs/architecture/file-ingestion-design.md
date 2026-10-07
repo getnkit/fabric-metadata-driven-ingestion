@@ -360,6 +360,8 @@ source scope as FULL REGULAR execution. The distinction is execution intent and
 lineage; each successful run still appends a new batch-specific Landing/Bronze
 copy.
 
+`p_start_time` is normalized once at the Object Controller when the run starts, using `yyyy-MM-ddTHH:mm:ss.fff`. Downstream routers and adapters treat it as the canonical UTC run-start timestamp string and do not reformat it unless deriving another representation such as `ingestion_date`.
+
 The current SFTP incremental physical flow is therefore:
 
 ```text
