@@ -72,10 +72,7 @@ if notebookutils.fs.exists(landing_path):
         f"LANDING_CLEANUP_INCOMPLETE: batch_id={batch_id} path={landing_relative_path}"
     )
 
-print(
-    f"LANDING_CLEANUP_SUCCESS batch_id={batch_id} "
-    f"path={landing_relative_path}"
-)
+print(f"LANDING_CLEANUP_SUCCESS batch_id={batch_id} path={landing_relative_path}")
 
 # METADATA ********************
 
