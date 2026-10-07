@@ -206,7 +206,6 @@ result = json.dumps(
     {
         "source_row_count": int(row_count),
         "target_row_count": int(row_count),
-        "file_format": file_format,
     }
 )
 
