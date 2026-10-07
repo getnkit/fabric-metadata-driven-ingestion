@@ -9,7 +9,7 @@ Accepted for the current blueprint.
 ```text
 pl_ingest_orchestrator
   -> pl_ingest_object_controller
-      -> DATABASE|LAKEHOUSE
+      -> DATABASE
           -> pl_ingest_database_router
               -> source_connection_type|load_strategy
                   -> AZURE_SQL|FULL
@@ -22,6 +22,12 @@ The DATABASE router is intentionally a thin pattern-level connector/strategy
 router. Its purpose is to keep physical database technology and connector-specific
 load implementation out of the object controller while avoiding a separate router
 pipeline for every FULL/INCREMENTAL combination.
+
+Batch ingestion has one target-type invariant: Bronze is a Fabric Lakehouse.
+The object controller validates `target_connection_type = LAKEHOUSE` before
+routing, so target type is not duplicated in the route key. Target identity
+(`target_conn_ref`, connection settings, schema, and table) remains metadata
+because it selects the actual Lakehouse/table instance.
 
 ## Framework-owned behavior
 

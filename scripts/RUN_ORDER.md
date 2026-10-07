@@ -92,7 +92,13 @@ Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
 - `load_strategy` remains the config's FULL/INCREMENTAL strategy for every run. BACKFILL + FULL uses empty LOW/HIGH and rereads the full current source scope; BACKFILL + INCREMENTAL requires explicit LOW/HIGH and never advances the operational watermark.
 - See `docs/operations/run-request-examples.md` for copy/paste examples.
 
-## 5) Current relational Bronze target convention
+## 5) Batch Bronze target invariant
+
+All `pl_ingest_*` batch ingestion paths target Bronze in a Fabric Lakehouse.
+The object controller validates the resolved target connection type as
+`LAKEHOUSE` before routing. Target type is therefore not part of the route key;
+`target_conn_ref`, target connection settings, schema, and table still identify
+the concrete Lakehouse destination.
 
 The current DATABASE ingestion path writes relational sources directly to Bronze
 Lakehouse Delta tables. For these configs, `source_path` and `landing_path` are
@@ -151,7 +157,7 @@ The first FILE route is:
 
 ```text
 pl_ingest_object_controller
-  -> FILE|LAKEHOUSE
+  -> FILE
   -> pl_ingest_file_router
   -> SFTP|FULL
   -> pl_ingest_sftp_full_adapter
@@ -192,7 +198,7 @@ The first FILE incremental route is:
 
 ```text
 pl_ingest_object_controller
-  -> FILE|LAKEHOUSE
+  -> FILE
   -> pl_ingest_file_router
   -> SFTP|INCREMENTAL
   -> pl_ingest_sftp_incremental_adapter

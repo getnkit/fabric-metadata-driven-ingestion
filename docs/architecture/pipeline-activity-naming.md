@@ -166,6 +166,17 @@ Do not automatically delete Bronze rows after `sp_finalize_success` itself fails
 
 Active ingestion pipelines use the `pl_ingest_` workload namespace so that ingestion items remain identifiable when the workspace later contains transformation, data-quality, or maintenance pipelines.
 
+## Batch target invariant
+
+Within this framework, `pl_ingest_*` means batch ingestion orchestrated by
+Fabric Data Factory, and its Bronze target type is always Fabric Lakehouse.
+Because the destination type is invariant, pipeline names omit destination
+suffixes such as `_to_lakehouse_`, and the object-controller route key contains
+only the ingestion pattern (`DATABASE`, `FILE`, and future batch patterns).
+The controller still validates `target_connection_type = LAKEHOUSE` before
+routing. Target connection/schema/table metadata remains required to identify the
+actual Lakehouse destination.
+
 The naming shape is role-oriented:
 
 ```text
@@ -192,17 +203,19 @@ pl_ingest_orchestrator
   └─ All Active -> pl_ingest_config_paginator
                     -> pl_ingest_config_dispatcher
                          -> pl_ingest_object_controller
-                              -> pl_ingest_database_router
-                                   -> AZURE_SQL|FULL
-                                        -> pl_ingest_azure_sql_full_adapter
-                                   -> AZURE_SQL|INCREMENTAL
-                                        -> pl_ingest_azure_sql_incremental_adapter
-                                             -> pl_ingest_azure_sql_incremental_loader
-                              -> pl_ingest_file_router
-                                   -> SFTP|FULL
-                                        -> pl_ingest_sftp_full_adapter
-                                   -> SFTP|INCREMENTAL
-                                        -> pl_ingest_sftp_incremental_adapter
+                              -> DATABASE
+                                   -> pl_ingest_database_router
+                                        -> AZURE_SQL|FULL
+                                             -> pl_ingest_azure_sql_full_adapter
+                                        -> AZURE_SQL|INCREMENTAL
+                                             -> pl_ingest_azure_sql_incremental_adapter
+                                                  -> pl_ingest_azure_sql_incremental_loader
+                              -> FILE
+                                   -> pl_ingest_file_router
+                                        -> SFTP|FULL
+                                             -> pl_ingest_sftp_full_adapter
+                                        -> SFTP|INCREMENTAL
+                                             -> pl_ingest_sftp_incremental_adapter
 ```
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
