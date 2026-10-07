@@ -400,14 +400,7 @@
                 "secureOutput": false
               },
               "name": "nb_cleanup_landing_file_count_mismatch",
-              "dependsOn": [
-                {
-                  "activity": "copy_sftp_to_landing",
-                  "dependencyConditions": [
-                    "Succeeded"
-                  ]
-                }
-              ]
+              "dependsOn": []
             },
             {
               "type": "SqlServerStoredProcedure",
