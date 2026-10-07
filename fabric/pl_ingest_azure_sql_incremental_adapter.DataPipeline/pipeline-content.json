@@ -32,7 +32,7 @@
             },
             "annotations": []
           },
-          "firstRowOnly": false
+          "firstRowOnly": true
         },
         "policy": {
           "timeout": "0.12:00:00",
@@ -48,7 +48,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(\n    int(activity('lkp_current_watermark').output.count),\n    1\n)",
+            "value": "@contains(activity('lkp_current_watermark').output, 'firstRow')",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -270,7 +270,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(\n    pipeline().parameters.p_watermark_field,\n    activity('lkp_current_watermark').output.value[0].watermark_field\n)",
+            "value": "@equals(\n    pipeline().parameters.p_watermark_field,\n    activity('lkp_current_watermark').output.firstRow.watermark_field\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -304,7 +304,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.value[0].watermark_field,\n    '.'\n)",
+                      "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -461,7 +461,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.value[0].watermark_field,\n    '.'\n)",
+                  "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "WATERMARK_FIELD_MISMATCH"
@@ -721,7 +721,7 @@
         "typeProperties": {
           "variableName": "v_lower_bound",
           "value": {
-            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.value[0].last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
+            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.firstRow.last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
             "type": "Expression"
           }
         },

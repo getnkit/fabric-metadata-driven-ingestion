@@ -71,7 +71,7 @@
             },
             "annotations": []
           },
-          "firstRowOnly": false
+          "firstRowOnly": true
         },
         "policy": {
           "timeout": "0.12:00:00",
@@ -94,7 +94,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(\n    int(activity('lkp_ingestion_config').output.count),\n    1\n)",
+            "value": "@contains(activity('lkp_ingestion_config').output, 'firstRow')",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -128,7 +128,7 @@
         "typeProperties": {
           "variableName": "v_request_valid",
           "value": {
-            "value": "@or(\n    and(\n        equals(variables('v_run_type'), 'REGULAR'),\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        )\n    ),\n    or(\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            )\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n                and(\n                    not(empty(pipeline().parameters.p_requested_lower_bound)),\n                    not(empty(pipeline().parameters.p_requested_upper_bound))\n                )\n            )\n        )\n    )\n)",
+            "value": "@or(\n    and(\n        equals(variables('v_run_type'), 'REGULAR'),\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        )\n    ),\n    or(\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.firstRow.load_strategy), 'FULL'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            )\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.firstRow.load_strategy), 'INCREMENTAL'),\n                and(\n                    not(empty(pipeline().parameters.p_requested_lower_bound)),\n                    not(empty(pipeline().parameters.p_requested_upper_bound))\n                )\n            )\n        )\n    )\n)",
             "type": "Expression"
           }
         },
@@ -151,7 +151,7 @@
         "typeProperties": {
           "variableName": "v_execution_decision",
           "value": {
-            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        variables('v_request_valid'),\n        if(\n            equals(\n                toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n                'LAKEHOUSE'\n            ),\n            toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n            'INVALID_TARGET'\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
+            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.firstRow.is_active),\n    if(\n        variables('v_request_valid'),\n        if(\n            equals(\n                toUpper(activity('lkp_ingestion_config').output.firstRow.target_connection_type),\n                'LAKEHOUSE'\n            ),\n            toUpper(activity('lkp_ingestion_config').output.firstRow.ingestion_pattern),\n            'INVALID_TARGET'\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
             "type": "Expression"
           }
         },
@@ -220,7 +220,7 @@
                       },
                       "load_strategy": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -256,7 +256,7 @@
                       },
                       "source_object": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -267,14 +267,14 @@
                       },
                       "source_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_system": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -300,35 +300,35 @@
                       },
                       "watermark_field": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.watermark_field",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_table": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -393,7 +393,7 @@
                       },
                       "error_message": {
                         "value": {
-                          "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
+                          "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -407,7 +407,7 @@
                       },
                       "load_strategy": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -443,7 +443,7 @@
                       },
                       "source_object": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -454,14 +454,14 @@
                       },
                       "source_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_system": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -487,35 +487,35 @@
                       },
                       "watermark_field": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.watermark_field",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_table": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -550,7 +550,7 @@
                   "type": "Fail",
                   "typeProperties": {
                     "message": {
-                      "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
+                      "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
                       "type": "Expression"
                     },
                     "errorCode": "INVALID_RUN_REQUEST"
@@ -599,7 +599,7 @@
                       },
                       "error_message": {
                         "value": {
-                          "value": "@concat(\n    'Unsupported batch ingestion target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. pl_ingest_* requires target_connection_type=LAKEHOUSE.'\n)",
+                          "value": "@concat(\n    'Unsupported batch ingestion target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. pl_ingest_* requires target_connection_type=LAKEHOUSE.'\n)",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -613,7 +613,7 @@
                       },
                       "load_strategy": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -649,7 +649,7 @@
                       },
                       "source_object": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -660,14 +660,14 @@
                       },
                       "source_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_system": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -693,35 +693,35 @@
                       },
                       "watermark_field": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.watermark_field",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_schema": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_table": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "source_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
                       },
                       "target_conn_ref": {
                         "value": {
-                          "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                          "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -756,7 +756,7 @@
                   "type": "Fail",
                   "typeProperties": {
                     "message": {
-                      "value": "@concat(\n    'Unsupported batch ingestion target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. pl_ingest_* requires target_connection_type=LAKEHOUSE.'\n)",
+                      "value": "@concat(\n    'Unsupported batch ingestion target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. pl_ingest_* requires target_connection_type=LAKEHOUSE.'\n)",
                       "type": "Expression"
                     },
                     "errorCode": "UNSUPPORTED_TARGET_CONNECTION_TYPE"
@@ -813,63 +813,63 @@
                         "type": "Expression"
                       },
                       "p_source_connection_type": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_connection_type",
                         "type": "Expression"
                       },
                       "p_source_system": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                         "type": "Expression"
                       },
                       "p_source_object": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                         "type": "Expression"
                       },
                       "p_load_strategy": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                         "type": "Expression"
                       },
                       "p_watermark_field": {
-                        "value": "@coalesce(activity('lkp_ingestion_config').output.value[0].watermark_field, '')",
+                        "value": "@coalesce(activity('lkp_ingestion_config').output.firstRow.watermark_field, '')",
                         "type": "Expression"
                       },
                       "p_source_conn_ref": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                         "type": "Expression"
                       },
                       "p_source_connection_settings": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_connection_settings",
                         "type": "Expression"
                       },
                       "p_target_conn_ref": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                         "type": "Expression"
                       },
                       "p_target_connection_settings": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_connection_settings",
                         "type": "Expression"
                       },
                       "p_target_schema": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                         "type": "Expression"
                       },
                       "p_target_table": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                         "type": "Expression"
                       },
                       "p_source_schema": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_schema",
                         "type": "Expression"
                       },
                       "p_copy_partition_option": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_option",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.copy_partition_option",
                         "type": "Expression"
                       },
                       "p_copy_partition_column": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].copy_partition_column",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.copy_partition_column",
                         "type": "Expression"
                       },
                       "p_copy_parallel_copies": {
-                        "value": "@int(activity('lkp_ingestion_config').output.value[0].copy_parallel_copies)",
+                        "value": "@int(activity('lkp_ingestion_config').output.firstRow.copy_parallel_copies)",
                         "type": "Expression"
                       }
                     },
@@ -933,63 +933,63 @@
                         "type": "Expression"
                       },
                       "p_source_connection_type": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_type",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_connection_type",
                         "type": "Expression"
                       },
                       "p_source_system": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                         "type": "Expression"
                       },
                       "p_source_object": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                         "type": "Expression"
                       },
                       "p_load_strategy": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                         "type": "Expression"
                       },
                       "p_watermark_field": {
-                        "value": "@coalesce(activity('lkp_ingestion_config').output.value[0].watermark_field, '')",
+                        "value": "@coalesce(activity('lkp_ingestion_config').output.firstRow.watermark_field, '')",
                         "type": "Expression"
                       },
                       "p_source_conn_ref": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                         "type": "Expression"
                       },
                       "p_source_connection_settings": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_connection_settings",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_connection_settings",
                         "type": "Expression"
                       },
                       "p_target_conn_ref": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                         "type": "Expression"
                       },
                       "p_target_connection_settings": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_connection_settings",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_connection_settings",
                         "type": "Expression"
                       },
                       "p_target_schema": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                         "type": "Expression"
                       },
                       "p_target_table": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                         "type": "Expression"
                       },
                       "p_source_path": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_path",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_path",
                         "type": "Expression"
                       },
                       "p_source_options": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].source_options",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.source_options",
                         "type": "Expression"
                       },
                       "p_landing_path": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].landing_path",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.landing_path",
                         "type": "Expression"
                       },
                       "p_file_format": {
-                        "value": "@activity('lkp_ingestion_config').output.value[0].file_format",
+                        "value": "@activity('lkp_ingestion_config').output.firstRow.file_format",
                         "type": "Expression"
                       }
                     },
@@ -1044,7 +1044,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                      "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.firstRow.ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1058,7 +1058,7 @@
                   },
                   "load_strategy": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].load_strategy",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.load_strategy",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1094,7 +1094,7 @@
                   },
                   "source_object": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_object",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.source_object",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1105,14 +1105,14 @@
                   },
                   "source_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_schema",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.source_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_system": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_system",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.source_system",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1138,35 +1138,35 @@
                   },
                   "watermark_field": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].watermark_field",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.watermark_field",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_schema": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_schema",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.target_schema",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_table": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_table",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.target_table",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "source_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].source_conn_ref",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.source_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "target_conn_ref": {
                     "value": {
-                      "value": "@activity('lkp_ingestion_config').output.value[0].target_conn_ref",
+                      "value": "@activity('lkp_ingestion_config').output.firstRow.target_conn_ref",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1201,7 +1201,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.value[0].ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.value[0].target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.value[0].load_strategy,\n    '.'\n)",
+                  "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.firstRow.ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "UNSUPPORTED_INGESTION_ROUTE"

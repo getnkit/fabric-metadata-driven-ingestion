@@ -32,7 +32,7 @@
             },
             "annotations": []
           },
-          "firstRowOnly": false
+          "firstRowOnly": true
         },
         "policy": {
           "timeout": "0.12:00:00",
@@ -48,7 +48,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@equals(activity('lkp_current_watermark').output.count, 1)",
+            "value": "@contains(activity('lkp_current_watermark').output, 'firstRow')",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -270,7 +270,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(\n    equals(\n        activity('lkp_current_watermark').output.value[0].watermark_field,\n        pipeline().parameters.p_watermark_field\n    ),\n    equals(\n        toLower(pipeline().parameters.p_watermark_field),\n        'last_modified_time'\n    )\n)",
+            "value": "@and(\n    equals(\n        activity('lkp_current_watermark').output.firstRow.watermark_field,\n        pipeline().parameters.p_watermark_field\n    ),\n    equals(\n        toLower(pipeline().parameters.p_watermark_field),\n        'last_modified_time'\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -304,7 +304,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('SFTP incremental requires watermark_field=last_modified_time. Config=', pipeline().parameters.p_watermark_field, ', state=', activity('lkp_current_watermark').output.value[0].watermark_field, '.')",
+                      "value": "@concat('SFTP incremental requires watermark_field=last_modified_time. Config=', pipeline().parameters.p_watermark_field, ', state=', activity('lkp_current_watermark').output.firstRow.watermark_field, '.')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -464,7 +464,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('SFTP incremental requires watermark_field=last_modified_time. Config=', pipeline().parameters.p_watermark_field, ', state=', activity('lkp_current_watermark').output.value[0].watermark_field, '.')",
+                  "value": "@concat('SFTP incremental requires watermark_field=last_modified_time. Config=', pipeline().parameters.p_watermark_field, ', state=', activity('lkp_current_watermark').output.firstRow.watermark_field, '.')",
                   "type": "Expression"
                 },
                 "errorCode": "UNSUPPORTED_FILE_WATERMARK"
@@ -724,7 +724,7 @@
         "typeProperties": {
           "variableName": "v_processing_lower_bound",
           "value": {
-            "value": "@if(\n    equals(toUpper(pipeline().parameters.p_run_type), 'REGULAR'),\n    string(activity('lkp_current_watermark').output.value[0].last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
+            "value": "@if(\n    equals(toUpper(pipeline().parameters.p_run_type), 'REGULAR'),\n    string(activity('lkp_current_watermark').output.firstRow.last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
             "type": "Expression"
           }
         },
