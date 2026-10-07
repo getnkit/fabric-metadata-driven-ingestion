@@ -325,7 +325,10 @@
               "annotations": []
             }
           },
-          "enableStaging": false
+          "enableStaging": false,
+          "skipErrorFile": {
+            "fileMissing": false
+          }
         },
         "policy": {
           "timeout": "0.12:00:00",
