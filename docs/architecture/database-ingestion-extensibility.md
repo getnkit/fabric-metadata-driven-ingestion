@@ -9,20 +9,19 @@ Accepted for the current blueprint.
 ```text
 pl_ingest_orchestrator
   -> pl_ingest_object_controller
-      -> DATABASE|LAKEHOUSE|INCREMENTAL
-          -> pl_ingest_database_incremental_router
-              -> source_connection_type
-                  -> AZURE_SQL
-                      -> pl_ingest_azure_sql_incremental_adapter
-      -> DATABASE|LAKEHOUSE|FULL
-          -> pl_ingest_database_full_router
-              -> source_connection_type
-                  -> AZURE_SQL
+      -> DATABASE|LAKEHOUSE
+          -> pl_ingest_database_router
+              -> source_connection_type|load_strategy
+                  -> AZURE_SQL|FULL
                       -> pl_ingest_azure_sql_full_adapter
+                  -> AZURE_SQL|INCREMENTAL
+                      -> pl_ingest_azure_sql_incremental_adapter
 ```
 
-The DATABASE pipelines are intentionally thin connector routers. Their purpose is
-to keep physical database technology out of the pattern-level object router.
+The DATABASE router is intentionally a thin pattern-level connector/strategy
+router. Its purpose is to keep physical database technology and connector-specific
+load implementation out of the object controller while avoiding a separate router
+pipeline for every FULL/INCREMENTAL combination.
 
 ## Framework-owned behavior
 
@@ -94,13 +93,13 @@ shared contract is proven.
 The likely future shape is:
 
 ```text
-pl_ingest_database_incremental_router
-  -> common database state/boundary orchestration
-  -> connector adapter
-       -> Azure SQL
-       -> Oracle
+pl_ingest_database_router
+  -> source_connection_type|load_strategy
+       -> AZURE_SQL|FULL        -> Azure SQL FULL adapter
+       -> AZURE_SQL|INCREMENTAL -> Azure SQL INCREMENTAL adapter
+       -> ORACLE|FULL           -> Oracle FULL adapter
+       -> ORACLE|INCREMENTAL    -> Oracle INCREMENTAL adapter
        -> ...
-  -> common validation/finalization
 ```
 
 The exact adapter contract is intentionally deferred until a second real

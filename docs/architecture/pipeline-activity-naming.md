@@ -180,7 +180,7 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 | `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. |
 | `dispatcher` | Fans out one bounded normalized run-request collection to the per-object controller. |
 | `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
-| `router` | Selects the connector-specific implementation for a generic ingestion pattern such as DATABASE/FULL or FILE/INCREMENTAL. |
+| `router` | Selects the connector + load-strategy implementation within a generic ingestion pattern such as DATABASE or FILE. |
 | `adapter` | Converts generic ingestion metadata into connector-specific configuration **and executes the connector-specific ingestion flow**. It is not only a metadata translator. |
 | `loader` | Optional physical load sub-step split from an adapter only when a separate execution boundary is technically justified. |
 
@@ -192,15 +192,17 @@ pl_ingest_orchestrator
   └─ All Active -> pl_ingest_config_paginator
                     -> pl_ingest_config_dispatcher
                          -> pl_ingest_object_controller
-                              -> pl_ingest_database_full_router
-                                   -> pl_ingest_azure_sql_full_adapter
-                              -> pl_ingest_database_incremental_router
-                                   -> pl_ingest_azure_sql_incremental_adapter
-                                        -> pl_ingest_azure_sql_incremental_loader
-                              -> pl_ingest_file_full_router
-                                   -> pl_ingest_sftp_full_adapter
-                              -> pl_ingest_file_incremental_router
-                                   -> pl_ingest_sftp_incremental_adapter
+                              -> pl_ingest_database_router
+                                   -> AZURE_SQL|FULL
+                                        -> pl_ingest_azure_sql_full_adapter
+                                   -> AZURE_SQL|INCREMENTAL
+                                        -> pl_ingest_azure_sql_incremental_adapter
+                                             -> pl_ingest_azure_sql_incremental_loader
+                              -> pl_ingest_file_router
+                                   -> SFTP|FULL
+                                        -> pl_ingest_sftp_full_adapter
+                                   -> SFTP|INCREMENTAL
+                                        -> pl_ingest_sftp_incremental_adapter
 ```
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
@@ -212,7 +214,7 @@ Platform Retry/Rerun is treated as execution recovery and is not encoded as a fr
 Invoke Pipeline activity names mirror the called pipeline name without the `pl_` prefix by default:
 
 ```text
-pl_ingest_database_incremental_router     -> inv_ingest_database_incremental_router
+pl_ingest_database_router                 -> inv_ingest_database_router
 pl_ingest_azure_sql_incremental_adapter   -> inv_ingest_azure_sql_incremental_adapter
 pl_ingest_azure_sql_incremental_loader    -> inv_ingest_azure_sql_incremental_loader
 pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter

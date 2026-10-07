@@ -150,9 +150,9 @@ The first FILE route is:
 
 ```text
 pl_ingest_object_controller
-  -> FILE|LAKEHOUSE|FULL
-  -> pl_ingest_file_full_router
-  -> SFTP
+  -> FILE|LAKEHOUSE
+  -> pl_ingest_file_router
+  -> SFTP|FULL
   -> pl_ingest_sftp_full_adapter
 ```
 
@@ -191,9 +191,9 @@ The first FILE incremental route is:
 
 ```text
 pl_ingest_object_controller
-  -> FILE|LAKEHOUSE|INCREMENTAL
-  -> pl_ingest_file_incremental_router
-  -> SFTP
+  -> FILE|LAKEHOUSE
+  -> pl_ingest_file_router
+  -> SFTP|INCREMENTAL
   -> pl_ingest_sftp_incremental_adapter
   -> recursive Binary copy to Landing
   -> nb_load_file_landing_to_bronze
