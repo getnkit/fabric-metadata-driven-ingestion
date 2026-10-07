@@ -33,7 +33,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'CAST(COUNT_BIG(1) AS bigint) AS config_count, ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1;'\n)",
+              "value": "@concat(\n    'SELECT ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1;'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
