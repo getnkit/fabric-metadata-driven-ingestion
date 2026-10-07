@@ -28,11 +28,11 @@
                     "type": "Expression"
                   },
                   "p_requested_lower_bound": {
-                    "value": "@coalesce(item().lower_bound, '')",
+                    "value": "@if(contains(item(), 'lower_bound'), coalesce(item()['lower_bound'], ''), '')",
                     "type": "Expression"
                   },
                   "p_requested_upper_bound": {
-                    "value": "@coalesce(item().upper_bound, '')",
+                    "value": "@if(contains(item(), 'upper_bound'), coalesce(item()['upper_bound'], ''), '')",
                     "type": "Expression"
                   }
                 },
