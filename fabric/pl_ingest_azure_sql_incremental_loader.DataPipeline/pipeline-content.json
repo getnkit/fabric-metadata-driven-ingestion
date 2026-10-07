@@ -793,6 +793,9 @@
             }
           }
         },
+        "externalReferences": {
+          "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+        },
         "policy": {
           "timeout": "0.01:00:00",
           "retry": 1,
@@ -1302,8 +1305,7 @@
         "defaultValue": "NONE"
       },
       "p_copy_partition_column": {
-        "type": "string",
-        "defaultValue": ""
+        "type": "string"
       },
       "p_copy_parallel_copies": {
         "type": "int",

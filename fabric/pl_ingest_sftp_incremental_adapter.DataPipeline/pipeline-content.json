@@ -1396,6 +1396,9 @@
                   }
                 }
               },
+              "externalReferences": {
+                "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+              },
               "policy": {
                 "timeout": "0.01:00:00",
                 "retry": 1,
@@ -1939,6 +1942,9 @@
                   }
                 }
               },
+              "externalReferences": {
+                "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+              },
               "policy": {
                 "timeout": "0.02:00:00",
                 "retry": 0,
@@ -2192,6 +2198,9 @@
                     "type": "string"
                   }
                 }
+              },
+              "externalReferences": {
+                "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
               },
               "policy": {
                 "timeout": "0.01:00:00",
@@ -2873,6 +2882,9 @@
             }
           }
         },
+        "externalReferences": {
+          "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+        },
         "policy": {
           "timeout": "0.01:00:00",
           "retry": 1,
@@ -3381,12 +3393,10 @@
         "type": "string"
       },
       "p_requested_lower_bound": {
-        "type": "string",
-        "defaultValue": ""
+        "type": "string"
       },
       "p_requested_upper_bound": {
-        "type": "string",
-        "defaultValue": ""
+        "type": "string"
       }
     },
     "variables": {

@@ -392,6 +392,9 @@
                   }
                 }
               },
+              "externalReferences": {
+                "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+              },
               "policy": {
                 "timeout": "0.01:00:00",
                 "retry": 1,
@@ -909,6 +912,9 @@
             }
           }
         },
+        "externalReferences": {
+          "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
+        },
         "policy": {
           "timeout": "0.02:00:00",
           "retry": 0,
@@ -1157,6 +1163,9 @@
               "type": "string"
             }
           }
+        },
+        "externalReferences": {
+          "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
         },
         "policy": {
           "timeout": "0.01:00:00",
@@ -1620,6 +1629,9 @@
               "type": "string"
             }
           }
+        },
+        "externalReferences": {
+          "connection": "012037b4-5887-4ccd-b8e0-43219198308f"
         },
         "policy": {
           "timeout": "0.01:00:00",
