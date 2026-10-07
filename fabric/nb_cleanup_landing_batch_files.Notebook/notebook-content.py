@@ -24,6 +24,7 @@ p_batch_id = ""
 
 # CELL ********************
 
+# Validate pipeline-supplied values before constructing the OneLake Landing path.
 def _require_nonempty(name, value):
     if value is None or str(value).strip() == "":
         raise ValueError(f"{name} is required.")
@@ -49,6 +50,7 @@ path_segments = [segment for segment in landing_relative_path.split("/") if segm
 if not path_segments or any(segment in {".", ".."} for segment in path_segments):
     raise ValueError("p_landing_relative_path is not a safe Landing batch path.")
 
+# Require the current batch_id as the final path segment before allowing recursive deletion.
 expected_batch_segment = f"batch_id={batch_id}"
 if path_segments[-1] != expected_batch_segment:
     raise ValueError(
