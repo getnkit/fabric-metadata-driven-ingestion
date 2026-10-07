@@ -33,7 +33,7 @@
         "name": "set_run_type",
         "dependsOn": [
           {
-            "activity": "set_batch_id",
+            "activity": "set_start_time",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -126,29 +126,6 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_batch_id",
-          "value": {
-            "value": "@pipeline().parameters.p_batch_id",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_batch_id",
-        "dependsOn": [
-          {
-            "activity": "set_start_time",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "SetVariable",
-        "typeProperties": {
           "variableName": "v_request_valid",
           "value": {
             "value": "@or(\n    and(\n        equals(variables('v_run_type'), 'REGULAR'),\n        and(\n            empty(pipeline().parameters.p_requested_lower_bound),\n            empty(pipeline().parameters.p_requested_upper_bound)\n        )\n    ),\n    or(\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'FULL'),\n                and(\n                    empty(pipeline().parameters.p_requested_lower_bound),\n                    empty(pipeline().parameters.p_requested_upper_bound)\n                )\n            )\n        ),\n        and(\n            equals(variables('v_run_type'), 'BACKFILL'),\n            and(\n                equals(toUpper(activity('lkp_ingestion_config').output.value[0].load_strategy), 'INCREMENTAL'),\n                and(\n                    not(empty(pipeline().parameters.p_requested_lower_bound)),\n                    not(empty(pipeline().parameters.p_requested_upper_bound))\n                )\n            )\n        )\n    )\n)",
@@ -172,32 +149,9 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_route_key",
-          "value": {
-            "value": "@toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern)",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_route_key",
-        "dependsOn": [
-          {
-            "activity": "set_request_valid",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "SetVariable",
-        "typeProperties": {
           "variableName": "v_execution_decision",
           "value": {
-            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        variables('v_request_valid'),\n        if(\n            equals(\n                toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n                'LAKEHOUSE'\n            ),\n            variables('v_route_key'),\n            'INVALID_TARGET'\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
+            "value": "@if(\n    bool(activity('lkp_ingestion_config').output.value[0].is_active),\n    if(\n        variables('v_request_valid'),\n        if(\n            equals(\n                toUpper(activity('lkp_ingestion_config').output.value[0].target_connection_type),\n                'LAKEHOUSE'\n            ),\n            toUpper(activity('lkp_ingestion_config').output.value[0].ingestion_pattern),\n            'INVALID_TARGET'\n        ),\n        'INVALID_REQUEST'\n    ),\n    'INACTIVE'\n)",
             "type": "Expression"
           }
         },
@@ -208,7 +162,7 @@
         "name": "set_execution_decision",
         "dependsOn": [
           {
-            "activity": "set_route_key",
+            "activity": "set_request_valid",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -237,7 +191,7 @@
                       },
                       "batch_id": {
                         "value": {
-                          "value": "@variables('v_batch_id')",
+                          "value": "@pipeline().parameters.p_batch_id",
                           "type": "Expression"
                         },
                         "type": "Guid"
@@ -421,7 +375,7 @@
                       },
                       "batch_id": {
                         "value": {
-                          "value": "@variables('v_batch_id')",
+                          "value": "@pipeline().parameters.p_batch_id",
                           "type": "Expression"
                         },
                         "type": "Guid"
@@ -627,7 +581,7 @@
                       },
                       "batch_id": {
                         "value": {
-                          "value": "@variables('v_batch_id')",
+                          "value": "@pipeline().parameters.p_batch_id",
                           "type": "Expression"
                         },
                         "type": "Guid"
@@ -827,7 +781,7 @@
                   "typeProperties": {
                     "parameters": {
                       "p_batch_id": {
-                        "value": "@variables('v_batch_id')",
+                        "value": "@pipeline().parameters.p_batch_id",
                         "type": "Expression"
                       },
                       "p_ingestion_config_id": {
@@ -947,7 +901,7 @@
                   "typeProperties": {
                     "parameters": {
                       "p_batch_id": {
-                        "value": "@variables('v_batch_id')",
+                        "value": "@pipeline().parameters.p_batch_id",
                         "type": "Expression"
                       },
                       "p_ingestion_config_id": {
@@ -1072,7 +1026,7 @@
                   },
                   "batch_id": {
                     "value": {
-                      "value": "@variables('v_batch_id')",
+                      "value": "@pipeline().parameters.p_batch_id",
                       "type": "Expression"
                     },
                     "type": "Guid"
@@ -1277,15 +1231,13 @@
     ],
     "parameters": {
       "p_batch_id": {
-        "type": "string",
-        "defaultValue": "''"
+        "type": "string"
       },
       "p_ingestion_config_id": {
         "type": "int"
       },
       "p_run_type": {
-        "type": "string",
-        "defaultValue": "REGULAR"
+        "type": "string"
       },
       "p_requested_lower_bound": {
         "type": "string",
@@ -1297,9 +1249,6 @@
       }
     },
     "variables": {
-      "v_batch_id": {
-        "type": "String"
-      },
       "v_start_time": {
         "type": "String"
       },
@@ -1308,9 +1257,6 @@
       },
       "v_request_valid": {
         "type": "Boolean"
-      },
-      "v_route_key": {
-        "type": "String"
       },
       "v_execution_decision": {
         "type": "String"
