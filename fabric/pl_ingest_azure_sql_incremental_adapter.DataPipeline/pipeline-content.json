@@ -1259,14 +1259,6 @@
                     "value": "@pipeline().parameters.p_run_type",
                     "type": "Expression"
                   },
-                  "p_processing_lower_bound": {
-                    "value": "@variables('v_processing_lower_bound')",
-                    "type": "Expression"
-                  },
-                  "p_processing_upper_bound": {
-                    "value": "@variables('v_processing_upper_bound')",
-                    "type": "Expression"
-                  },
                   "p_start_time": {
                     "value": "@pipeline().parameters.p_start_time",
                     "type": "Expression"
@@ -1277,6 +1269,14 @@
                   },
                   "p_audit_pipeline_name": {
                     "value": "@pipeline().parameters.p_audit_pipeline_name",
+                    "type": "Expression"
+                  },
+                  "p_processing_lower_bound": {
+                    "value": "@variables('v_processing_lower_bound')",
+                    "type": "Expression"
+                  },
+                  "p_processing_upper_bound": {
+                    "value": "@variables('v_processing_upper_bound')",
                     "type": "Expression"
                   },
                   "p_source_system": {
@@ -1299,14 +1299,6 @@
                     "value": "@pipeline().parameters.p_watermark_field",
                     "type": "Expression"
                   },
-                  "p_target_table": {
-                    "value": "@pipeline().parameters.p_target_table",
-                    "type": "Expression"
-                  },
-                  "p_target_schema": {
-                    "value": "@pipeline().parameters.p_target_schema",
-                    "type": "Expression"
-                  },
                   "p_source_conn_ref": {
                     "value": "@pipeline().parameters.p_source_conn_ref",
                     "type": "Expression"
@@ -1321,6 +1313,14 @@
                   },
                   "p_target_connection_settings": {
                     "value": "@pipeline().parameters.p_target_connection_settings",
+                    "type": "Expression"
+                  },
+                  "p_target_schema": {
+                    "value": "@pipeline().parameters.p_target_schema",
+                    "type": "Expression"
+                  },
+                  "p_target_table": {
+                    "value": "@pipeline().parameters.p_target_table",
                     "type": "Expression"
                   },
                   "p_copy_partition_option": {
@@ -1374,13 +1374,16 @@
       "p_ingestion_config_id": {
         "type": "int"
       },
-      "p_audit_pipeline_run_id": {
+      "p_run_type": {
         "type": "string"
       },
       "p_start_time": {
         "type": "string"
       },
-      "p_run_type": {
+      "p_audit_pipeline_run_id": {
+        "type": "string"
+      },
+      "p_audit_pipeline_name": {
         "type": "string"
       },
       "p_requested_lower_bound": {
@@ -1390,9 +1393,6 @@
       "p_requested_upper_bound": {
         "type": "string",
         "defaultValue": ""
-      },
-      "p_audit_pipeline_name": {
-        "type": "string"
       },
       "p_source_system": {
         "type": "string"

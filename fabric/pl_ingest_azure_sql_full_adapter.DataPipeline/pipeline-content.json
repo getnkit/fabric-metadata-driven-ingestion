@@ -240,7 +240,7 @@
         "type": "Switch",
         "typeProperties": {
           "on": {
-            "value": "@concat(\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'PHYSICAL_PARTITIONS'\n        ),\n        'TABLE',\n        'QUERY'\n    ),\n    '|',\n    if(\n        greater(pipeline().parameters.p_copy_parallel_copies, 0),\n        'TUNED',\n        'AUTO'\n    )\n)",
+            "value": "@concat(\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'PHYSICAL_PARTITIONS'\n        ),\n        'PHYSICAL',\n        'QUERY'\n    ),\n    '|',\n    if(\n        greater(pipeline().parameters.p_copy_parallel_copies, 0),\n        'TUNED',\n        'AUTO'\n    )\n)",
             "type": "Expression"
           },
           "cases": [
@@ -537,7 +537,7 @@
               ]
             },
             {
-              "value": "TABLE|AUTO",
+              "value": "PHYSICAL|AUTO",
               "activities": [
                 {
                   "type": "Copy",
@@ -647,7 +647,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "copy_source_to_bronze_table_auto",
+                  "name": "copy_source_to_bronze_physical_auto",
                   "dependsOn": []
                 },
                 {
@@ -655,7 +655,7 @@
                   "typeProperties": {
                     "variableName": "v_source_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_table_auto').output.rowsRead)",
+                      "value": "@string(activity('copy_source_to_bronze_physical_auto').output.rowsRead)",
                       "type": "Expression"
                     }
                   },
@@ -663,10 +663,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_source_row_count_table_auto",
+                  "name": "set_source_row_count_physical_auto",
                   "dependsOn": [
                     {
-                      "activity": "copy_source_to_bronze_table_auto",
+                      "activity": "copy_source_to_bronze_physical_auto",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -678,7 +678,7 @@
                   "typeProperties": {
                     "variableName": "v_target_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_table_auto').output.rowsCopied)",
+                      "value": "@string(activity('copy_source_to_bronze_physical_auto').output.rowsCopied)",
                       "type": "Expression"
                     }
                   },
@@ -686,10 +686,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_target_row_count_table_auto",
+                  "name": "set_target_row_count_physical_auto",
                   "dependsOn": [
                     {
-                      "activity": "set_source_row_count_table_auto",
+                      "activity": "set_source_row_count_physical_auto",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -699,7 +699,7 @@
               ]
             },
             {
-              "value": "TABLE|TUNED",
+              "value": "PHYSICAL|TUNED",
               "activities": [
                 {
                   "type": "Copy",
@@ -813,7 +813,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "copy_source_to_bronze_table_tuned",
+                  "name": "copy_source_to_bronze_physical_tuned",
                   "dependsOn": []
                 },
                 {
@@ -821,7 +821,7 @@
                   "typeProperties": {
                     "variableName": "v_source_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_table_tuned').output.rowsRead)",
+                      "value": "@string(activity('copy_source_to_bronze_physical_tuned').output.rowsRead)",
                       "type": "Expression"
                     }
                   },
@@ -829,10 +829,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_source_row_count_table_tuned",
+                  "name": "set_source_row_count_physical_tuned",
                   "dependsOn": [
                     {
-                      "activity": "copy_source_to_bronze_table_tuned",
+                      "activity": "copy_source_to_bronze_physical_tuned",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -844,7 +844,7 @@
                   "typeProperties": {
                     "variableName": "v_target_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_table_tuned').output.rowsCopied)",
+                      "value": "@string(activity('copy_source_to_bronze_physical_tuned').output.rowsCopied)",
                       "type": "Expression"
                     }
                   },
@@ -852,10 +852,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_target_row_count_table_tuned",
+                  "name": "set_target_row_count_physical_tuned",
                   "dependsOn": [
                     {
-                      "activity": "set_source_row_count_table_tuned",
+                      "activity": "set_source_row_count_physical_tuned",
                       "dependencyConditions": [
                         "Succeeded"
                       ]

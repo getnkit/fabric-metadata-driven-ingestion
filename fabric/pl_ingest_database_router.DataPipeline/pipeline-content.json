@@ -128,16 +128,20 @@
                         "value": "@pipeline().parameters.p_ingestion_config_id",
                         "type": "Expression"
                       },
-                      "p_audit_pipeline_run_id": {
-                        "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                      "p_run_type": {
+                        "value": "@pipeline().parameters.p_run_type",
                         "type": "Expression"
                       },
                       "p_start_time": {
                         "value": "@pipeline().parameters.p_start_time",
                         "type": "Expression"
                       },
-                      "p_run_type": {
-                        "value": "@pipeline().parameters.p_run_type",
+                      "p_audit_pipeline_run_id": {
+                        "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                        "type": "Expression"
+                      },
+                      "p_audit_pipeline_name": {
+                        "value": "@pipeline().parameters.p_audit_pipeline_name",
                         "type": "Expression"
                       },
                       "p_requested_lower_bound": {
@@ -146,10 +150,6 @@
                       },
                       "p_requested_upper_bound": {
                         "value": "@pipeline().parameters.p_requested_upper_bound",
-                        "type": "Expression"
-                      },
-                      "p_audit_pipeline_name": {
-                        "value": "@pipeline().parameters.p_audit_pipeline_name",
                         "type": "Expression"
                       },
                       "p_source_system": {

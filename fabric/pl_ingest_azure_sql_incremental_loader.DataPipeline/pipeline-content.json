@@ -55,7 +55,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid Azure SQL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE and DYNAMIC_RANGE; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                      "value": "@concat(\n    'Invalid Azure SQL INCREMENTAL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE and DYNAMIC_RANGE; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -218,7 +218,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid Azure SQL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE and DYNAMIC_RANGE; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                  "value": "@concat(\n    'Invalid Azure SQL INCREMENTAL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE and DYNAMIC_RANGE; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_COPY_OPTIONS"
@@ -277,13 +277,13 @@
                     "type": "AzureSqlTable",
                     "typeProperties": {
                       "database": {
-                        "value": "@json(\n    pipeline().parameters.p_source_connection_settings\n).database",
+                        "value": "@json(pipeline().parameters.p_source_connection_settings).database",
                         "type": "Expression"
                       }
                     },
                     "schema": [],
                     "externalReferences": {
-                      "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
+                      "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
                     },
                     "annotations": []
                   }
@@ -347,7 +347,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "copy_source_to_bronze_tuned",
+              "name": "copy_source_to_bronze_query_tuned",
               "dependsOn": []
             },
             {
@@ -355,7 +355,7 @@
               "typeProperties": {
                 "variableName": "v_source_row_count",
                 "value": {
-                  "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsRead)",
+                  "value": "@string(activity('copy_source_to_bronze_query_tuned').output.rowsRead)",
                   "type": "Expression"
                 }
               },
@@ -363,10 +363,10 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_source_row_count_tuned",
+              "name": "set_source_row_count_query_tuned",
               "dependsOn": [
                 {
-                  "activity": "copy_source_to_bronze_tuned",
+                  "activity": "copy_source_to_bronze_query_tuned",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -378,7 +378,7 @@
               "typeProperties": {
                 "variableName": "v_target_row_count",
                 "value": {
-                  "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsCopied)",
+                  "value": "@string(activity('copy_source_to_bronze_query_tuned').output.rowsCopied)",
                   "type": "Expression"
                 }
               },
@@ -386,10 +386,10 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_target_row_count_tuned",
+              "name": "set_target_row_count_query_tuned",
               "dependsOn": [
                 {
-                  "activity": "set_source_row_count_tuned",
+                  "activity": "set_source_row_count_query_tuned",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -422,13 +422,13 @@
                     "type": "AzureSqlTable",
                     "typeProperties": {
                       "database": {
-                        "value": "@json(\n    pipeline().parameters.p_source_connection_settings\n).database",
+                        "value": "@json(pipeline().parameters.p_source_connection_settings).database",
                         "type": "Expression"
                       }
                     },
                     "schema": [],
                     "externalReferences": {
-                      "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
+                      "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
                     },
                     "annotations": []
                   }
@@ -488,7 +488,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "copy_source_to_bronze_auto",
+              "name": "copy_source_to_bronze_query_auto",
               "dependsOn": []
             },
             {
@@ -496,7 +496,7 @@
               "typeProperties": {
                 "variableName": "v_source_row_count",
                 "value": {
-                  "value": "@string(activity('copy_source_to_bronze_auto').output.rowsRead)",
+                  "value": "@string(activity('copy_source_to_bronze_query_auto').output.rowsRead)",
                   "type": "Expression"
                 }
               },
@@ -504,10 +504,10 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_source_row_count_auto",
+              "name": "set_source_row_count_query_auto",
               "dependsOn": [
                 {
-                  "activity": "copy_source_to_bronze_auto",
+                  "activity": "copy_source_to_bronze_query_auto",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -519,7 +519,7 @@
               "typeProperties": {
                 "variableName": "v_target_row_count",
                 "value": {
-                  "value": "@string(activity('copy_source_to_bronze_auto').output.rowsCopied)",
+                  "value": "@string(activity('copy_source_to_bronze_query_auto').output.rowsCopied)",
                   "type": "Expression"
                 }
               },
@@ -527,10 +527,10 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_target_row_count_auto",
+              "name": "set_target_row_count_query_auto",
               "dependsOn": [
                 {
-                  "activity": "set_source_row_count_auto",
+                  "activity": "set_source_row_count_query_auto",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
@@ -1252,12 +1252,6 @@
       "p_run_type": {
         "type": "string"
       },
-      "p_processing_lower_bound": {
-        "type": "string"
-      },
-      "p_processing_upper_bound": {
-        "type": "string"
-      },
       "p_start_time": {
         "type": "string"
       },
@@ -1267,6 +1261,12 @@
       "p_audit_pipeline_name": {
         "type": "string"
       },
+      "p_processing_lower_bound": {
+        "type": "string"
+      },
+      "p_processing_upper_bound": {
+        "type": "string"
+      },
       "p_source_system": {
         "type": "string"
       },
@@ -1274,12 +1274,6 @@
         "type": "string"
       },
       "p_source_object": {
-        "type": "string"
-      },
-      "p_target_schema": {
-        "type": "string"
-      },
-      "p_target_table": {
         "type": "string"
       },
       "p_load_strategy": {
@@ -1298,6 +1292,12 @@
         "type": "string"
       },
       "p_target_connection_settings": {
+        "type": "string"
+      },
+      "p_target_schema": {
+        "type": "string"
+      },
+      "p_target_table": {
         "type": "string"
       },
       "p_copy_partition_option": {
