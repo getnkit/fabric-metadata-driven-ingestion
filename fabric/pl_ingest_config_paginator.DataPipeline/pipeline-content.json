@@ -78,39 +78,6 @@
         ]
       },
       {
-        "type": "IfCondition",
-        "typeProperties": {
-          "expression": {
-            "value": "@greater(int(activity('lkp_config_pagination_info').output.firstRow.config_count), 0)",
-            "type": "Expression"
-          },
-          "ifTrueActivities": [],
-          "ifFalseActivities": [
-            {
-              "type": "Fail",
-              "typeProperties": {
-                "message": {
-                  "value": "No active ingestion configurations were found.",
-                  "type": "Expression"
-                },
-                "errorCode": "CONFIG_NOT_FOUND"
-              },
-              "name": "fail_no_active_configs",
-              "dependsOn": []
-            }
-          ]
-        },
-        "name": "if_active_configs_found",
-        "dependsOn": [
-          {
-            "activity": "lkp_config_pagination_info",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
         "type": "ForEach",
         "typeProperties": {
           "isSequential": true,
@@ -205,7 +172,7 @@
         "name": "fe_config_pages",
         "dependsOn": [
           {
-            "activity": "if_active_configs_found",
+            "activity": "lkp_config_pagination_info",
             "dependencyConditions": [
               "Succeeded"
             ]

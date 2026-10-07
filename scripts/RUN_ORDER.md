@@ -84,7 +84,7 @@ are hosted in the same Microsoft Entra tenant.
 
 Top-level execution uses `pl_ingest_orchestrator.p_run_requests`:
 
-- `[]` runs all active configurations as REGULAR with pagination.
+- `[]` runs all active configurations as REGULAR with pagination. If no configurations are active, the paginator completes successfully as a no-op and no object-level audit row is created.
 - A non-empty array runs exactly the requested configs; each object requires
   `config_id` and `run_type`. `lower_bound` / `upper_bound` are optional
   request fields and are needed only when the execution semantics require them.

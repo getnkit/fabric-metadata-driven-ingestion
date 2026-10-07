@@ -188,7 +188,7 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 | Role | Responsibility |
 |---|---|
 | `orchestrator` | Top-level ingestion framework entry point; establishes run scope and selects Explicit vs All Active execution. |
-| `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. |
+| `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. Zero active configs is a successful no-op. |
 | `dispatcher` | Fans out one bounded normalized run-request collection to the per-object controller. |
 | `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
 | `router` | Selects the connector + load-strategy implementation within a generic ingestion pattern such as DATABASE or FILE. |
