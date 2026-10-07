@@ -35,8 +35,8 @@ set_processing_upper_bound_backfill
 
 copy_source_to_bronze_query_auto
 copy_source_to_bronze_query_tuned
-copy_source_to_bronze_physical_auto
-copy_source_to_bronze_physical_tuned
+copy_source_to_bronze_table_auto
+copy_source_to_bronze_table_tuned
 ```
 
 ForEach activity names should describe the collection being iterated:
