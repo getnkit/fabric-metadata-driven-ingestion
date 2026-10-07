@@ -374,13 +374,13 @@ pl_ingest_sftp_incremental_adapter
        PreserveHierarchy
   -> if_landing_file_count_consistent
        filesRead == filesWritten
-  -> if_files_found
-       -> nb_load_file_landing_to_bronze
-            p_file_format
-            p_source_options
-       -> sp_finalize_success
-       -> no files
-            -> sp_finalize_no_new_data_success
+  -> if_no_new_data
+       filesRead == 0
+       -> true: sp_finalize_no_new_data_success
+       -> false: nb_load_file_landing_to_bronze
+                    p_file_format
+                    p_source_options
+                 -> sp_finalize_success
 ```
 
 The previous explicit folder-queue / Until / scanner-pipeline design was removed

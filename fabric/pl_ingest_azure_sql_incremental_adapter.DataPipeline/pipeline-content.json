@@ -103,14 +103,14 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_name",
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -325,14 +325,14 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_name",
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -491,7 +491,7 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_lower_bound",
+          "variableName": "v_processing_lower_bound",
           "value": {
             "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.firstRow.last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
             "type": "Expression"
@@ -501,7 +501,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "set_lower_bound",
+        "name": "set_processing_lower_bound",
         "dependsOn": [
           {
             "activity": "if_watermark_field_match",
@@ -559,9 +559,9 @@
             {
               "type": "SetVariable",
               "typeProperties": {
-                "variableName": "v_upper_bound",
+                "variableName": "v_processing_upper_bound",
                 "value": {
-                  "value": "@coalesce(\n    activity('lkp_source_upper_bound').output.firstRow.upper_bound,\n    variables('v_lower_bound')\n)",
+                  "value": "@coalesce(\n    activity('lkp_source_upper_bound').output.firstRow.upper_bound,\n    variables('v_processing_lower_bound')\n)",
                   "type": "Expression"
                 }
               },
@@ -569,7 +569,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_upper_bound_regular",
+              "name": "set_processing_upper_bound_regular",
               "dependsOn": [
                 {
                   "activity": "lkp_source_upper_bound",
@@ -629,21 +629,21 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_name",
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_lower_bound": {
                     "value": {
-                      "value": "@variables('v_lower_bound')",
+                      "value": "@variables('v_processing_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -795,7 +795,7 @@
             {
               "type": "SetVariable",
               "typeProperties": {
-                "variableName": "v_upper_bound",
+                "variableName": "v_processing_upper_bound",
                 "value": {
                   "value": "@pipeline().parameters.p_requested_upper_bound",
                   "type": "Expression"
@@ -805,7 +805,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "set_upper_bound_backfill",
+              "name": "set_processing_upper_bound_backfill",
               "dependsOn": []
             }
           ]
@@ -813,7 +813,7 @@
         "name": "if_regular_run",
         "dependsOn": [
           {
-            "activity": "set_lower_bound",
+            "activity": "set_processing_lower_bound",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -824,7 +824,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@if(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    greaterOrEquals(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    ),\n    greater(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
+            "value": "@if(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    greaterOrEquals(\n        ticks(variables('v_processing_upper_bound')),\n        ticks(variables('v_processing_lower_bound'))\n    ),\n    greater(\n        ticks(variables('v_processing_upper_bound')),\n        ticks(variables('v_processing_lower_bound'))\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -858,7 +858,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; BACKFILL requires upper_bound > lower_bound.'\n)",
+                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires processing_upper_bound >= processing_lower_bound; BACKFILL requires processing_upper_bound > processing_lower_bound.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -879,28 +879,28 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_name",
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_lower_bound": {
                     "value": {
-                      "value": "@variables('v_lower_bound')",
+                      "value": "@variables('v_processing_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@variables('v_upper_bound')",
+                      "value": "@variables('v_processing_upper_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1021,7 +1021,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_lower_bound'),\n    ', upper_bound=',\n    variables('v_upper_bound'),\n    '. REGULAR requires upper_bound >= lower_bound; BACKFILL requires upper_bound > lower_bound.'\n)",
+                  "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires processing_upper_bound >= processing_lower_bound; BACKFILL requires processing_upper_bound > processing_lower_bound.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_PROCESSING_BOUNDARY"
@@ -1052,7 +1052,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    equals(\n        ticks(variables('v_upper_bound')),\n        ticks(variables('v_lower_bound'))\n    )\n)",
+            "value": "@and(\n    equals(\n        pipeline().parameters.p_run_type,\n        'REGULAR'\n    ),\n    equals(\n        ticks(variables('v_processing_upper_bound')),\n        ticks(variables('v_processing_lower_bound'))\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [
@@ -1103,28 +1103,28 @@
                   },
                   "pipeline_name": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_name",
+                      "value": "@pipeline().parameters.p_audit_pipeline_name",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "pipeline_run_id": {
                     "value": {
-                      "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_lower_bound": {
                     "value": {
-                      "value": "@variables('v_lower_bound')",
+                      "value": "@variables('v_processing_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@variables('v_lower_bound')",
+                      "value": "@variables('v_processing_lower_bound')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1259,12 +1259,12 @@
                     "value": "@pipeline().parameters.p_run_type",
                     "type": "Expression"
                   },
-                  "p_lower_bound": {
-                    "value": "@variables('v_lower_bound')",
+                  "p_processing_lower_bound": {
+                    "value": "@variables('v_processing_lower_bound')",
                     "type": "Expression"
                   },
-                  "p_upper_bound": {
-                    "value": "@variables('v_upper_bound')",
+                  "p_processing_upper_bound": {
+                    "value": "@variables('v_processing_upper_bound')",
                     "type": "Expression"
                   },
                   "p_start_time": {
@@ -1272,11 +1272,11 @@
                     "type": "Expression"
                   },
                   "p_audit_pipeline_run_id": {
-                    "value": "@pipeline().parameters.p_parent_pipeline_run_id",
+                    "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                     "type": "Expression"
                   },
                   "p_audit_pipeline_name": {
-                    "value": "@pipeline().parameters.p_parent_pipeline_name",
+                    "value": "@pipeline().parameters.p_audit_pipeline_name",
                     "type": "Expression"
                   },
                   "p_source_system": {
@@ -1374,7 +1374,7 @@
       "p_ingestion_config_id": {
         "type": "int"
       },
-      "p_parent_pipeline_run_id": {
+      "p_audit_pipeline_run_id": {
         "type": "string"
       },
       "p_start_time": {
@@ -1391,7 +1391,7 @@
         "type": "string",
         "defaultValue": ""
       },
-      "p_parent_pipeline_name": {
+      "p_audit_pipeline_name": {
         "type": "string"
       },
       "p_source_system": {
@@ -1438,10 +1438,10 @@
       }
     },
     "variables": {
-      "v_lower_bound": {
+      "v_processing_lower_bound": {
         "type": "String"
       },
-      "v_upper_bound": {
+      "v_processing_upper_bound": {
         "type": "String"
       }
     }

@@ -90,14 +90,14 @@
                   },
                   "processing_lower_bound": {
                     "value": {
-                      "value": "@pipeline().parameters.p_lower_bound",
+                      "value": "@pipeline().parameters.p_processing_lower_bound",
                       "type": "Expression"
                     },
                     "type": "String"
                   },
                   "processing_upper_bound": {
                     "value": {
-                      "value": "@pipeline().parameters.p_upper_bound",
+                      "value": "@pipeline().parameters.p_processing_upper_bound",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -259,7 +259,7 @@
                 "source": {
                   "type": "AzureSqlSource",
                   "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE ',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        '?DfDynamicRangePartitionCondition AND ',\n        ''\n    ),\n    '[',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126)'\n)",
+                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE ',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        '?DfDynamicRangePartitionCondition AND ',\n        ''\n    ),\n    '[',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_processing_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_processing_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126)'\n)",
                     "type": "Expression"
                   },
                   "partitionOption": {
@@ -404,7 +404,7 @@
                 "source": {
                   "type": "AzureSqlSource",
                   "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE ',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        '?DfDynamicRangePartitionCondition AND ',\n        ''\n    ),\n    '[',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126)'\n)",
+                    "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    variables('v_ingestion_timestamp'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '] WHERE ',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        '?DfDynamicRangePartitionCondition AND ',\n        ''\n    ),\n    '[',\n    pipeline().parameters.p_watermark_field,\n    '] > CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_processing_lower_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126) AND [',\n    pipeline().parameters.p_watermark_field,\n    '] <= CONVERT(datetime2(3), ''',\n    formatDateTime(\n        pipeline().parameters.p_processing_upper_bound,\n        'yyyy-MM-ddTHH:mm:ss.fff'\n    ),\n    ''', 126)'\n)",
                     "type": "Expression"
                   },
                   "partitionOption": {
@@ -613,14 +613,14 @@
             },
             "processing_lower_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_lower_bound",
+                "value": "@pipeline().parameters.p_processing_lower_bound",
                 "type": "Expression"
               },
               "type": "String"
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_upper_bound",
+                "value": "@pipeline().parameters.p_processing_upper_bound",
                 "type": "Expression"
               },
               "type": "String"
@@ -877,14 +877,14 @@
             },
             "processing_lower_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_lower_bound",
+                "value": "@pipeline().parameters.p_processing_lower_bound",
                 "type": "Expression"
               },
               "type": "String"
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_upper_bound",
+                "value": "@pipeline().parameters.p_processing_upper_bound",
                 "type": "Expression"
               },
               "type": "String"
@@ -1072,14 +1072,14 @@
             },
             "processing_lower_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_lower_bound",
+                "value": "@pipeline().parameters.p_processing_lower_bound",
                 "type": "Expression"
               },
               "type": "String"
             },
             "processing_upper_bound": {
               "value": {
-                "value": "@pipeline().parameters.p_upper_bound",
+                "value": "@pipeline().parameters.p_processing_upper_bound",
                 "type": "Expression"
               },
               "type": "String"
@@ -1252,10 +1252,10 @@
       "p_run_type": {
         "type": "string"
       },
-      "p_lower_bound": {
+      "p_processing_lower_bound": {
         "type": "string"
       },
-      "p_upper_bound": {
+      "p_processing_upper_bound": {
         "type": "string"
       },
       "p_start_time": {

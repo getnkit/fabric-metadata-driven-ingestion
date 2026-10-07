@@ -128,7 +128,7 @@
                         "value": "@pipeline().parameters.p_ingestion_config_id",
                         "type": "Expression"
                       },
-                      "p_parent_pipeline_run_id": {
+                      "p_audit_pipeline_run_id": {
                         "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                         "type": "Expression"
                       },
@@ -148,7 +148,7 @@
                         "value": "@pipeline().parameters.p_requested_upper_bound",
                         "type": "Expression"
                       },
-                      "p_parent_pipeline_name": {
+                      "p_audit_pipeline_name": {
                         "value": "@pipeline().parameters.p_audit_pipeline_name",
                         "type": "Expression"
                       },

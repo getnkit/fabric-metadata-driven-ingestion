@@ -24,14 +24,14 @@ Set Variable activity names mirror the variable they set, dropping the variable'
 
 ```text
 v_run_type -> set_run_type
-v_lower_bound -> set_lower_bound
+v_processing_lower_bound -> set_processing_lower_bound
 ```
 
 When the same logical operation appears in alternative branches, append the branch/execution context consistently rather than naming only one branch specially:
 
 ```text
-set_upper_bound_regular
-set_upper_bound_backfill
+set_processing_upper_bound_regular
+set_processing_upper_bound_backfill
 
 copy_source_to_bronze_query_auto
 copy_source_to_bronze_query_tuned
