@@ -158,7 +158,7 @@ WHERE source_system = 'LOGISTICS_VENDOR'
 UPDATE w
 SET
     w.watermark_field = 'last_modified_time',
-    w.last_watermark_value = '1900-01-01T00:00:00.000Z',
+    w.last_watermark_value = '1900-01-01T00:00:00.000',
     w.last_successful_batch_id = NULL,
     w.last_successful_pipeline_run_id = NULL,
     w.watermark_updated_at = SYSUTCDATETIME()

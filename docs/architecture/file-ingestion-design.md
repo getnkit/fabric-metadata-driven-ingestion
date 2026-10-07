@@ -285,7 +285,7 @@ FILE-specific state table.
 The initial checkpoint is:
 
 ```text
-1900-01-01T00:00:00.000Z
+1900-01-01T00:00:00.000
 ```
 
 For each REGULAR run, the adapter uses:
@@ -294,6 +294,8 @@ For each REGULAR run, the adapter uses:
 LOW  = current last_watermark_value
 HIGH = ingestion run start time
 ```
+
+Both values are treated as UTC and stored as ISO-style timestamp text without a `Z` suffix.
 
 and selects source files whose Last Modified value is in:
 
@@ -362,7 +364,6 @@ The current SFTP incremental physical flow is therefore:
 
 ```text
 pl_ingest_sftp_incremental_adapter
-  -> if_valid_processing_scope
   -> resolve LOW/HIGH for REGULAR or BACKFILL
   -> if_valid_processing_boundary
   -> if_supported_file_format

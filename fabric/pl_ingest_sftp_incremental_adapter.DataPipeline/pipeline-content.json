@@ -513,7 +513,7 @@
         "typeProperties": {
           "variableName": "v_processing_upper_bound",
           "value": {
-            "value": "@if(\n    equals(toUpper(pipeline().parameters.p_run_type), 'REGULAR'),\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-ddTHH:mm:ss.fffZ'),\n    pipeline().parameters.p_requested_upper_bound\n)",
+            "value": "@if(\n    equals(toUpper(pipeline().parameters.p_run_type), 'REGULAR'),\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-ddTHH:mm:ss.fff'),\n    pipeline().parameters.p_requested_upper_bound\n)",
             "type": "Expression"
           }
         },
@@ -535,7 +535,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@if(\n    equals(toUpper(pipeline().parameters.p_run_type), 'REGULAR'),\n    greaterOrEquals(\n        ticks(variables('v_processing_upper_bound')),\n        ticks(variables('v_processing_lower_bound'))\n    ),\n    greater(\n        ticks(variables('v_processing_upper_bound')),\n        ticks(variables('v_processing_lower_bound'))\n    )\n)",
+            "value": "@greater(\n    ticks(variables('v_processing_upper_bound')),\n    ticks(variables('v_processing_lower_bound'))\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -569,7 +569,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires HIGH >= LOW; BACKFILL requires HIGH > LOW.'\n)",
+                      "value": "@concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. HIGH must be greater than LOW for both REGULAR and BACKFILL.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -729,7 +729,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires HIGH >= LOW; BACKFILL requires HIGH > LOW.'\n)",
+                  "value": "@concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. HIGH must be greater than LOW for both REGULAR and BACKFILL.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_PROCESSING_BOUNDARY"

@@ -25,7 +25,7 @@ Examples:
 
 ```text
 DATABASE  updated_at          -> 2026-09-27T10:30:00.000
-FILE      last_modified_time  -> 2026-09-27T10:30:00.000Z
+FILE      last_modified_time  -> 2026-09-27T10:30:00.000
 API       sync_token          -> opaque provider token
 API       updated_at          -> 2026-09-27T10:30:00.000Z
 STREAM    source_sequence     -> 123456789
@@ -61,8 +61,8 @@ processing_upper_bound   = 2026-09-27T11:00:00.000
 
 FILE
 watermark_field          = last_modified_time
-processing_lower_bound   = 2026-09-27T10:00:00.000Z
-processing_upper_bound   = 2026-09-27T11:00:00.000Z
+processing_lower_bound   = 2026-09-27T10:00:00.000
+processing_upper_bound   = 2026-09-27T11:00:00.000
 ```
 
 For DATABASE timestamp-watermark ingestion, boundary semantics are:
@@ -78,6 +78,8 @@ BACKFILL:
   upper <= lower -> invalid boundary -> FAILED
 ```
 
+For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A REGULAR no-new-file scan is still a forward time window and can finish `SUCCESS` with zero rows.
+
 ## FILE incremental choice
 
 The first FILE incremental feed uses:
@@ -91,6 +93,8 @@ The SFTP adapter uses the connector's Last Modified window:
 ```text
 modifiedDatetimeStart <= LastModified < modifiedDatetimeEnd
 ```
+
+The framework represents these FILE boundaries as UTC timestamp text without a timezone suffix. UTC is the operational convention; the string itself remains timezone-naive, consistent with the framework's other operational timestamps.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a
