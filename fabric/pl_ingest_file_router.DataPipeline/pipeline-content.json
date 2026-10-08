@@ -91,6 +91,10 @@
                       "p_file_format": {
                         "value": "@pipeline().parameters.p_file_format",
                         "type": "Expression"
+                      },
+                      "p_file_name_pattern": {
+                        "value": "@pipeline().parameters.p_file_name_pattern",
+                        "type": "Expression"
                       }
                     },
                     "waitOnCompletion": true,
@@ -206,6 +210,10 @@
                       },
                       "p_requested_upper_bound": {
                         "value": "@pipeline().parameters.p_requested_upper_bound",
+                        "type": "Expression"
+                      },
+                      "p_file_name_pattern": {
+                        "value": "@pipeline().parameters.p_file_name_pattern",
                         "type": "Expression"
                       }
                     },
@@ -506,6 +514,9 @@
         "type": "string"
       },
       "p_file_format": {
+        "type": "string"
+      },
+      "p_file_name_pattern": {
         "type": "string"
       }
     }

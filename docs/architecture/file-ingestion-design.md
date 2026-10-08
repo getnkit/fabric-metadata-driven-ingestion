@@ -50,13 +50,28 @@ For the current DATABASE path, both fields are NULL because the source is alread
 identified by `source_schema` + `source_object` and the pipeline writes directly
 to Bronze.
 
-For FILE ingestion, both fields are first-class metadata.
+For FILE ingestion, `source_object` is a stable logical feed ID (for example,
+`inventory_movement`), **not** the filename or its wildcard. `source_path`
+is the source-owned folder. Physical file selection belongs exclusively to
+`source_options.file_name_pattern`, which is required, non-blank and must
+not fall back to `source_object`. The Object Controller Lookup extracts it safely as `file_name_pattern` and
+passes `p_file_name_pattern` through the FILE Router; the SFTP Adapter validates
+that parameter before Copy. `source_object` remains stable if the producer
+changes the pattern or delivery naming, preserving config ID and watermark.
+See [Source Metadata Convention](source-metadata-convention.md).
 
 `file_format` is first-class FILE routing metadata because it changes how a raw Landing file is parsed into Bronze. The canonical values are `DELIMITED_TEXT`, `PARQUET`, and `JSON`.
 
 `source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds require `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and `escape`.
 
 Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
+
+The SQL metadata CHECK constraint rejects missing/blank FILE patterns at
+registration time. Both SFTP adapters independently validate the same
+requirement before Copy. Invalid settings finalize the run as FAILED with
+`INVALID_FILE_NAME_PATTERN`, without writing Landing/Bronze or advancing
+the FILE watermark. An unmatched **valid** filename pattern can still yield
+zero files; validate producer patterns operationally.
 
 ## FILE flow
 

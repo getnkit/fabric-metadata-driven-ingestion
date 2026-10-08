@@ -88,6 +88,18 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT CK_ingestion_config_pattern
         CHECK (ingestion_pattern IN ('DATABASE','FILE','API')),
 
+    CONSTRAINT CK_ingestion_config_file_name_pattern
+        CHECK
+        (
+            ingestion_pattern <> 'FILE'
+            OR
+            (
+                source_options IS NOT NULL
+                AND ISJSON(source_options) = 1
+                AND NULLIF(TRIM(JSON_VALUE(source_options, '$.file_name_pattern')), '') IS NOT NULL
+            )
+        ),
+
     CONSTRAINT CK_ingestion_config_file_format
         CHECK
         (

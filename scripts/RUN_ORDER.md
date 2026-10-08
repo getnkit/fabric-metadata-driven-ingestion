@@ -108,10 +108,15 @@ the Bronze target is resolved through `target_conn_ref`, `target_schema`, and
 
 FILE ingestion uses the same `control.ingestion_config` table:
 
-- `source_path` identifies where the source data is located.
+- `source_object` is a stable FILE feed ID, never an implied filename.
+- `source_path` identifies the producer-owned source folder.
+- `source_options.file_name_pattern` is mandatory and non-blank for FILE. Its
+  literal/wildcard value selects the physical files; no fallback to `source_object`.
 - `landing_path` identifies the platform-owned Landing Zone path.
 - `file_format` selects the Landing-to-Bronze parser for FILE ingestion.
-- `source_options` stores format/source-specific options. The current `DELIMITED_TEXT` contract requires file-name pattern, delimiter, header, encoding, quote, and escape.
+- Other `source_options` keys specify format/parser settings such as delimiter,
+  header, encoding, quote, and escape. See
+  [Source Metadata Convention](../docs/architecture/source-metadata-convention.md).
 
 No separate `file_ingestion_config` table or Quarantine area is used in the
 current project scope.
@@ -130,7 +135,14 @@ To remove the retired framework-level `RERUN` run type from an existing control 
 
 The migration refuses to rewrite historical `RERUN` audit rows automatically. If any exist, review them explicitly before applying the tighter constraint.
 
-Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pipeline artifacts are synced.
+For an existing database with FILE feeds, after applying the FILE-format
+migration and correcting missing/blank patterns (if any), run the
+non-destructive `scripts/control/migrations/008_require_file_name_pattern.sql`
+to enforce the FILE selection requirement. This script does not change
+watermark values or configuration IDs. Use `scripts/control/04_seed_ingestion_metadata.sql`
+only when you actually intend to seed/refresh example metadata, not merely to
+apply the new validation rule. Sync both SFTP adapters before running invalid
+FILE metadata tests.
 
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
 `scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`, then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh FILE metadata. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
