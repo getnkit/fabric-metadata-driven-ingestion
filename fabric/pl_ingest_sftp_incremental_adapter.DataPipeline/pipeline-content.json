@@ -729,7 +729,7 @@
         "typeProperties": {
           "variableName": "v_processing_upper_bound",
           "value": {
-            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-ddTHH:mm:ss.fff'),\n    pipeline().parameters.p_requested_upper_bound\n)",
+            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    pipeline().parameters.p_start_time,\n    pipeline().parameters.p_requested_upper_bound\n)",
             "type": "Expression"
           }
         },
@@ -1264,11 +1264,11 @@
                 "type": "Expression"
               },
               "modifiedDatetimeStart": {
-                "value": "@variables('v_processing_lower_bound')",
+                "value": "@formatDateTime(variables('v_processing_lower_bound'), 'yyyy-MM-ddTHH:mm:ss.fffZ')",
                 "type": "Expression"
               },
               "modifiedDatetimeEnd": {
-                "value": "@variables('v_processing_upper_bound')",
+                "value": "@formatDateTime(variables('v_processing_upper_bound'), 'yyyy-MM-ddTHH:mm:ss.fffZ')",
                 "type": "Expression"
               }
             },

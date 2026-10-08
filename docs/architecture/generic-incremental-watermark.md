@@ -89,9 +89,14 @@ For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > low
   interpretation. Do not blanket-convert watermarks to UTC or add `Z`.
   Azure SQL `DATETIME2(7)` source boundaries remain source-local and can
   retain seven fractional digits; watermark state stores them exactly.
-- At connector boundaries, adapt representation only where required. For
-  existing SFTP Last Modified filtering, the framework preserves its tested
-  no-`Z` UTC watermark representation.
+- At connector boundaries, adapt representation only where required. SFTP
+  Last Modified filtering uses Microsoft's UTC `yyyy-MM-ddTHH:mm:ss.fffZ`
+  form for both bounds. The legacy no-`Z` checkpoint is interpreted as UTC
+  solely for this SFTP source contract and formatted with `Z` for Copy.
+  A new REGULAR upper bound comes from canonical `p_start_time` (with `Z`)
+  and advances the checkpoint in that form on successful completion.
+  The old committed lower-bound string is not rewritten prior to the optimistic
+  watermark compare; no historical watermark rewrite is required.
 
 ## Azure SQL timestamp-watermark precision
 
@@ -129,11 +134,16 @@ The SFTP adapter uses the connector's Last Modified window:
 modifiedDatetimeStart <= LastModified < modifiedDatetimeEnd
 ```
 
-The existing FILE Last Modified watermark values remain UTC timestamp text
-without a timezone suffix. This is a connector-specific, source-derived
-checkpoint convention; framework-created operational timestamp strings now
-carry `Z`. The REGULAR SFTP upper bound is formatted to no-`Z` UTC text before
-it is used in filtering or persisted as a watermark.
+SFTP Last Modified values are UTC by source contract. Both Copy filter
+bounds are formatted as `yyyy-MM-ddTHH:mm:ss.fffZ`, matching the Fabric SFTP
+connector reference. Existing stored watermark strings without `Z` are
+read unchanged and formatted as UTC solely at the SFTP Copy boundary; the
+REGULAR upper bound from canonical `p_start_time` already carries `Z` and
+is persisted as the next committed watermark. The optimistic comparison
+retains the exact original stored LOW value, including its old representation.
+BACKFILL LOW/HIGH must represent UTC instants (with `Z` preferred); explicit
+non-UTC offsets must first be converted to UTC, not relabeled by formatting.
+This change does not apply to Azure SQL `DATETIME2` source watermarks.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a

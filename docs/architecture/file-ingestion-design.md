@@ -308,11 +308,14 @@ LOW  = current last_watermark_value
 HIGH = ingestion run start time
 ```
 
-These SFTP Last Modified watermarks remain UTC timestamp text without a `Z`
-suffix as established by the existing source/connector contract. The new
-framework-generated `p_start_time` includes `Z`; the REGULAR SFTP upper bound
-is formatted back to the existing UTC/no-`Z` representation at this connector
-boundary, preserving old watermark state and tested Last Modified filtering.
+SFTP Last Modified timestamps represent UTC by source contract. Both Copy
+filter bounds use the documented UTC `yyyy-MM-ddTHH:mm:ss.fffZ` representation.
+The REGULAR upper bound now preserves `p_start_time` (with `Z`) and a
+successful run commits that upper bound as the next checkpoint. An existing
+no-`Z` lower checkpoint is used unchanged for optimistic state comparison
+and formatted as UTC with `Z` only for SFTP Copy. BACKFILL bounds must
+represent UTC instants; convert any non-UTC offset to UTC before supplying
+it rather than just appending `Z`.
 
 and selects source files whose Last Modified value is in:
 
