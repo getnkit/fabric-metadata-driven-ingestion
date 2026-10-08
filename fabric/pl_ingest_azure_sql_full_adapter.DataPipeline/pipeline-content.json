@@ -323,7 +323,7 @@
                       "type": "TabularTranslator",
                       "typeConversion": true,
                       "typeConversionSettings": {
-                        "allowDataTruncation": true,
+                        "allowDataTruncation": false,
                         "treatBooleanAsNumber": false
                       }
                     },
@@ -467,7 +467,7 @@
                       "type": "TabularTranslator",
                       "typeConversion": true,
                       "typeConversionSettings": {
-                        "allowDataTruncation": true,
+                        "allowDataTruncation": false,
                         "treatBooleanAsNumber": false
                       }
                     },
@@ -633,7 +633,7 @@
                       "type": "TabularTranslator",
                       "typeConversion": true,
                       "typeConversionSettings": {
-                        "allowDataTruncation": true,
+                        "allowDataTruncation": false,
                         "treatBooleanAsNumber": false
                       }
                     },
@@ -795,7 +795,7 @@
                       "type": "TabularTranslator",
                       "typeConversion": true,
                       "typeConversionSettings": {
-                        "allowDataTruncation": true,
+                        "allowDataTruncation": false,
                         "treatBooleanAsNumber": false
                       }
                     },
@@ -1103,6 +1103,13 @@
             "p_batch_id": {
               "value": {
                 "value": "@pipeline().parameters.p_batch_id",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "p_pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
                 "type": "Expression"
               },
               "type": "string"

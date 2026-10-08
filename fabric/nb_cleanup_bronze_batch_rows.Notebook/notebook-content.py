@@ -15,6 +15,7 @@ p_lakehouse_id = ""
 p_target_schema = ""
 p_target_table = ""
 p_batch_id = ""
+p_pipeline_run_id = ""
 
 # METADATA ********************
 
@@ -46,6 +47,7 @@ lakehouse_id = _require_safe_path_segment("p_lakehouse_id", p_lakehouse_id)
 target_schema = _require_safe_path_segment("p_target_schema", p_target_schema)
 target_table = _require_safe_path_segment("p_target_table", p_target_table)
 batch_id = _require_nonempty("p_batch_id", p_batch_id)
+pipeline_run_id = _require_nonempty("p_pipeline_run_id", p_pipeline_run_id)
 
 table_relative_path = f"{target_schema}/{target_table}"
 
@@ -54,8 +56,12 @@ table_path = (
     f"{lakehouse_id}/Tables/{table_relative_path}"
 )
 
-# Compensating cleanup is intentionally scoped to one failed ingestion batch.
-batch_predicate = F.col("_batch_id") == F.lit(batch_id)
+# Scope cleanup to one object execution, not only the orchestrator-shared batch.
+# Different configs may write to the same target in the same batch.
+batch_predicate = (
+    (F.col("_batch_id") == F.lit(batch_id))
+    & (F.col("_pipeline_run_id") == F.lit(pipeline_run_id))
+)
 
 
 def _cleanup_batch_rows():

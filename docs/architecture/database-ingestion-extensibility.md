@@ -75,6 +75,25 @@ The current Azure SQL FULL and INCREMENTAL Copy paths enable native Data
 Consistency Verification. Future database adapters must confirm support for their
 actual Copy pair and execution mode rather than inheriting this setting blindly.
 
+## Copy type-conversion policy
+
+All six Azure SQL -> Lakehouse Bronze Copy branches (FULL Query/Table AUTO/TUNED
+and INCREMENTAL Query AUTO/TUNED) use automatic source-schema mapping with
+`TabularTranslator.typeConversion = true` and
+`typeConversionSettings.allowDataTruncation = false`.
+
+This is a fail-fast ingestion policy: do not allow the Copy type-conversion
+layer to silently truncate source values when converting to destination types.
+The setting does **not** guarantee byte-for-byte equivalence or prevent every
+lossy native SQL -> Fabric interim type -> Delta mapping. A type that cannot
+be represented in the sink may fail rather than being silently accepted; validate
+real source type compatibility when onboarding new tables. Bronze remains
+append-only and metadata-driven, without per-table hardcoded column mapping.
+
+SFTP Binary source-to-Landing transfer and the Spark delimited-text parser
+do not use this TabularTranslator setting; they preserve their existing
+connector/reader-specific behavior.
+
 ## Copy performance metadata
 
 Connector-native performance hints are stored in the optional

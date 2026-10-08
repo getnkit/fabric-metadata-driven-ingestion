@@ -21,7 +21,12 @@ Retention, legal erasure, or other lifecycle-management policies are separate go
 
 A Bronze write and the control/audit finalization are not one distributed transaction. A pipeline can fail after rows have already reached Bronze while the watermark/control state remains uncommitted. A blind rerun can then append the same logical input again.
 
-The recovery scope is the ingestion `batch_id`.
+The recovery scope is the pair **(`batch_id`, `pipeline_run_id`)** in the
+specific target Delta table. The orchestrator intentionally shares a batch ID
+across different configs for correlation; the object controller has its own
+pipeline run ID. Both metadata columns are present in the Azure SQL and SFTP
+Bronze outputs. Filtering only by batch ID could remove another config's rows
+if two configs write to the same target in one orchestrator batch.
 
 ## Reusable component
 
@@ -39,9 +44,13 @@ p_lakehouse_id
 p_target_schema
 p_target_table
 p_batch_id
+p_pipeline_run_id
 ```
 
-The notebook resolves the target Delta table, counts rows for the supplied `_batch_id`, deletes only those rows, re-counts the same batch, and fails with `BRONZE_CLEANUP_INCOMPLETE` if any rows remain.
+The notebook resolves the target Delta table, counts rows matching **both**
+`_batch_id` and `_pipeline_run_id`, deletes only those rows, re-counts that
+same object execution, and fails with `BRONZE_CLEANUP_INCOMPLETE` if any
+matching rows remain.
 
 The notebook is idempotent: a retry against an already-clean batch succeeds with zero rows removed.
 
@@ -115,11 +124,12 @@ Bronze batch check:
 ```sql
 SELECT COUNT(*) AS batch_rows
 FROM <target_schema>.<target_table>
-WHERE _batch_id = '<batch_id>';
+WHERE _batch_id = '<batch_id>'
+  AND _pipeline_run_id = '<object_pipeline_run_id>';
 ```
 
 For a failed run that completed automatic cleanup, `batch_rows` must be zero and the watermark must remain at the previously committed value.
 
 ## Manual fallback
 
-If an operational incident predates the automatic cleanup path, or cleanup itself could not run, reconcile only the failed `_batch_id` using a Fabric Notebook / Spark Delta operation and verify zero remaining rows before rerun.
+If an operational incident predates the automatic cleanup path, or cleanup itself could not run, reconcile only the failed (`_batch_id`, `_pipeline_run_id`) pair using a Fabric Notebook / Spark Delta operation and verify zero remaining rows before rerun.

@@ -109,7 +109,9 @@ The reusable notebook item is:
 nb_cleanup_bronze_batch_rows
 ```
 
-It deletes Bronze rows for exactly one `_batch_id` and verifies that no rows for that batch remain.
+It deletes Bronze rows for exactly one **(`_batch_id`, `_pipeline_run_id`)**
+object-execution pair and verifies that no matching rows remain. The batch ID
+may be shared by multiple object runs in the same orchestrator execution.
 
 The active automatic-cleanup activity name is:
 

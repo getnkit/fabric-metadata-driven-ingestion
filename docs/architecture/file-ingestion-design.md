@@ -117,9 +117,10 @@ ingestion run fails and records the error in the normal ingestion audit path. A
 file already copied to Landing remains there for inspection/reprocessing.
 
 When a failed path may already have appended rows to Bronze, the framework invokes
-the reusable `nb_cleanup_bronze_batch_rows` notebook. Cleanup is scoped to the
-current `_batch_id`, verifies that the batch has zero remaining Bronze rows, and
-only then allows the FAILED run to be finalized. This makes a subsequent rerun
+the reusable `nb_cleanup_bronze_batch_rows` notebook. Cleanup is scoped to both the
+current `_batch_id` and object `_pipeline_run_id`, verifies that zero rows for
+that object execution remain in Bronze, and only then allows the FAILED run to
+be finalized. This makes a subsequent rerun
 safe without turning Bronze into a MERGE/deduplication layer.
 
 The framework intentionally does not auto-clean after an ambiguous

@@ -1161,6 +1161,13 @@
                 "type": "Expression"
               },
               "type": "string"
+            },
+            "p_pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                "type": "Expression"
+              },
+              "type": "string"
             }
           }
         },
