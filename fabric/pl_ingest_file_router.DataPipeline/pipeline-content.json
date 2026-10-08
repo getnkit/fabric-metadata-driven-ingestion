@@ -255,7 +255,7 @@
                     "type": "DateTime"
                   },
                   "error_code": {
-                    "value": "UNSUPPORTED_FILE_CONNECTION_TYPE",
+                    "value": "UNSUPPORTED_FILE_ROUTE",
                     "type": "String"
                   },
                   "error_message": {
@@ -407,7 +407,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "sp_finalize_unsupported_file_connection",
+              "name": "sp_finalize_unsupported_file_route",
               "dependsOn": []
             },
             {
@@ -417,12 +417,12 @@
                   "value": "@concat(\n    'Unsupported FILE route: source_connection_type=',\n    pipeline().parameters.p_source_connection_type,\n    ', load_strategy=',\n    pipeline().parameters.p_load_strategy,\n    '.'\n)",
                   "type": "Expression"
                 },
-                "errorCode": "UNSUPPORTED_FILE_CONNECTION_TYPE"
+                "errorCode": "UNSUPPORTED_FILE_ROUTE"
               },
-              "name": "fail_unsupported_file_connection",
+              "name": "fail_unsupported_file_route",
               "dependsOn": [
                 {
-                  "activity": "sp_finalize_unsupported_file_connection",
+                  "activity": "sp_finalize_unsupported_file_route",
                   "dependencyConditions": [
                     "Succeeded"
                   ]
