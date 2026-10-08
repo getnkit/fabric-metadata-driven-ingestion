@@ -80,6 +80,28 @@ BACKFILL:
 
 For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A REGULAR no-new-file scan is still a forward time window and can finish `SUCCESS` with zero rows.
 
+## Azure SQL timestamp-watermark precision
+
+For Azure SQL incremental ingestion, the adapter preserves LOW/HIGH checkpoint values
+from the control state and source Lookup without rounding or timestamp reformatting.
+The shared `control.pipeline_watermarks.last_watermark_value` remains a STRING
+(`NVARCHAR(1000)`) for exact optimistic-watermark comparison.
+
+Both AUTO and TUNED Copy branches use `CONVERT(datetime2(7), '<boundary>', 126)`
+in the **source SQL predicate**. SQL Server accepts timestamp strings with fewer
+than seven fractional digits; `datetime2(7)` also preserves up to seven digits
+from a higher-precision source. Do not use `formatDateTime(..., '...fff')`
+on the boundary immediately before the SQL predicate: it would discard
+fractional precision beyond milliseconds. This conversion is for source-side
+filtering, not for storage of the checkpoint in the control SQL database.
+
+Requested BACKFILL bounds must be SQL Server-parseable timestamps. ISO 8601 with
+no timezone offset is recommended for the existing UTC, timezone-naive boundary
+convention. Before onboarding a `datetime2(7)` source, verify that Fabric
+Lookup, pipeline parameters and finalization preserve all seven digits
+end-to-end. The SFTP connector's Last Modified filter semantics and operational
+audit timestamp precision are separate and unchanged.
+
 ## FILE incremental choice
 
 The first FILE incremental feed uses:
