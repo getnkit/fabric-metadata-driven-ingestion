@@ -706,7 +706,7 @@
         "typeProperties": {
           "variableName": "v_processing_lower_bound",
           "value": {
-            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    string(activity('lkp_current_watermark').output.firstRow.last_watermark_value),\n    pipeline().parameters.p_requested_lower_bound\n)",
+            "value": "@if(\n    equals(pipeline().parameters.p_run_type, 'REGULAR'),\n    activity('lkp_current_watermark').output.firstRow.last_watermark_value,\n    pipeline().parameters.p_requested_lower_bound\n)",
             "type": "Expression"
           }
         },
@@ -3384,12 +3384,10 @@
         "type": "string"
       },
       "p_requested_lower_bound": {
-        "type": "string",
-        "defaultValue": ""
+        "type": "string"
       },
       "p_requested_upper_bound": {
-        "type": "string",
-        "defaultValue": ""
+        "type": "string"
       }
     },
     "variables": {
