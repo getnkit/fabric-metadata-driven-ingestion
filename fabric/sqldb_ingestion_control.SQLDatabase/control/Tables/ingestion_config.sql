@@ -20,14 +20,6 @@ CREATE TABLE [control].[ingestion_config] (
     [file_format]         VARCHAR (30)    NULL,
     CONSTRAINT [PK_ingestion_config] PRIMARY KEY CLUSTERED ([ingestion_config_id] ASC),
     CONSTRAINT [CK_ingestion_config_copy_options_json] CHECK ([copy_options] IS NULL OR isjson([copy_options])=(1)),
-    CONSTRAINT [CK_ingestion_config_file_name_pattern] CHECK (
-        [ingestion_pattern] <> 'FILE'
-        OR (
-            [source_options] IS NOT NULL
-            AND ISJSON([source_options]) = 1
-            AND NULLIF(TRIM(JSON_VALUE([source_options], '$.file_name_pattern')), '') IS NOT NULL
-        )
-    ),
     CONSTRAINT [CK_ingestion_config_file_format] CHECK ([ingestion_pattern]='FILE' AND ([file_format]='JSON' OR [file_format]='PARQUET' OR [file_format]='DELIMITED_TEXT') OR ([ingestion_pattern]='API' OR [ingestion_pattern]='DATABASE') AND [file_format] IS NULL),
     CONSTRAINT [CK_ingestion_config_landing_path] CHECK ([ingestion_pattern]<>'FILE' OR [landing_path] IS NOT NULL),
     CONSTRAINT [CK_ingestion_config_pattern] CHECK ([ingestion_pattern]='API' OR [ingestion_pattern]='FILE' OR [ingestion_pattern]='DATABASE'),
