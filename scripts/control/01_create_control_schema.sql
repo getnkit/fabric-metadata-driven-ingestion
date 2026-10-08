@@ -184,6 +184,8 @@ CREATE TABLE audit.ingestion_log
     source_conn_ref           NVARCHAR(100) NULL,
     source_schema             NVARCHAR(128) NULL,
     source_object             NVARCHAR(128) NULL,
+    source_path               NVARCHAR(1000) NULL,
+    ingestion_pattern         VARCHAR(20) NULL,
 
     target_path               NVARCHAR(1000) NULL,
     target_conn_ref           NVARCHAR(100) NULL,

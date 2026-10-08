@@ -128,6 +128,11 @@ To remove the retired framework-level `RERUN` run type from an existing control 
 
 `scripts/control/migrations/007_remove_rerun_run_type.sql`
 
+For an existing audit table, apply `scripts/control/migrations/008_add_ingestion_log_source_metadata.sql`
+(non-destructive; historical rows remain NULL). The finalizer reads the two
+new source metadata fields from the ingestion config when the run finishes.
+No Pipeline parameter or Watermark changes are required.
+
 The migration refuses to rewrite historical `RERUN` audit rows automatically. If any exist, review them explicitly before applying the tighter constraint.
 
 Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pipeline artifacts are synced.

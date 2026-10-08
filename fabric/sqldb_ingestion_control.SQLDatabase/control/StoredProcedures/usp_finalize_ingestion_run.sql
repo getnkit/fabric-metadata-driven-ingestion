@@ -41,6 +41,8 @@ BEGIN
     DECLARE @ConflictMessage NVARCHAR(4000);
     DECLARE @ExpectedWatermark NVARCHAR(1000);
     DECLARE @NewWatermark NVARCHAR(1000);
+    DECLARE @AuditSourcePath NVARCHAR(1000);
+    DECLARE @AuditIngestionPattern VARCHAR(20);
 
     SET @DurationSeconds = DATEDIFF(SECOND, @start_time, @end_time);
     SET @ExpectedWatermark = @processing_lower_bound;
@@ -77,6 +79,13 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        -- Resolve source metadata for this log entry without new Pipeline parameters.
+        SELECT
+            @AuditSourcePath = c.source_path,
+            @AuditIngestionPattern = c.ingestion_pattern
+        FROM control.ingestion_config AS c
+        WHERE c.ingestion_config_id = @ingestion_config_id;
+
         IF @advance_watermark = 1
         BEGIN
             UPDATE control.pipeline_watermarks
@@ -110,6 +119,8 @@ BEGIN
                     source_conn_ref,
                     source_schema,
                     source_object,
+                    source_path,
+                    ingestion_pattern,
                     landing_path,
                     target_conn_ref,
                     target_schema,
@@ -138,6 +149,8 @@ BEGIN
                     @source_conn_ref,
                     @source_schema,
                     @source_object,
+                    @AuditSourcePath,
+                    @AuditIngestionPattern,
                     @landing_path,
                     @target_conn_ref,
                     @target_schema,
@@ -172,6 +185,8 @@ BEGIN
             source_conn_ref,
             source_schema,
             source_object,
+            source_path,
+            ingestion_pattern,
             landing_path,
             target_conn_ref,
             target_schema,
@@ -200,6 +215,8 @@ BEGIN
             @source_conn_ref,
             @source_schema,
             @source_object,
+            @AuditSourcePath,
+            @AuditIngestionPattern,
             @landing_path,
             @target_conn_ref,
             @target_schema,
