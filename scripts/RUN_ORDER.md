@@ -166,10 +166,10 @@ pl_ingest_object_controller
 The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
 
 The current FULL feed uses the stable producer filename
-`inventory_snapshot.csv`. Each run writes Landing to a batch-specific path:
+`inventory_snapshot.csv`. Each run writes Landing to an object-execution-specific path:
 
 ```text
-Files/landing/logistics_vendor/inventory_snapshot/ingestion_date=YYYY-MM-DD/batch_id=<batch_id>/
+Files/landing/logistics_vendor/inventory_snapshot/ingestion_date=YYYY-MM-DD/ingestion_config_id=<config_id>/batch_id=<batch_id>/pipeline_run_id=<object_controller_run_id>/
 ```
 
 This prevents one FULL run from re-reading a directory of historical dated

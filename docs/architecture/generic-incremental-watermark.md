@@ -80,6 +80,19 @@ BACKFILL:
 
 For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A REGULAR no-new-file scan is still a forward time window and can finish `SUCCESS` with zero rows.
 
+## Timestamp ownership and timezone contract
+
+- Framework-created operational timestamp strings (`p_start_time`,
+  `v_ingestion_timestamp`) represent UTC and carry a `Z` suffix. SQL audit
+  `DATETIME2(3)` is stored as a timezone-less UTC value, by data type.
+- Source-derived watermarks preserve their native type, precision and timezone
+  interpretation. Do not blanket-convert watermarks to UTC or add `Z`.
+  Azure SQL `DATETIME2(7)` source boundaries remain source-local and can
+  retain seven fractional digits; watermark state stores them exactly.
+- At connector boundaries, adapt representation only where required. For
+  existing SFTP Last Modified filtering, the framework preserves its tested
+  no-`Z` UTC watermark representation.
+
 ## Azure SQL timestamp-watermark precision
 
 For Azure SQL incremental ingestion, the adapter preserves LOW/HIGH checkpoint values
@@ -116,7 +129,11 @@ The SFTP adapter uses the connector's Last Modified window:
 modifiedDatetimeStart <= LastModified < modifiedDatetimeEnd
 ```
 
-The framework represents these FILE boundaries as UTC timestamp text without a timezone suffix. UTC is the operational convention; the string itself remains timezone-naive, consistent with the framework's other operational timestamps.
+The existing FILE Last Modified watermark values remain UTC timestamp text
+without a timezone suffix. This is a connector-specific, source-derived
+checkpoint convention; framework-created operational timestamp strings now
+carry `Z`. The REGULAR SFTP upper bound is formatted to no-`Z` UTC text before
+it is used in filtering or persisted as a watermark.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a

@@ -215,7 +215,7 @@
         "typeProperties": {
           "variableName": "v_ingestion_timestamp",
           "value": {
-            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fff'\n)",
+            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fffZ'\n)",
             "type": "Expression"
           }
         },
@@ -238,7 +238,7 @@
         "typeProperties": {
           "variableName": "v_landing_relative_path",
           "value": {
-            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    'ingestion_date=',\n    formatDateTime(\n        pipeline().parameters.p_start_time,\n        'yyyy-MM-dd'\n    ),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+            "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    if(\n        endsWith(pipeline().parameters.p_landing_path, '/'),\n        '',\n        '/'\n    ),\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/pipeline_run_id=',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    '/'\n)",
             "type": "Expression"
           }
         },
@@ -389,6 +389,20 @@
                       "type": "Expression"
                     },
                     "type": "string"
+                  },
+                  "p_ingestion_config_id": {
+                    "value": {
+                      "value": "@string(pipeline().parameters.p_ingestion_config_id)",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "p_pipeline_run_id": {
+                    "value": {
+                      "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                      "type": "Expression"
+                    },
+                    "type": "string"
                   }
                 }
               },
@@ -517,7 +531,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                      "value": "@concat('Files/', variables('v_landing_relative_path'))",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -722,7 +736,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                      "value": "@concat('Files/', variables('v_landing_relative_path'))",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1044,7 +1058,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                "value": "@concat('Files/', variables('v_landing_relative_path'))",
                 "type": "Expression"
               },
               "type": "String"
@@ -1303,7 +1317,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                "value": "@concat('Files/', variables('v_landing_relative_path'))",
                 "type": "Expression"
               },
               "type": "String"
@@ -1489,7 +1503,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                "value": "@concat('Files/', variables('v_landing_relative_path'))",
                 "type": "Expression"
               },
               "type": "String"
@@ -1634,6 +1648,20 @@
                 "type": "Expression"
               },
               "type": "string"
+            },
+            "p_ingestion_config_id": {
+              "value": {
+                "value": "@string(pipeline().parameters.p_ingestion_config_id)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "p_pipeline_run_id": {
+              "value": {
+                "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                "type": "Expression"
+              },
+              "type": "string"
             }
           }
         },
@@ -1769,7 +1797,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                "value": "@concat('Files/', variables('v_landing_relative_path'))",
                 "type": "Expression"
               },
               "type": "String"
@@ -1974,7 +2002,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
+                "value": "@concat('Files/', variables('v_landing_relative_path'))",
                 "type": "Expression"
               },
               "type": "String"

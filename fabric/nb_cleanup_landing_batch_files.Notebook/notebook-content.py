@@ -13,7 +13,9 @@
 p_workspace_id = ""
 p_lakehouse_id = ""
 p_landing_relative_path = ""
+p_ingestion_config_id = ""
 p_batch_id = ""
+p_pipeline_run_id = ""
 
 # METADATA ********************
 
@@ -40,7 +42,9 @@ def _require_safe_path_segment(name, value):
 
 workspace_id = _require_safe_path_segment("p_workspace_id", p_workspace_id)
 lakehouse_id = _require_safe_path_segment("p_lakehouse_id", p_lakehouse_id)
-batch_id = _require_nonempty("p_batch_id", p_batch_id)
+ingestion_config_id = _require_safe_path_segment("p_ingestion_config_id", p_ingestion_config_id)
+batch_id = _require_safe_path_segment("p_batch_id", p_batch_id)
+pipeline_run_id = _require_safe_path_segment("p_pipeline_run_id", p_pipeline_run_id)
 landing_relative_path = _require_nonempty(
     "p_landing_relative_path",
     p_landing_relative_path,
@@ -50,12 +54,21 @@ path_segments = [segment for segment in landing_relative_path.split("/") if segm
 if not path_segments or any(segment in {".", ".."} for segment in path_segments):
     raise ValueError("p_landing_relative_path is not a safe Landing batch path.")
 
-# Require the current batch_id as the final path segment before allowing recursive deletion.
-expected_batch_segment = f"batch_id={batch_id}"
-if path_segments[-1] != expected_batch_segment:
+# A shared orchestrator batch can contain multiple configs writing the same Landing root.
+# Require the full object-execution scope before allowing recursive deletion.
+expected_execution_segments = [
+    f"ingestion_config_id={ingestion_config_id}",
+    f"batch_id={batch_id}",
+    f"pipeline_run_id={pipeline_run_id}",
+]
+if (
+    len(path_segments) < 4
+    or not path_segments[-4].startswith("ingestion_date=")
+    or path_segments[-3:] != expected_execution_segments
+):
     raise ValueError(
-        "p_landing_relative_path must end with the current batch_id segment: "
-        f"{expected_batch_segment}"
+        "p_landing_relative_path must end with ingestion_date and the current "
+        "ingestion_config_id/batch_id/pipeline_run_id execution scope."
     )
 
 landing_path = (
@@ -63,7 +76,7 @@ landing_path = (
     f"{lakehouse_id}/Files/{landing_relative_path}"
 )
 
-# Compensating cleanup is intentionally scoped to the failed batch folder only.
+# Compensating cleanup is intentionally scoped to this failed object-execution folder only.
 if notebookutils.fs.exists(landing_path):
     notebookutils.fs.rm(landing_path, True)
 

@@ -116,6 +116,12 @@ If a file cannot be found, opened, or parsed according to `source_options`, the
 ingestion run fails and records the error in the normal ingestion audit path. A
 file already copied to Landing remains there for inspection/reprocessing.
 
+When SFTP landing Copy fails or its file counts mismatch, Landing cleanup
+recursively deletes only the validated leaf folder ending in
+`ingestion_config_id=<config_id>/batch_id=<batch_id>/pipeline_run_id=<object_controller_run_id>/`.
+The cleanup Notebook requires these three matching IDs and the ingestion date
+before deletion; it cannot delete another config's shared-batch Landing files.
+
 When a failed path may already have appended rows to Bronze, the framework invokes
 the reusable `nb_cleanup_bronze_batch_rows` notebook. Cleanup is scoped to both the
 current `_batch_id` and object `_pipeline_run_id`, verifies that zero rows for
@@ -183,8 +189,14 @@ Files/landing/logistics_vendor/inventory_snapshot/
 Runtime example:
 Files/landing/logistics_vendor/inventory_snapshot/
   ingestion_date=YYYY-MM-DD/
-    batch_id=<batch_id>/
-= human-browsable date organization plus immutable raw copy for one ingestion run
+    ingestion_config_id=<config_id>/
+      batch_id=<batch_id>/
+        pipeline_run_id=<object_controller_run_id>/
+= date organization plus an isolated raw copy for one object execution.
+The orchestrator may share batch_id across different configs; config_id and the
+object controller's pipeline_run_id prevent same-root file collisions and
+cross-execution Landing cleanup. Every audit landing_path records this exact
+execution folder, and Copy/Notebook/cleanup use its relative Files/ path.
 ```
 
 The source inventory rows use the same SKU convention as the ECOMMERCE catalog
@@ -296,7 +308,11 @@ LOW  = current last_watermark_value
 HIGH = ingestion run start time
 ```
 
-Both values are treated as UTC and stored as ISO-style timestamp text without a `Z` suffix.
+These SFTP Last Modified watermarks remain UTC timestamp text without a `Z`
+suffix as established by the existing source/connector contract. The new
+framework-generated `p_start_time` includes `Z`; the REGULAR SFTP upper bound
+is formatted back to the existing UTC/no-`Z` representation at this connector
+boundary, preserving old watermark state and tested Last Modified filtering.
 
 and selects source files whose Last Modified value is in:
 
@@ -337,10 +353,12 @@ source:
 landing:
   Files/landing/logistics_vendor/inventory_movement/
     ingestion_date=YYYY-MM-DD/
-      batch_id=<batch_id>/
-        2026/
-          10/
-            file.csv
+      ingestion_config_id=<config_id>/
+        batch_id=<batch_id>/
+          pipeline_run_id=<object_controller_run_id>/
+            2026/
+              10/
+                file.csv
 ```
 
 For REGULAR execution, if the recursive Landing copy finds matching files and
@@ -361,7 +379,13 @@ source scope as FULL REGULAR execution. The distinction is execution intent and
 lineage; each successful run still appends a new batch-specific Landing/Bronze
 copy.
 
-`p_start_time` is normalized once at the Object Controller when the run starts, using `yyyy-MM-ddTHH:mm:ss.fff`. Downstream routers and adapters treat it as the canonical UTC run-start timestamp string and do not reformat it unless deriving another representation such as `ingestion_date`.
+`p_start_time` is generated in UTC once at the Object Controller, as
+`yyyy-MM-ddTHH:mm:ss.fffZ`. Framework-created timestamp strings (including
+`v_ingestion_timestamp` passed to the file Notebook) carry `Z`. SQL
+`DATETIME2(3)` and the existing SFTP Last Modified connector boundary use
+their native timezone-less representations without changing the UTC instant.
+Source-derived watermark bounds retain their source-specific precision and
+timezone semantics; do not append `Z` to such values without a UTC contract.
 
 The current SFTP incremental physical flow is therefore:
 

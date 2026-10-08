@@ -28,6 +28,18 @@ pipeline run ID. Both metadata columns are present in the Azure SQL and SFTP
 Bronze outputs. Filtering only by batch ID could remove another config's rows
 if two configs write to the same target in one orchestrator batch.
 
+## FILE Landing cleanup isolation
+
+An orchestrator batch may include multiple `ingestion_config_id` values
+that share a Landing base path (and may target the same Bronze table).
+SFTP FULL and INCREMENTAL Landing paths therefore use the leaf scope
+`ingestion_date=<date>/ingestion_config_id=<id>/batch_id=<id>/pipeline_run_id=<object_run_id>/`.
+Landing cleanup validates these exact trailing segments before recursively
+deleting the failed execution's leaf folder; it cannot delete a sibling
+config/run folder. The audit `landing_path` points to the same execution
+folder used by Copy and the Notebook. Bronze cleanup separately uses the
+existing `(_batch_id, _pipeline_run_id)` predicate.
+
 ## Reusable component
 
 The framework uses one notebook item:
