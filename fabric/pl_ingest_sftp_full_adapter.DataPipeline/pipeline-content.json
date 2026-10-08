@@ -273,7 +273,7 @@
                 "type": "Expression"
               },
               "wildcardFileName": {
-                "value": "@trim(string(json(pipeline().parameters.p_source_options).file_name_pattern))",
+                "value": "@trim(json(pipeline().parameters.p_source_options).file_name_pattern)",
                 "type": "Expression"
               }
             },
