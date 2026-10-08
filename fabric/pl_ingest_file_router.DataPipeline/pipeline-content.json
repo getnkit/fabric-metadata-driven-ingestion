@@ -260,7 +260,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('Unsupported FILE route: source_connection_type=', pipeline().parameters.p_source_connection_type, ', load_strategy=', pipeline().parameters.p_load_strategy, '.')",
+                      "value": "@concat(\n    'Unsupported FILE route: source_connection_type=',\n    pipeline().parameters.p_source_connection_type,\n    ', load_strategy=',\n    pipeline().parameters.p_load_strategy,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -414,7 +414,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('Unsupported FILE route: source_connection_type=', pipeline().parameters.p_source_connection_type, ', load_strategy=', pipeline().parameters.p_load_strategy, '.')",
+                  "value": "@concat(\n    'Unsupported FILE route: source_connection_type=',\n    pipeline().parameters.p_source_connection_type,\n    ', load_strategy=',\n    pipeline().parameters.p_load_strategy,\n    '.'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "UNSUPPORTED_FILE_CONNECTION_TYPE"

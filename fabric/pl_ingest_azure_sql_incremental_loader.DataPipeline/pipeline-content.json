@@ -1044,7 +1044,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original Bronze write failure: ', activity('if_parallel_copy_override').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('if_parallel_copy_override').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1214,7 +1214,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original Bronze write failure: ', activity('if_parallel_copy_override').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+            "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('if_parallel_copy_override').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
             "type": "Expression"
           },
           "errorCode": "BRONZE_CLEANUP_FAILED"

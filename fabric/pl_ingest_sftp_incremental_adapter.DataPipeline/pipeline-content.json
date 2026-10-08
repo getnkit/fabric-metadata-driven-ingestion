@@ -1429,7 +1429,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('Landing file count mismatch. filesRead=', string(activity('copy_sftp_to_landing').output.filesRead), ', filesWritten=', string(activity('copy_sftp_to_landing').output.filesWritten))",
+                      "value": "@concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1518,7 +1518,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1599,7 +1599,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('Landing file count mismatch. filesRead=', string(activity('copy_sftp_to_landing').output.filesRead), ', filesWritten=', string(activity('copy_sftp_to_landing').output.filesWritten))",
+                  "value": "@concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n)",
                   "type": "Expression"
                 },
                 "errorCode": "LANDING_FILE_COUNT_MISMATCH"
@@ -1643,7 +1643,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('Original Landing file count mismatch. filesRead=', string(activity('copy_sftp_to_landing').output.filesRead), ', filesWritten=', string(activity('copy_sftp_to_landing').output.filesWritten), ' | Landing cleanup failure: ', activity('nb_cleanup_landing_file_count_mismatch').error.message)",
+                      "value": "@concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_file_count_mismatch').error.message\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1732,7 +1732,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1813,7 +1813,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('Original Landing file count mismatch. filesRead=', string(activity('copy_sftp_to_landing').output.filesRead), ', filesWritten=', string(activity('copy_sftp_to_landing').output.filesWritten), ' | Landing cleanup failure: ', activity('nb_cleanup_landing_file_count_mismatch').error.message)",
+                  "value": "@concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_file_count_mismatch').error.message\n)",
                   "type": "Expression"
                 },
                 "errorCode": "LANDING_CLEANUP_FAILED"
@@ -2254,7 +2254,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2522,7 +2522,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2628,7 +2628,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('Original Bronze write failure: ', activity('nb_load_file_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                      "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('nb_load_file_landing_to_bronze').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2717,7 +2717,7 @@
                   },
                   "landing_path": {
                     "value": {
-                      "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                      "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2798,7 +2798,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat('Original Bronze write failure: ', activity('nb_load_file_landing_to_bronze').error.message, ' | Bronze cleanup failure: ', activity('nb_cleanup_bronze_write_failed').error.message)",
+                  "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('nb_load_file_landing_to_bronze').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
                   "type": "Expression"
                 },
                 "errorCode": "BRONZE_CLEANUP_FAILED"
@@ -3018,7 +3018,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                 "type": "Expression"
               },
               "type": "String"
@@ -3143,7 +3143,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat('Original Landing write failure: ', activity('copy_sftp_to_landing').error.message, ' | Landing cleanup failure: ', activity('nb_cleanup_landing_write_failed').error.message)",
+                "value": "@concat(\n    'Original Landing write failure: ',\n    activity('copy_sftp_to_landing').error.message,\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_write_failed').error.message\n)",
                 "type": "Expression"
               },
               "type": "String"
@@ -3232,7 +3232,7 @@
             },
             "landing_path": {
               "value": {
-                "value": "@concat(pipeline().parameters.p_landing_path, 'ingestion_date=', formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'), '/batch_id=', pipeline().parameters.p_batch_id, '/')",
+                "value": "@concat(\n    pipeline().parameters.p_landing_path,\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/'\n)",
                 "type": "Expression"
               },
               "type": "String"
@@ -3313,7 +3313,7 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat('Original Landing write failure: ', activity('copy_sftp_to_landing').error.message, ' | Landing cleanup failure: ', activity('nb_cleanup_landing_write_failed').error.message)",
+            "value": "@concat(\n    'Original Landing write failure: ',\n    activity('copy_sftp_to_landing').error.message,\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_write_failed').error.message\n)",
             "type": "Expression"
           },
           "errorCode": "LANDING_CLEANUP_FAILED"
