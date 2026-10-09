@@ -75,7 +75,9 @@ Source connection + source_path
 
 The source-to-Landing step is intentionally Binary so the delivered file is preserved byte-for-byte. Parsing starts only after the raw artifact reaches Landing.
 
-The reusable `nb_load_file_landing_to_bronze` notebook owns format-specific reader dispatch. The current reader registry supports `DELIMITED_TEXT` only. `PARQUET` and `JSON` remain future readers rather than pipeline branches. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT` before raw Landing work starts.
+The FILE Router now owns a single `if_supported_file_format` gate before `sw_file_route`, with the Personal `p_file_format` contract (`@equals(toUpper(pipeline().parameters.p_file_format), 'DELIMITED_TEXT')`). Unsupported formats are audited and failed once with `UNSUPPORTED_FILE_FORMAT` before invoking SFTP FULL or INCREMENTAL; the corresponding format gates and failure finalizers were removed from both SFTP adapters. The gate runs before incremental LOW/HIGH are resolved, so its failure audit has NULL processing bounds. In particular, an invalid format now takes precedence over state or boundary validation; supported formats continue through the existing adapter logic.
+
+The reusable `nb_load_file_landing_to_bronze` notebook still owns format-specific reader dispatch and retains its own safety check. The current reader registry supports `DELIMITED_TEXT` only. `PARQUET` and `JSON` remain future readers rather than pipeline branches. Unsupported formats fail explicitly with `UNSUPPORTED_FILE_FORMAT` before raw Landing work starts.
 
 Landing is retained for FILE ingestion because the delivered file is itself the raw ingestion artifact and can be reused for troubleshooting or reprocessing.
 
@@ -408,11 +410,13 @@ semantics. Do not append `Z` to a source-native value without a UTC contract.
 The current SFTP incremental physical flow is therefore:
 
 ```text
-pl_ingest_sftp_incremental_adapter
-  -> resolve LOW/HIGH for REGULAR or BACKFILL
-  -> if_valid_processing_boundary
-  -> if_supported_file_format
-  -> copy_sftp_to_landing
+pl_ingest_file_router
+  -> if_supported_file_format (supported: DELIMITED_TEXT)
+  -> sw_file_route (SFTP|INCREMENTAL)
+  -> pl_ingest_sftp_incremental_adapter
+      -> resolve LOW/HIGH for REGULAR or BACKFILL
+      -> if_valid_processing_boundary
+      -> copy_sftp_to_landing
        recursive = true
        wildcard file_name_pattern
        LOW <= LastModified < HIGH
@@ -500,4 +504,4 @@ SFTP
        -> common Bronze write
 ```
 
-The pipeline performs only a supported-format guard; it does not route to a different pipeline branch per file format. Reader selection lives inside the reusable notebook so future `PARQUET` or `JSON` support can reuse the same Landing, lineage, Bronze-write, row-count, and recovery behavior.
+The **FILE Router** performs the single framework-level supported-format guard before connector/strategy routing; SFTP FULL and INCREMENTAL do not repeat that check. It does not route to a different pipeline branch per file format. Reader selection lives inside the reusable notebook so future `PARQUET` or `JSON` support can reuse the same Landing, lineage, Bronze-write, row-count, and recovery behavior. When additional connector adapters support different subsets of formats, revisit the Router guard as an explicit route/adapter capability policy rather than assuming one global list fits every adapter.
