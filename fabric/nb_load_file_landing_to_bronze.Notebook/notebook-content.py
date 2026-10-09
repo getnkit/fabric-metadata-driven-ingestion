@@ -20,7 +20,6 @@ p_target_schema = ""
 p_target_table = ""
 p_batch_id = ""
 p_pipeline_run_id = ""
-p_ingestion_timestamp = ""
 
 # METADATA ********************
 
@@ -32,6 +31,7 @@ p_ingestion_timestamp = ""
 # CELL ********************
 
 import json
+from datetime import datetime, timezone
 from pyspark import StorageLevel
 from pyspark.sql import functions as F
 
@@ -130,10 +130,6 @@ target_schema = _require_safe_path_segment("p_target_schema", p_target_schema)
 target_table = _require_safe_path_segment("p_target_table", p_target_table)
 batch_id = _require_nonempty("p_batch_id", p_batch_id)
 pipeline_run_id = _require_nonempty("p_pipeline_run_id", p_pipeline_run_id)
-ingestion_timestamp = _require_nonempty(
-    "p_ingestion_timestamp",
-    p_ingestion_timestamp,
-)
 source_options = _parse_source_options(p_source_options)
 
 if file_format not in READERS:
@@ -174,7 +170,6 @@ df = (
     df
     .withColumn("_batch_id", F.lit(batch_id))
     .withColumn("_pipeline_run_id", F.lit(pipeline_run_id))
-    .withColumn("_ingestion_timestamp", F.lit(ingestion_timestamp).cast("timestamp"))
     .withColumn(
         "_source_file_name",
         F.element_at(F.split(relative_file_path, "/"), -1),
@@ -190,11 +185,20 @@ df = (
 try:
     row_count = df.count()
 
+    # Capture one UTC instant immediately before the Bronze Delta append.
+    # This is the approximate write-start time, not the Delta commit timestamp.
+    bronze_write_utc = datetime.now(timezone.utc)
+    bronze_ingestion_timestamp = bronze_write_utc.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    bronze_ingestion_date = bronze_write_utc.date()
+
     # Bronze ingestion is append-oriented; failed batches are compensated by the cleanup notebook.
     (
-        df.write
+        df.withColumn("_ingestion_timestamp", F.lit(bronze_ingestion_timestamp).cast("timestamp"))
+        .withColumn("_ingestion_date", F.lit(bronze_ingestion_date))
+        .write
         .format("delta")
         .mode("append")
+        .option("mergeSchema", "true")
         .save(target_table_path)
     )
 finally:
