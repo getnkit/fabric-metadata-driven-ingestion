@@ -82,7 +82,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat('No watermark state found for ingestion_config_id=', string(pipeline().parameters.p_ingestion_config_id), '.'),0,4000)",
+                      "value": "@concat('No watermark state found for ingestion_config_id=', string(pipeline().parameters.p_ingestion_config_id), '.')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -301,7 +301,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n),0,4000)",
+                      "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -520,7 +520,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Unsupported SFTP incremental watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    '. Supported value=last_modified_time.'\n),0,4000)",
+                      "value": "@concat(\n    'Unsupported SFTP incremental watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    '. Supported value=last_modified_time.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -785,7 +785,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. processing_upper_bound must be greater than processing_lower_bound for both REGULAR and BACKFILL.'\n),0,4000)",
+                      "value": "@concat(\n    'Invalid SFTP incremental processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. processing_upper_bound must be greater than processing_lower_bound for both REGULAR and BACKFILL.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1010,7 +1010,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.'),0,4000)",
+                      "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1420,7 +1420,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n),0,4000)",
+                      "value": "@concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n)",
                       "type": "Expression"
                     },
                     "type": "String"
