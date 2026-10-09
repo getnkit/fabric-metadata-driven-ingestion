@@ -34,6 +34,22 @@ CDF       commit_version      -> 981
 
 The physical adapter owns interpretation of the STRING checkpoint.
 
+## Watermark-state lookup contract
+
+For the implemented Azure SQL and SFTP INCREMENTAL adapters, the initial
+`lkp_current_watermark` filters **both** `ingestion_config_id` and
+`watermark_field` in SQL. The `if_state_found` gate therefore checks whether
+a checkpoint exists for that exact requested pair; no separate
+`if_watermark_field_match` activity is needed. A missing checkpoint **or a
+mismatched field** now follows the same `STATE_NOT_FOUND` failure branch, whose
+message includes the requested config ID and watermark field. This intentionally
+replaces the previous dedicated `WATERMARK_FIELD_MISMATCH` audit code.
+
+The SFTP adapter still checks `if_supported_watermark_field` after state
+resolution, because finding a stored field does not establish that the SFTP
+adapter supports its semantics (`last_modified_time`). The checkpoint's
+optimistic comparison during successful finalization remains unchanged.
+
 ## Generic processing boundaries
 
 The audit/finalization interface uses the same two generic boundary fields for
