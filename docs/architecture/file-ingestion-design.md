@@ -42,21 +42,24 @@ source_path
 = source-owned location used to locate delivered source data
 
 landing_path
-= platform-owned Landing Zone path used before Bronze when the ingestion pattern
-  requires a Landing step
+= platform-owned Lakehouse Files-relative Landing Zone base path used before
+  Bronze when the ingestion pattern requires a Landing step
+  (example: landing/logistics_vendor/inventory_snapshot/; no Files/ prefix)
 ```
 
 For the current DATABASE path, both fields are NULL because the source is already
 identified by `source_schema` + `source_object` and the pipeline writes directly
 to Bronze.
 
-For FILE ingestion, both fields are first-class metadata.
+For FILE ingestion, both fields are first-class metadata. The FILE `landing_path` contract is strict: use `landing/...` (relative to the Lakehouse **Files** root), never `Files/landing/...`. The adapter concatenates this base path with `ingestion_date` and per-object execution segments without `replace()` or automatic path-prefix correction. Fabric Copy receives the Files-relative `folderPath`; Bronze and Landing-cleanup notebooks prepend the physical `/Files/` segment once. Historical audit paths and already-landed files are not relocated by this metadata change.
 
 `file_format` is first-class FILE routing metadata because it changes how a raw Landing file is parsed into Bronze. The canonical values are `DELIMITED_TEXT`, `PARQUET`, and `JSON`.
 
 `source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds require `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and `escape`.
 
 Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
+
+For existing Fabric SQL Database environments, sync both SFTP adapters and apply `scripts/control/migrations/009_normalize_file_landing_path.sql` before the next FILE run. The migration rewrites only the two exact old seeded paths, validates any other FILE config for the strict `landing/...` convention, and does not change watermark state or move existing Lakehouse Files.
 
 ## FILE flow
 
@@ -183,8 +186,8 @@ This separates ownership cleanly:
 /outbound/inventory/
 = source/provider-owned delivery path
 
-Files/landing/logistics_vendor/inventory_snapshot/
-= platform-owned raw Landing base path
+landing/logistics_vendor/inventory_snapshot/
+= platform-owned raw Landing base path in control.ingestion_config (relative to Files/)
 
 Runtime example:
 Files/landing/logistics_vendor/inventory_snapshot/
@@ -195,8 +198,9 @@ Files/landing/logistics_vendor/inventory_snapshot/
 = date organization plus an isolated raw copy for one object execution.
 The orchestrator may share batch_id across different configs; config_id and the
 object controller's pipeline_run_id prevent same-root file collisions and
-cross-execution Landing cleanup. Every audit landing_path records this exact
-execution folder, and Copy/Notebook/cleanup use its relative Files/ path.
+cross-execution Landing cleanup. Every audit landing_path records this physical
+`Files/landing/...` execution folder, while Copy/Notebook/cleanup use the
+corresponding relative `landing/...` path (the notebooks prepend `/Files/`).
 ```
 
 The source inventory rows use the same SKU convention as the ECOMMERCE catalog
@@ -240,7 +244,7 @@ source_object      = inventory_snapshot
 source_path        = /outbound/inventory/
 ingestion_pattern  = FILE
 file_format        = DELIMITED_TEXT
-landing_path       = Files/landing/logistics_vendor/inventory_snapshot/
+landing_path       = landing/logistics_vendor/inventory_snapshot/
 target_conn_ref    = LH_ECOMMERCE_BRONZE
 target_schema      = fulfillment
 target_table       = inventory_snapshots
@@ -286,7 +290,7 @@ source_object      = inventory_movement
 source_path        = /outbound/inventory/movements/
 file_format        = DELIMITED_TEXT
 file_name_pattern  = inventory_movement_*.csv
-landing_path       = Files/landing/logistics_vendor/inventory_movement/
+landing_path       = landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
 watermark_field    = last_modified_time
