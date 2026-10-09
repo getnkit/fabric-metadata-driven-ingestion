@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "control_db_connection_id",
+      "note": "Environment-specific Fabric SQL Database connection GUID. Configure in workspace.",
+      "type": "String",
+      "value": ""
+    },
+    {
+      "name": "control_db_item_id",
+      "note": "Environment-specific sqldb_ingestion_control Fabric SQL Database item GUID. Configure in workspace.",
+      "type": "String",
+      "value": ""
+    },
+    {
+      "name": "pipeline_invoke_connection_id",
+      "note": "Environment-specific Invoke Pipeline connection GUID. Configure in workspace.",
+      "type": "String",
+      "value": ""
+    },
+    {
+      "name": "notebook_execution_connection_id",
+      "note": "Environment-specific Notebook execution connection GUID. Configure in workspace.",
+      "type": "String",
+      "value": ""
+    }
+  ]
+}
