@@ -82,7 +82,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'No watermark state found for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '.'\n),0,4000)",
+                      "value": "@concat(\n    'No watermark state found for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -304,7 +304,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n),0,4000)",
+                      "value": "@concat(\n    'Watermark field mismatch for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Config watermark_field=',\n    pipeline().parameters.p_watermark_field,\n    ', state watermark_field=',\n    activity('lkp_current_watermark').output.firstRow.watermark_field,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -858,7 +858,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires processing_upper_bound >= processing_lower_bound; BACKFILL requires processing_upper_bound > processing_lower_bound.'\n),0,4000)",
+                      "value": "@concat(\n    'Invalid processing boundary for run_type=',\n    pipeline().parameters.p_run_type,\n    '. processing_lower_bound=',\n    variables('v_processing_lower_bound'),\n    ', processing_upper_bound=',\n    variables('v_processing_upper_bound'),\n    '. REGULAR requires processing_upper_bound >= processing_lower_bound; BACKFILL requires processing_upper_bound > processing_lower_bound.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
