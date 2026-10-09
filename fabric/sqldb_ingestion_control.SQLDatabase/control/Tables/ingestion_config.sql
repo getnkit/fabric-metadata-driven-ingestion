@@ -21,7 +21,7 @@ CREATE TABLE [control].[ingestion_config] (
     CONSTRAINT [PK_ingestion_config] PRIMARY KEY CLUSTERED ([ingestion_config_id] ASC),
     CONSTRAINT [CK_ingestion_config_copy_options_json] CHECK ([copy_options] IS NULL OR isjson([copy_options])=(1)),
     CONSTRAINT [CK_ingestion_config_file_format] CHECK ([ingestion_pattern]='FILE' AND ([file_format]='JSON' OR [file_format]='PARQUET' OR [file_format]='DELIMITED_TEXT') OR ([ingestion_pattern]='API' OR [ingestion_pattern]='DATABASE') AND [file_format] IS NULL),
-    CONSTRAINT [CK_ingestion_config_landing_path] CHECK ([ingestion_pattern]<>'FILE' OR [landing_path] IS NOT NULL),
+    CONSTRAINT [CK_ingestion_config_landing_path] CHECK ([ingestion_pattern]<>'FILE' OR ([landing_path] IS NOT NULL AND TRIM([landing_path]) <> '')),
     CONSTRAINT [CK_ingestion_config_pattern] CHECK ([ingestion_pattern]='API' OR [ingestion_pattern]='FILE' OR [ingestion_pattern]='DATABASE'),
     CONSTRAINT [CK_ingestion_config_source_options_json] CHECK ([source_options] IS NULL OR isjson([source_options])=(1)),
     CONSTRAINT [CK_ingestion_config_source_path] CHECK ([ingestion_pattern]<>'FILE' OR [source_path] IS NOT NULL),
