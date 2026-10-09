@@ -121,9 +121,12 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT CK_ingestion_config_landing_path
         CHECK
         (
-            (ingestion_pattern = 'FILE' AND landing_path IS NOT NULL)
+            ingestion_pattern <> 'FILE'
             OR
-            (ingestion_pattern IN ('DATABASE','API'))
+            (
+                landing_path IS NOT NULL
+                AND TRIM(landing_path) <> ''
+            )
         ),
 
     CONSTRAINT CK_ingestion_config_strategy
