@@ -148,6 +148,19 @@ Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pip
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
 `scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`. Before the next FILE run, pause FILE ingestion, sync both updated SFTP Pipeline artifacts from Git, and execute `scripts/control/migrations/009_normalize_file_landing_path.sql` to convert the two exact seeded legacy values from `Files/landing/...` to `landing/...`. Then rerun `scripts/control/04_seed_ingestion_metadata.sql` if needed to register/refresh FILE metadata. Migration `009` is idempotent, does not reset watermark state or move historical files, and intentionally errors if other FILE config paths violate the new contract; correct those values explicitly and rerun it. Resume FILE runs only after checking the metadata below.
 
+For existing control databases that already contain FILE ingestion metadata, also
+apply `scripts/control/migrations/010_require_nonblank_file_landing_path.sql`
+after migration `009` (if needed). This replaces the old
+`CK_ingestion_config_landing_path` constraint with a stronger FILE-only required
+path check: `landing_path IS NOT NULL AND TRIM(landing_path) <> ''`.
+The migration validates existing FILE rows before replacing the constraint and
+fails without modifying metadata if any are NULL or blank. Correct invalid
+rows explicitly and rerun it. DATABASE/API `landing_path = NULL` remains
+valid. The script does not change watermark state, audit history, or physical
+Landing Files. A fresh control database created by
+`scripts/control/01_create_control_schema.sql` already includes the updated
+constraint and does not need migration `010`.
+
 ## 6) Incremental-change simulator
 
 After the initial ingestion tests, run:
