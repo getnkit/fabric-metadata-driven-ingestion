@@ -260,7 +260,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Unsupported FILE route: source_connection_type=',\n    pipeline().parameters.p_source_connection_type,\n    ', load_strategy=',\n    pipeline().parameters.p_load_strategy,\n    '.'\n)",
+                      "value": "@substring(concat(\n    'Unsupported FILE route: source_connection_type=',\n    pipeline().parameters.p_source_connection_type,\n    ', load_strategy=',\n    pipeline().parameters.p_load_strategy,\n    '.'\n),0,4000)",
                       "type": "Expression"
                     },
                     "type": "String"
