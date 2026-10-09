@@ -29,6 +29,8 @@ CREATE TABLE [audit].[ingestion_log] (
     [duration_seconds]       INT              NOT NULL,
     [log_timestamp]          DATETIME2 (3)    CONSTRAINT [DF_ingestion_log_timestamp] DEFAULT (sysutcdatetime()) NOT NULL,
     CONSTRAINT [PK_ingestion_log] PRIMARY KEY CLUSTERED ([ingestion_log_id] ASC),
+    CONSTRAINT [CK_ingestion_log_required_text] CHECK (LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [pipeline_run_id])) > 0 AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [pipeline_name])) > 0),
+    CONSTRAINT [CK_ingestion_log_load_strategy] CHECK ([load_strategy] IS NULL OR [load_strategy] IN ('FULL', 'INCREMENTAL')),
     CONSTRAINT [CK_ingestion_log_counts] CHECK (([source_row_count] IS NULL OR [source_row_count]>=(0)) AND ([target_row_count] IS NULL OR [target_row_count]>=(0))),
     CONSTRAINT [CK_ingestion_log_duration] CHECK ([duration_seconds]>=(0)),
     CONSTRAINT [CK_ingestion_log_run_type] CHECK ([run_type]='BACKFILL' OR [run_type]='REGULAR'),

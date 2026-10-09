@@ -31,14 +31,51 @@ It is used later to create fresh rows and updates beyond the committed watermark
 
 ## 2) Run on Fabric SQL Database — `sqldb_ingestion_control`
 
+### Fresh installation (new/empty SQL Database)
+
 Run in this order:
 
-1. `scripts/control/01_create_control_schema.sql`
-2. `scripts/control/02_create_control_procedures.sql`
-3. `scripts/control/03_seed_connection_settings.sql`
-4. `scripts/control/04_seed_ingestion_metadata.sql`
+1. `scripts/control/01_create_control_schema.sql` — **non-destructive, CREATE-IF-ABSENT** for 4 tables and 3 indexes; creates/updates the watermark view.
+2. `scripts/control/02_create_control_procedures.sql` — CREATE OR ALTER both ingestion procedures.
+3. `scripts/control/03_seed_connection_settings.sql` — environment-specific metadata.
+4. `scripts/control/04_seed_ingestion_metadata.sql` — sample ingestion configs and initial watermarks.
+5. `scripts/control/99_verify_control_plane.sql` — read-only schema integrity checks.
 
-`02_create_control_procedures.sql` is idempotent and contains both ingestion finalization and top-level explicit-request validation procedures. Rerun it after pulling framework changes that modify either control procedure.
+SQL Database Project under `fabric/sqldb_ingestion_control.SQLDatabase/` is
+the schema source of truth. The fresh-install script mirrors the current
+Personal tables/constraints, including FILE required metadata, object-root JSON
+and audit `landing_path`. It **never issues DROP TABLE/DROP VIEW** or resets
+Watermark State/Audit History. It is NOT an upgrade mechanism: `CREATE-IF-ABSENT`
+leaves populated older tables unchanged, and `99` will fail if required
+constraints/indexes are still missing.
+
+`02_create_control_procedures.sql` is idempotent and contains both ingestion
+finalization and top-level explicit-request validation procedures. Rerun it
+after pulling framework changes that modify either control procedure. It now
+rejects a NULL run-request JSON envelope explicitly.
+
+### Existing DEV / populated control database
+
+Do **not** reset, recreate, or re-seed watermarks as a shortcut to deployment.
+Take a verified backup/export and pause ingestion first. Review/apply applicable
+historical structural migrations (`001`–`010`) in order, including the FILE
+Landing migration `009` and nonblank Landing migration `010`. Then run:
+
+```text
+scripts/control/migrations/011_harden_control_plane_constraints.sql
+scripts/control/02_create_control_procedures.sql
+scripts/control/99_verify_control_plane.sql
+```
+
+Migration `011` preflights existing data, atomically re-establishes **trusted**
+constraints, and stops if required text is blank, JSON roots are not objects,
+FILE `file_format` is missing, or an incremental watermark is blank. It does
+not mutate Config, Watermark or Audit rows. Fix rejected metadata consciously,
+then rerun; never use bootstrap `01` to perform an existing-environment upgrade.
+
+See `docs/operations/sql-control-plane-hardening.md` for preflight,
+deployment order and rollback boundaries. **Git/static checks are not a Fabric
+SQL Database migration or runtime execution.**
 
 Expected metadata state after seeding:
 
@@ -152,9 +189,9 @@ FILE ingestion uses the same `control.ingestion_config` table:
 No separate `file_ingestion_config` table or Quarantine area is used in the
 current project scope.
 
-For an existing live control database created before M76, run
-`scripts/control/migrations/001_refine_ingestion_metadata.sql` instead of rerunning
-the destructive bootstrap schema script.
+For an existing live control database created before M76, apply
+`scripts/control/migrations/001_refine_ingestion_metadata.sql` as applicable;
+bootstrap `01` is now non-destructive but does not migrate existing tables.
 
 For a live control database created before database copy tuning metadata was added, also run:
 
@@ -186,8 +223,8 @@ fails without modifying metadata if any are NULL or blank. Correct invalid
 rows explicitly and rerun it. DATABASE/API `landing_path = NULL` remains
 valid. The script does not change watermark state, audit history, or physical
 Landing Files. A fresh control database created by
-`scripts/control/01_create_control_schema.sql` already includes the updated
-constraint and does not need migration `010`.
+`scripts/control/01_create_control_schema.sql` already includes the current
+constraints and does not need migrations `010` or `011`.
 
 ## 6) Incremental-change simulator
 

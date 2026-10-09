@@ -285,7 +285,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF ISJSON(@run_requests_json, ARRAY) <> 1
+    IF ISNULL(ISJSON(@run_requests_json, ARRAY), 0) <> 1
     BEGIN
         THROW 51010, 'INVALID_RUN_REQUESTS: p_run_requests must be a JSON array.', 1;
     END;

@@ -19,15 +19,22 @@ CREATE TABLE [control].[ingestion_config] (
     [updated_at]          DATETIME2 (3)   CONSTRAINT [DF_ingestion_config_updated_at] DEFAULT (sysutcdatetime()) NOT NULL,
     [file_format]         VARCHAR (30)    NULL,
     CONSTRAINT [PK_ingestion_config] PRIMARY KEY CLUSTERED ([ingestion_config_id] ASC),
-    CONSTRAINT [CK_ingestion_config_copy_options_json] CHECK ([copy_options] IS NULL OR isjson([copy_options])=(1)),
-    CONSTRAINT [CK_ingestion_config_file_format] CHECK ([ingestion_pattern]='FILE' AND ([file_format]='JSON' OR [file_format]='PARQUET' OR [file_format]='DELIMITED_TEXT') OR ([ingestion_pattern]='API' OR [ingestion_pattern]='DATABASE') AND [file_format] IS NULL),
+    CONSTRAINT [CK_ingestion_config_copy_options_json] CHECK ([copy_options] IS NULL OR ISJSON([copy_options], OBJECT) = 1),
+    CONSTRAINT [CK_ingestion_config_required_text] CHECK (
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [source_system])) > 0 AND
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [source_conn_ref])) > 0 AND
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [source_object])) > 0 AND
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [target_conn_ref])) > 0 AND
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [target_schema])) > 0 AND
+        LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [target_table])) > 0),
+    CONSTRAINT [CK_ingestion_config_file_format] CHECK ([ingestion_pattern]='FILE' AND [file_format] IS NOT NULL AND ([file_format]='JSON' OR [file_format]='PARQUET' OR [file_format]='DELIMITED_TEXT') OR ([ingestion_pattern]='API' OR [ingestion_pattern]='DATABASE') AND [file_format] IS NULL),
     CONSTRAINT [CK_ingestion_config_landing_path] CHECK ([ingestion_pattern]<>'FILE' OR ([landing_path] IS NOT NULL AND TRIM([landing_path]) <> '')),
     CONSTRAINT [CK_ingestion_config_pattern] CHECK ([ingestion_pattern]='API' OR [ingestion_pattern]='FILE' OR [ingestion_pattern]='DATABASE'),
-    CONSTRAINT [CK_ingestion_config_source_options_json] CHECK ([source_options] IS NULL OR isjson([source_options])=(1)),
-    CONSTRAINT [CK_ingestion_config_source_path] CHECK ([ingestion_pattern]<>'FILE' OR [source_path] IS NOT NULL),
-    CONSTRAINT [CK_ingestion_config_source_schema] CHECK ([ingestion_pattern]<>'DATABASE' OR [source_schema] IS NOT NULL),
+    CONSTRAINT [CK_ingestion_config_source_options_json] CHECK ([source_options] IS NULL OR ISJSON([source_options], OBJECT) = 1),
+    CONSTRAINT [CK_ingestion_config_source_path] CHECK ([ingestion_pattern]<>'FILE' OR ([source_path] IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [source_path])) > 0)),
+    CONSTRAINT [CK_ingestion_config_source_schema] CHECK ([ingestion_pattern]<>'DATABASE' OR ([source_schema] IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [source_schema])) > 0)),
     CONSTRAINT [CK_ingestion_config_strategy] CHECK ([load_strategy]='INCREMENTAL' OR [load_strategy]='FULL'),
-    CONSTRAINT [CK_ingestion_config_watermark] CHECK ([load_strategy]='FULL' AND [watermark_field] IS NULL OR [load_strategy]='INCREMENTAL' AND [watermark_field] IS NOT NULL),
+    CONSTRAINT [CK_ingestion_config_watermark] CHECK ([load_strategy]='FULL' AND [watermark_field] IS NULL OR [load_strategy]='INCREMENTAL' AND [watermark_field] IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [watermark_field])) > 0),
     CONSTRAINT [FK_ingestion_config_source_connection] FOREIGN KEY ([source_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref]),
     CONSTRAINT [FK_ingestion_config_target_connection] FOREIGN KEY ([target_conn_ref]) REFERENCES [control].[connection_settings] ([connection_ref]),
     CONSTRAINT [UQ_ingestion_config_source] UNIQUE NONCLUSTERED ([source_system] ASC, [source_schema] ASC, [source_object] ASC)

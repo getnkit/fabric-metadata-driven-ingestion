@@ -1,8 +1,13 @@
 /*
     01_create_control_schema.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
-    Purpose: Create the metadata, current-state, and audit structures used by the
-             metadata-driven ingestion framework.
+    Purpose: Non-destructive fresh-install bootstrap for the Personal
+             metadata-driven ingestion Control and Audit Plane.
+
+    SQL Database Project definitions are the schema source of truth.
+    CREATE-IF-ABSENT is NOT a schema migration: existing tables are preserved
+    unchanged. For existing DEV, apply reviewed migrations 001-011 and run 99.
+    NEVER drop state or audit tables in a bootstrap.
 */
 
 SET NOCOUNT ON;
@@ -13,20 +18,8 @@ IF SCHEMA_ID('control') IS NULL EXEC('CREATE SCHEMA control');
 IF SCHEMA_ID('audit') IS NULL EXEC('CREATE SCHEMA audit');
 GO
 
-IF OBJECT_ID('control.v_pipeline_watermarks', 'V') IS NOT NULL
-    DROP VIEW control.v_pipeline_watermarks;
-GO
-
-IF OBJECT_ID('audit.ingestion_log', 'U') IS NOT NULL
-    DROP TABLE audit.ingestion_log;
-IF OBJECT_ID('control.pipeline_watermarks', 'U') IS NOT NULL
-    DROP TABLE control.pipeline_watermarks;
-IF OBJECT_ID('control.ingestion_config', 'U') IS NOT NULL
-    DROP TABLE control.ingestion_config;
-IF OBJECT_ID('control.connection_settings', 'U') IS NOT NULL
-    DROP TABLE control.connection_settings;
-GO
-
+IF OBJECT_ID(N'control.connection_settings', N'U') IS NULL
+BEGIN
 CREATE TABLE control.connection_settings
 (
     connection_ref       NVARCHAR(100) NOT NULL
@@ -45,10 +38,16 @@ CREATE TABLE control.connection_settings
         CHECK (connection_type IN ('AZURE_SQL','SFTP','LAKEHOUSE')),
 
     CONSTRAINT CK_connection_settings_json
-        CHECK (ISJSON(connection_settings) = 1)
+        CHECK (ISJSON(connection_settings, OBJECT) = 1),
+
+    CONSTRAINT CK_connection_settings_ref_not_blank
+        CHECK (LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM connection_ref)) > 0)
 );
+END;
 GO
 
+IF OBJECT_ID(N'control.ingestion_config', N'U') IS NULL
+BEGIN
 CREATE TABLE control.ingestion_config
 (
     ingestion_config_id  INT IDENTITY(1,1) NOT NULL
@@ -91,21 +90,32 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT CK_ingestion_config_file_format
         CHECK
         (
-            (ingestion_pattern = 'FILE' AND file_format IN ('DELIMITED_TEXT','PARQUET','JSON'))
+            (ingestion_pattern = 'FILE' AND file_format IS NOT NULL AND file_format IN ('DELIMITED_TEXT','PARQUET','JSON'))
             OR
             (ingestion_pattern IN ('DATABASE','API') AND file_format IS NULL)
         ),
 
+    CONSTRAINT CK_ingestion_config_required_text
+        CHECK
+        (
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM source_system)) > 0 AND
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM source_conn_ref)) > 0 AND
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM source_object)) > 0 AND
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM target_conn_ref)) > 0 AND
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM target_schema)) > 0 AND
+            LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM target_table)) > 0
+        ),
+
     CONSTRAINT CK_ingestion_config_source_options_json
-        CHECK (source_options IS NULL OR ISJSON(source_options) = 1),
+        CHECK (source_options IS NULL OR ISJSON(source_options, OBJECT) = 1),
 
     CONSTRAINT CK_ingestion_config_copy_options_json
-        CHECK (copy_options IS NULL OR ISJSON(copy_options) = 1),
+        CHECK (copy_options IS NULL OR ISJSON(copy_options, OBJECT) = 1),
 
     CONSTRAINT CK_ingestion_config_source_schema
         CHECK
         (
-            (ingestion_pattern = 'DATABASE' AND source_schema IS NOT NULL)
+            (ingestion_pattern = 'DATABASE' AND source_schema IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM source_schema)) > 0)
             OR
             (ingestion_pattern IN ('FILE','API'))
         ),
@@ -113,7 +123,7 @@ CREATE TABLE control.ingestion_config
     CONSTRAINT CK_ingestion_config_source_path
         CHECK
         (
-            (ingestion_pattern = 'FILE' AND source_path IS NOT NULL)
+            (ingestion_pattern = 'FILE' AND source_path IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM source_path)) > 0)
             OR
             (ingestion_pattern IN ('DATABASE','API'))
         ),
@@ -137,7 +147,7 @@ CREATE TABLE control.ingestion_config
         (
             (load_strategy = 'FULL' AND watermark_field IS NULL)
             OR
-            (load_strategy = 'INCREMENTAL' AND watermark_field IS NOT NULL)
+            (load_strategy = 'INCREMENTAL' AND watermark_field IS NOT NULL AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM watermark_field)) > 0)
         ),
 
     CONSTRAINT FK_ingestion_config_source_connection
@@ -148,8 +158,11 @@ CREATE TABLE control.ingestion_config
         FOREIGN KEY (target_conn_ref)
         REFERENCES control.connection_settings(connection_ref)
 );
+END;
 GO
 
+IF OBJECT_ID(N'control.pipeline_watermarks', N'U') IS NULL
+BEGIN
 CREATE TABLE control.pipeline_watermarks
 (
     ingestion_config_id               INT NOT NULL
@@ -164,12 +177,18 @@ CREATE TABLE control.pipeline_watermarks
     watermark_updated_at              DATETIME2(3) NOT NULL
         CONSTRAINT DF_pipeline_watermarks_updated_at DEFAULT SYSUTCDATETIME(),
 
+    CONSTRAINT CK_pipeline_watermarks_required_text
+        CHECK (LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM watermark_field)) > 0 AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM last_watermark_value)) > 0),
+
     CONSTRAINT FK_pipeline_watermarks_config
         FOREIGN KEY (ingestion_config_id)
         REFERENCES control.ingestion_config(ingestion_config_id)
 );
+END;
 GO
 
+IF OBJECT_ID(N'audit.ingestion_log', N'U') IS NULL
+BEGIN
 CREATE TABLE audit.ingestion_log
 (
     ingestion_log_id          BIGINT IDENTITY(1,1) NOT NULL
@@ -190,7 +209,7 @@ CREATE TABLE audit.ingestion_log
     source_path               NVARCHAR(1000) NULL,
     ingestion_pattern         VARCHAR(20) NULL,
 
-    target_path               NVARCHAR(1000) NULL,
+    landing_path              NVARCHAR(1000) NULL,
     target_conn_ref           NVARCHAR(100) NULL,
     target_schema             NVARCHAR(128) NULL,
     target_table              NVARCHAR(128) NULL,
@@ -219,6 +238,12 @@ CREATE TABLE audit.ingestion_log
     CONSTRAINT UQ_ingestion_log_pipeline_run
         UNIQUE (pipeline_run_id),
 
+    CONSTRAINT CK_ingestion_log_required_text
+        CHECK (LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM pipeline_run_id)) > 0 AND LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM pipeline_name)) > 0),
+
+    CONSTRAINT CK_ingestion_log_load_strategy
+        CHECK (load_strategy IS NULL OR load_strategy IN ('FULL','INCREMENTAL')),
+
     CONSTRAINT CK_ingestion_log_run_type
         CHECK (run_type IN ('REGULAR','BACKFILL')),
 
@@ -239,21 +264,25 @@ CREATE TABLE audit.ingestion_log
     CONSTRAINT CK_ingestion_log_time
         CHECK (end_time >= start_time)
 );
+END;
 GO
 
-CREATE INDEX IX_ingestion_log_batch
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'audit.ingestion_log') AND name = N'IX_ingestion_log_batch')
+    CREATE INDEX IX_ingestion_log_batch
     ON audit.ingestion_log(batch_id, ingestion_log_id);
 GO
 
-CREATE INDEX IX_ingestion_log_config_time
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'audit.ingestion_log') AND name = N'IX_ingestion_log_config_time')
+    CREATE INDEX IX_ingestion_log_config_time
     ON audit.ingestion_log(ingestion_config_id, start_time DESC);
 GO
 
-CREATE INDEX IX_ingestion_log_status_time
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'audit.ingestion_log') AND name = N'IX_ingestion_log_status_time')
+    CREATE INDEX IX_ingestion_log_status_time
     ON audit.ingestion_log(status, start_time DESC);
 GO
 
-CREATE VIEW control.v_pipeline_watermarks
+CREATE OR ALTER VIEW control.v_pipeline_watermarks
 AS
 SELECT
     c.ingestion_config_id,
@@ -271,5 +300,5 @@ JOIN control.ingestion_config c
     ON c.ingestion_config_id = w.ingestion_config_id;
 GO
 
-PRINT 'Fabric control/state/audit schema created successfully.';
+PRINT 'Non-destructive Control/Audit bootstrap complete. Run scripts/control/99_verify_control_plane.sql to validate installed objects.';
 GO
