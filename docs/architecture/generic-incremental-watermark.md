@@ -78,7 +78,7 @@ BACKFILL:
   upper <= lower -> invalid boundary -> FAILED
 ```
 
-For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A REGULAR no-new-file scan is still a forward time window and can finish `SUCCESS` with zero rows.
+For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A scan with zero matching files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. This is a FILE-specific no-new-data decision; DATABASE's valid equal-bound `SUCCESS` case above remains unchanged.
 
 ## Timestamp ownership and timezone contract
 
@@ -94,7 +94,7 @@ For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > low
   form for both bounds. The legacy no-`Z` checkpoint is interpreted as UTC
   solely for this SFTP source contract and formatted with `Z` for Copy.
   A new REGULAR upper bound comes from canonical `p_start_time` (with `Z`)
-  and advances the checkpoint in that form on successful completion.
+  and advances the checkpoint in that form only after successful REGULAR ingestion with matching files.
   The old committed lower-bound string is not rewritten prior to the optimistic
   watermark compare; no historical watermark rewrite is required.
 
@@ -147,7 +147,7 @@ This change does not apply to Azure SQL `DATETIME2` source watermarks.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a
-successful scan, the watermark advances to that upper boundary.
+successful REGULAR ingestion with matching files and a completed Bronze write, the watermark advances to that upper boundary. When no files match, the status is `SKIPPED` and the checkpoint stays at the previous LOW.
 
 The source filename remains a file identity/evidence field, not the incremental
 checkpoint.
@@ -175,8 +175,11 @@ watermark.
 This optimistic comparison keeps the watermark state update and terminal audit
 insert atomic inside the control SQL database.
 
-A no-data FILE scan finishes as `SUCCESS` with zero rows and may still advance its Last Modified
-window. Because it is a successful operational scan, the committed processing boundary advances normally.
+A no-data FILE scan finishes as `SKIPPED` with zero rows and never advances its Last Modified
+checkpoint. Audit processing LOW/HIGH still describe the attempted scan. A later
+REGULAR run repeats that original LOW-to-new-HIGH range, allowing late-arriving
+files to be discovered before any subsequent successful nonempty advance. This
+is not a complete late-arrival guarantee once a later nonempty run advances state.
 
 ## Run types and recovery
 
