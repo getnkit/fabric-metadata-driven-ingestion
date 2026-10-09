@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "VariableLibrary",
+    "displayName": "vl_personal_ingestion",
+    "description": "Environment-specific runtime bindings for the Personal Fabric metadata-driven ingestion framework."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "84c396d0-5e43-4b69-a15b-9a61e726df83"
+  }
+}
