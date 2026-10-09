@@ -1200,29 +1200,6 @@
       {
         "type": "SetVariable",
         "typeProperties": {
-          "variableName": "v_ingestion_timestamp",
-          "value": {
-            "value": "@formatDateTime(\n    utcNow(),\n    'yyyy-MM-ddTHH:mm:ss.fffZ'\n)",
-            "type": "Expression"
-          }
-        },
-        "policy": {
-          "secureInput": false,
-          "secureOutput": false
-        },
-        "name": "set_ingestion_timestamp",
-        "dependsOn": [
-          {
-            "activity": "if_supported_file_format",
-            "dependencyConditions": [
-              "Succeeded"
-            ]
-          }
-        ]
-      },
-      {
-        "type": "SetVariable",
-        "typeProperties": {
           "variableName": "v_landing_relative_path",
           "value": {
             "value": "@concat(\n    replace(\n        pipeline().parameters.p_landing_path,\n        'Files/',\n        ''\n    ),\n    if(\n        endsWith(pipeline().parameters.p_landing_path, '/'),\n        '',\n        '/'\n    ),\n    'ingestion_date=',\n    formatDateTime(pipeline().parameters.p_start_time, 'yyyy-MM-dd'),\n    '/ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '/batch_id=',\n    pipeline().parameters.p_batch_id,\n    '/pipeline_run_id=',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    '/'\n)",
@@ -1236,7 +1213,7 @@
         "name": "set_landing_relative_path",
         "dependsOn": [
           {
-            "activity": "set_ingestion_timestamp",
+            "activity": "if_supported_file_format",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -2114,13 +2091,6 @@
                   "p_pipeline_run_id": {
                     "value": {
                       "value": "@pipeline().parameters.p_audit_pipeline_run_id",
-                      "type": "Expression"
-                    },
-                    "type": "string"
-                  },
-                  "p_ingestion_timestamp": {
-                    "value": {
-                      "value": "@variables('v_ingestion_timestamp')",
                       "type": "Expression"
                     },
                     "type": "string"
@@ -3430,9 +3400,6 @@
         "type": "String"
       },
       "v_processing_upper_bound": {
-        "type": "String"
-      },
-      "v_ingestion_timestamp": {
         "type": "String"
       },
       "v_landing_relative_path": {
