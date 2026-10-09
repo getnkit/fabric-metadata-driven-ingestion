@@ -1909,11 +1909,6 @@
         "type": "string"
       }
     },
-    "variables": {
-      "v_landing_relative_path": {
-        "type": "String"
-      }
-    },
     "libraryVariables": {
       "notebook_execution_connection_id": {
         "type": "String",
@@ -1929,6 +1924,11 @@
         "type": "String",
         "variableName": "control_db_connection_id",
         "libraryName": "vl_ingestion_connections"
+      }
+    },
+    "variables": {
+      "v_landing_relative_path": {
+        "type": "String"
       }
     }
   }

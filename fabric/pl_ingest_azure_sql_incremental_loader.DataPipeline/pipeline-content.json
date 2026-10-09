@@ -1319,19 +1319,6 @@
         "defaultValue": 0
       }
     },
-    "variables": {
-      "v_ingestion_timestamp": {
-        "type": "String"
-      },
-      "v_source_row_count": {
-        "type": "String",
-        "defaultValue": "0"
-      },
-      "v_target_row_count": {
-        "type": "String",
-        "defaultValue": "0"
-      }
-    },
     "libraryVariables": {
       "control_db_item_id": {
         "type": "String",
@@ -1347,6 +1334,19 @@
         "type": "String",
         "variableName": "notebook_execution_connection_id",
         "libraryName": "vl_ingestion_connections"
+      }
+    },
+    "variables": {
+      "v_ingestion_timestamp": {
+        "type": "String"
+      },
+      "v_source_row_count": {
+        "type": "String",
+        "defaultValue": "0"
+      },
+      "v_target_row_count": {
+        "type": "String",
+        "defaultValue": "0"
       }
     }
   }

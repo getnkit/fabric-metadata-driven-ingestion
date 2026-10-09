@@ -1248,20 +1248,6 @@
         "defaultValue": ""
       }
     },
-    "variables": {
-      "v_start_time": {
-        "type": "String"
-      },
-      "v_run_type": {
-        "type": "String"
-      },
-      "v_request_valid": {
-        "type": "Boolean"
-      },
-      "v_execution_decision": {
-        "type": "String"
-      }
-    },
     "libraryVariables": {
       "control_db_item_id": {
         "type": "String",
@@ -1277,6 +1263,20 @@
         "type": "String",
         "variableName": "pipeline_invoke_connection_id",
         "libraryName": "vl_ingestion_connections"
+      }
+    },
+    "variables": {
+      "v_start_time": {
+        "type": "String"
+      },
+      "v_run_type": {
+        "type": "String"
+      },
+      "v_request_valid": {
+        "type": "Boolean"
+      },
+      "v_execution_decision": {
+        "type": "String"
       }
     }
   }

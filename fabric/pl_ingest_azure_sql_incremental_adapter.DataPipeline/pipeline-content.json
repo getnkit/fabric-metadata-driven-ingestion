@@ -1213,14 +1213,6 @@
         "type": "int"
       }
     },
-    "variables": {
-      "v_processing_lower_bound": {
-        "type": "String"
-      },
-      "v_processing_upper_bound": {
-        "type": "String"
-      }
-    },
     "libraryVariables": {
       "control_db_item_id": {
         "type": "String",
@@ -1236,6 +1228,14 @@
         "type": "String",
         "variableName": "pipeline_invoke_connection_id",
         "libraryName": "vl_ingestion_connections"
+      }
+    },
+    "variables": {
+      "v_processing_lower_bound": {
+        "type": "String"
+      },
+      "v_processing_upper_bound": {
+        "type": "String"
       }
     }
   }

@@ -2948,17 +2948,6 @@
         "type": "string"
       }
     },
-    "variables": {
-      "v_processing_lower_bound": {
-        "type": "String"
-      },
-      "v_processing_upper_bound": {
-        "type": "String"
-      },
-      "v_landing_relative_path": {
-        "type": "String"
-      }
-    },
     "libraryVariables": {
       "control_db_item_id": {
         "type": "String",
@@ -2974,6 +2963,17 @@
         "type": "String",
         "variableName": "notebook_execution_connection_id",
         "libraryName": "vl_ingestion_connections"
+      }
+    },
+    "variables": {
+      "v_processing_lower_bound": {
+        "type": "String"
+      },
+      "v_processing_upper_bound": {
+        "type": "String"
+      },
+      "v_landing_relative_path": {
+        "type": "String"
       }
     }
   }
