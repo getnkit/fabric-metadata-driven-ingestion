@@ -53,6 +53,34 @@ Expected metadata state after seeding:
 - DATABASE incremental objects start at `1900-01-01T00:00:00.000`
 - FILE incremental uses the same `control.pipeline_watermarks` table with `watermark_field = last_modified_time` and initial checkpoint `1900-01-01T00:00:00.000`
 
+## 2a) Fabric runtime connection bindings (Variable Library)
+
+Before validating or running any updated ingestion pipelines, sync
+`fabric/vl_personal_ingestion.VariableLibrary` into the **same** workspace as
+`pl_ingest_orchestrator`, then set these four **String** variables in the active
+Fabric Variable Library value set for the current environment:
+
+- `control_db_connection_id` — Control SQL Database **Connection** GUID.
+- `control_db_item_id` — `sqldb_ingestion_control` SQL Database **item** GUID.
+- `pipeline_invoke_connection_id` — Invoke Pipeline **Connection** GUID.
+- `notebook_execution_connection_id` — Notebook **execution Connection** GUID.
+
+The committed Library defaults are intentionally blank. The Orchestrator now
+fails early with `MISSING_RUNTIME_BINDING` if any are blank; it does not accept
+Connection GUID parameters. All 11 framework pipelines bind only the values
+they consume, directly using `@pipeline().libraryVariables.<name>`.
+Control SQL workspace ID remains the same-workspace zero GUID, not a DEV
+physical workspace GUID. Source/target Copy Connection IDs still come from
+`control.connection_settings` and must be set correctly for each environment.
+
+**Release gate:** in Fabric DEV, Validate and run SQL Lookup/Stored Procedure,
+Invoke Pipeline, and Notebook with their Library expressions; then test both
+DATABASE/FILE and FULL/INCREMENTAL routes. For UAT/PROD, configure that
+workspace's values/metadata and verify child Pipeline/Notebook item rebinding.
+See `docs/operations/variable-library-environment-binding.md` for the exact
+UI setup and acceptance checklist. Git implementation alone does **not**
+prove Fabric dynamic Notebook Connection runtime support.
+
 ## 3) Source authentication
 
 The current project uses Basic authentication for the Azure SQL source connection:
