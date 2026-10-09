@@ -94,29 +94,30 @@ If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, a
 
 The Fabric SQL Database stores `audit.ingestion_log.error_message` as
 `NVARCHAR(4000)`; the shared `control.usp_finalize_ingestion_run` parameter
-uses the same limit. Every dynamic `error_message` expression in the Personal
-Fabric Data Pipelines caps its final string to **at most 4,000 characters**
-using Fabric Data Factory `substring(..., 0, 4000)`. This applies to Copy,
-Notebook, Source Lookup, routing, and configuration-validation failures.
+uses the same limit. **Only Finalizer expressions that propagate an Activity
+`.error.message`** have the Fabric Data Factory `substring(...,0,4000)`
+boundary guard (15 Finalizers across the Personal repo).
 
-- A single activity error uses
+- Single Copy, Notebook, or Lookup Activity errors (including error propagation
+  through a Switch/If Activity) use
   `@substring(string(activity('some_activity').error.message),0,4000)`.
-- A combined **original failure + cleanup failure** reserves up to **1,900
-  characters per source error** before composing the labeled message. The
-  combined string is bounded again to 4,000 to retain both error categories.
-- A Landing file-count mismatch followed by cleanup failure preserves the
-  numeric mismatch description, then allows up to 3,800 characters from the
-  cleanup exception, with the same outer 4,000-character cap.
-- Short static errors, NULL messages on successful/SKIPPED runs, audit statuses,
-  retry/cleanup dependencies and watermark decisions remain unchanged.
-- Truncation deliberately retains the beginning of an error and can omit later
-  stack-trace detail; inspect the failing Fabric activity run for full diagnostics.
+- A combined **original activity failure + cleanup activity failure** reserves up
+  to **1,900 characters for each source error**, then caps the labeled combined
+  result at 4,000 so both categories are retained.
+- Landing file-count mismatch followed by a cleanup Activity failure retains
+  the numeric mismatch description and up to 3,800 characters of cleanup
+  `.error.message`, then caps the composed result at 4,000.
+- Framework-composed Validation and Routing `concat()` messages **do not use
+  `substring()`** under this scoped change. NULL error messages, statuses,
+  retry/cleanup dependencies, and watermark behavior remain unchanged.
+- Truncation can omit a later stack-trace tail. Inspect the failing Fabric
+  Activity run for complete diagnostics.
 
-Acceptance: provoke a long Copy/Notebook exception and a cleanup-failure
-scenario in a safe DEV environment. Check `LEN(error_message) <= 4000`,
-that the terminal audit row is written, that original and cleanup labels remain
-present for combined failures, and that no failed run advances the watermark.
-This is a **static-code contract until Fabric runtime acceptance succeeds**.
+Acceptance: in DEV, provoke long Copy/Notebook/Lookup errors and cleanup
+failures. Confirm terminal audit entries are written; activity-derived
+`error_message` values have `LEN(error_message) <= 4000`; both labels remain
+visible for combined failures; and failed executions do not advance the watermark.
+The implementation has undergone static verification, not Fabric runtime testing.
 
 ## Safety boundary
 
