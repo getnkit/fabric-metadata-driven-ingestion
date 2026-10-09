@@ -39,7 +39,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
+                      "value": "@substring(concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.'),0,4000)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -425,7 +425,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n)",
+                      "value": "@substring(concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n),0,4000)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -630,7 +630,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_file_count_mismatch').error.message\n)",
+                      "value": "@substring(concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_file_count_mismatch').error.message),0,3800)\n),0,4000)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1204,7 +1204,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('nb_load_file_landing_to_bronze').error.message",
+                "value": "@substring(string(activity('nb_load_file_landing_to_bronze').error.message),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1390,7 +1390,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('nb_load_file_landing_to_bronze').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
+                "value": "@substring(concat(\n    'Original Bronze write failure: ',\n    substring(string(activity('nb_load_file_landing_to_bronze').error.message),0,1900),\n    ' | Bronze cleanup failure: ',\n    substring(string(activity('nb_cleanup_bronze_write_failed').error.message),0,1900)\n),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1684,7 +1684,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('copy_sftp_to_landing').error.message",
+                "value": "@substring(string(activity('copy_sftp_to_landing').error.message),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1889,7 +1889,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat(\n    'Original Landing write failure: ',\n    activity('copy_sftp_to_landing').error.message,\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_write_failed').error.message\n)",
+                "value": "@substring(concat(\n    'Original Landing write failure: ',\n    substring(string(activity('copy_sftp_to_landing').error.message),0,1900),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_write_failed').error.message),0,1900)\n),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
