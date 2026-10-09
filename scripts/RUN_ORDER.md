@@ -117,7 +117,7 @@ not reclassified automatically by this branch.
 FILE ingestion uses the same `control.ingestion_config` table:
 
 - `source_path` identifies where the source data is located.
-- `landing_path` identifies the platform-owned Landing Zone path.
+- `landing_path` identifies a platform-owned **Files-relative** Landing Zone base path. FILE configs store `landing/...` (not `Files/landing/...`); physical Lakehouse Files paths are still `Files/landing/...`. The SFTP adapters do not strip or normalize `Files/` prefixes.
 - `file_format` selects the Landing-to-Bronze parser for FILE ingestion.
 - `source_options` stores format/source-specific options. The current `DELIMITED_TEXT` contract requires file-name pattern, delimiter, header, encoding, quote, and escape.
 
@@ -146,7 +146,7 @@ The migration refuses to rewrite historical `RERUN` audit rows automatically. If
 Then rerun `scripts/control/04_seed_ingestion_metadata.sql` after the Fabric pipeline artifacts are synced.
 
 After creating Fabric connection `cn_sftp_logistics_vendor`, run
-`scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`, then rerun `scripts/control/04_seed_ingestion_metadata.sql` to register/refresh FILE metadata. Sync the pipeline artifacts from Git before rerunning the seed because the FILE config is active.
+`scripts/control/migrations/002_add_sftp_connection.sql` with its Connection ID. For an existing control database, also run `scripts/control/migrations/004_add_file_format.sql`. Before the next FILE run, pause FILE ingestion, sync both updated SFTP Pipeline artifacts from Git, and execute `scripts/control/migrations/009_normalize_file_landing_path.sql` to convert the two exact seeded legacy values from `Files/landing/...` to `landing/...`. Then rerun `scripts/control/04_seed_ingestion_metadata.sql` if needed to register/refresh FILE metadata. Migration `009` is idempotent, does not reset watermark state or move historical files, and intentionally errors if other FILE config paths violate the new contract; correct those values explicitly and rerun it. Resume FILE runs only after checking the metadata below.
 
 ## 6) Incremental-change simulator
 
@@ -176,7 +176,7 @@ pl_ingest_object_controller
   -> pl_ingest_sftp_full_adapter
 ```
 
-The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_ingestion_date`, `_source_file_name`, and `_source_file_path`. The loader captures a fresh single UTC write-start instant immediately before Delta append; `_ingestion_timestamp` and `_ingestion_date` derive from it, while the Landing `ingestion_date` partition continues to derive from Object Controller `p_start_time`.
+The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. Its config `landing_path` is `landing/logistics_vendor/inventory_snapshot/` (Files-relative), while the actual destination in OneLake is under `Files/landing/...`. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_ingestion_date`, `_source_file_name`, and `_source_file_path`. The loader captures a fresh single UTC write-start instant immediately before Delta append; `_ingestion_timestamp` and `_ingestion_date` derive from it, while the Landing `ingestion_date` partition continues to derive from Object Controller `p_start_time`.
 
 The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to an object-execution-specific path:
@@ -197,6 +197,7 @@ For an existing live control database, run:
 scripts/control/migrations/003_generalize_pipeline_watermark.sql
 scripts/control/migrations/004_add_file_format.sql
 scripts/control/02_create_control_procedures.sql
+scripts/control/migrations/009_normalize_file_landing_path.sql
 scripts/control/04_seed_ingestion_metadata.sql
 ```
 
@@ -226,7 +227,7 @@ source_object      = inventory_movement
 source_path        = /outbound/inventory/movements/
 file_format        = DELIMITED_TEXT
 file_name_pattern  = inventory_movement_*.csv
-landing_path       = Files/landing/logistics_vendor/inventory_movement/
+landing_path       = landing/logistics_vendor/inventory_movement/
 target_table       = fulfillment.inventory_movements
 load_strategy      = INCREMENTAL
 watermark_field    = last_modified_time
