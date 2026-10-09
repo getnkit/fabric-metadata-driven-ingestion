@@ -55,7 +55,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid Azure SQL FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                      "value": "@substring(concat(\n    'Invalid Azure SQL FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n),0,4000)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1165,7 +1165,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@activity('sw_copy_execution_strategy').error.message",
+                "value": "@substring(string(activity('sw_copy_execution_strategy').error.message),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1351,7 +1351,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@concat(\n    'Original Bronze write failure: ',\n    activity('sw_copy_execution_strategy').error.message,\n    ' | Bronze cleanup failure: ',\n    activity('nb_cleanup_bronze_write_failed').error.message\n)",
+                "value": "@substring(concat(\n    'Original Bronze write failure: ',\n    substring(string(activity('sw_copy_execution_strategy').error.message),0,1900),\n    ' | Bronze cleanup failure: ',\n    substring(string(activity('nb_cleanup_bronze_write_failed').error.message),0,1900)\n),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
