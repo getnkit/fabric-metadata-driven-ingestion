@@ -4,6 +4,7 @@
     Purpose: Seed ingestion configuration and initialize generic pipeline watermark
              state for all INCREMENTAL source objects. DATABASE, FILE, and future
              API patterns share control.pipeline_watermarks.
+              FILE landing_path is Lakehouse Files-relative (landing/...; no Files/ prefix).
 
              sales.order_items demonstrates metadata-driven Azure SQL
              DYNAMIC_RANGE partitioning. parallel_copies is intentionally omitted
@@ -79,7 +80,7 @@ VALUES
         'DELIMITED_TEXT',
         N'{"file_name_pattern":"inventory_snapshot.csv","delimiter":",","has_header":true,"encoding":"UTF-8","quote":"\"","escape":"\\"}',
         NULL,
-        'Files/landing/logistics_vendor/inventory_snapshot/',
+        'landing/logistics_vendor/inventory_snapshot/',
         'LH_ECOMMERCE_BRONZE',
         'fulfillment',
         'inventory_snapshots',
@@ -97,7 +98,7 @@ VALUES
         'DELIMITED_TEXT',
         N'{"file_name_pattern":"inventory_movement_*.csv","delimiter":",","has_header":true,"encoding":"UTF-8","quote":"\"","escape":"\\"}',
         NULL,
-        'Files/landing/logistics_vendor/inventory_movement/',
+        'landing/logistics_vendor/inventory_movement/',
         'LH_ECOMMERCE_BRONZE',
         'fulfillment',
         'inventory_movements',
