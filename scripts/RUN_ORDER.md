@@ -168,7 +168,7 @@ pl_ingest_object_controller
   -> pl_ingest_sftp_full_adapter
 ```
 
-The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with the standard technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_source_file_name`, and `_source_file_path`.
+The SFTP child first performs a Binary copy to Lakehouse Files Landing, preserving the raw file. It then invokes `nb_load_file_landing_to_bronze`, which dispatches the parser by `file_format`. The currently implemented `DELIMITED_TEXT` reader appends to the Bronze Delta table with technical columns `_batch_id`, `_pipeline_run_id`, `_ingestion_timestamp`, `_ingestion_date`, `_source_file_name`, and `_source_file_path`. The loader captures a fresh single UTC write-start instant immediately before Delta append; `_ingestion_timestamp` and `_ingestion_date` derive from it, while the Landing `ingestion_date` partition continues to derive from Object Controller `p_start_time`.
 
 The current FULL feed uses the stable producer filename
 `inventory_snapshot.csv`. Each run writes Landing to an object-execution-specific path:
