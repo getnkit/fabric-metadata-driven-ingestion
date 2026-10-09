@@ -82,11 +82,17 @@ sp_finalize_<target>_write_failed
 fail_<target>_write
 ```
 
-Examples:
+The SFTP source-to-Landing `copy_sftp_to_landing` failure is named by its
+**Copy operation**, rather than `write`, because the Copy Activity may fail
+while reading SFTP, moving data, or writing Lakehouse Files. A failure during
+the subsequent Landing cleanup remains a distinct `LANDING_CLEANUP_FAILED`.
 
 ```text
-sp_finalize_landing_write_failed
-fail_landing_write
+nb_cleanup_landing_copy_failed
+sp_finalize_landing_copy_failed
+fail_landing_copy
+sp_finalize_landing_copy_cleanup_failed
+fail_landing_copy_cleanup
 
 sp_finalize_bronze_write_failed
 fail_bronze_write
@@ -134,7 +140,7 @@ fail_bronze_write_cleanup
 Audit/error codes mirror the semantic failure boundary:
 
 ```text
-LANDING_WRITE_FAILED
+LANDING_COPY_FAILED
 BRONZE_WRITE_FAILED
 BRONZE_POST_WRITE_FAILED
 BRONZE_CLEANUP_FAILED
