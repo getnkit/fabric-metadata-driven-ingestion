@@ -393,7 +393,7 @@
                       },
                       "error_message": {
                         "value": {
-                          "value": "@substring(concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n),0,4000)",
+                          "value": "@concat(\n    'Invalid execution request for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', run_type=',\n    variables('v_run_type'),\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '. REGULAR must not provide LOW/HIGH; BACKFILL+FULL must not provide LOW/HIGH; BACKFILL+INCREMENTAL requires both LOW and HIGH.'\n)",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -599,7 +599,7 @@
                       },
                       "error_message": {
                         "value": {
-                          "value": "@substring(concat(\n    'Unsupported target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Expected target_connection_type=LAKEHOUSE.'\n),0,4000)",
+                          "value": "@concat(\n    'Unsupported target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ' for ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '. Expected target_connection_type=LAKEHOUSE.'\n)",
                           "type": "Expression"
                         },
                         "type": "String"
@@ -1044,7 +1044,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.firstRow.ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '.'\n),0,4000)",
+                      "value": "@concat(\n    'Unsupported ingestion route: run_type=',\n    variables('v_run_type'),\n    ', ingestion_pattern=',\n    activity('lkp_ingestion_config').output.firstRow.ingestion_pattern,\n    ', source_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.source_connection_type,\n    ', target_connection_type=',\n    activity('lkp_ingestion_config').output.firstRow.target_connection_type,\n    ', load_strategy=',\n    activity('lkp_ingestion_config').output.firstRow.load_strategy,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
