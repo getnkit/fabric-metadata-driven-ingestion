@@ -1645,7 +1645,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "nb_cleanup_landing_write_failed",
+        "name": "nb_cleanup_landing_copy_failed",
         "dependsOn": [
           {
             "activity": "copy_sftp_to_landing",
@@ -1679,7 +1679,7 @@
               "type": "DateTime"
             },
             "error_code": {
-              "value": "LANDING_WRITE_FAILED",
+              "value": "LANDING_COPY_FAILED",
               "type": "String"
             },
             "error_message": {
@@ -1831,10 +1831,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_landing_write_failed",
+        "name": "sp_finalize_landing_copy_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_landing_write_failed",
+            "activity": "nb_cleanup_landing_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1848,12 +1848,12 @@
             "value": "@activity('copy_sftp_to_landing').error.message",
             "type": "Expression"
           },
-          "errorCode": "LANDING_WRITE_FAILED"
+          "errorCode": "LANDING_COPY_FAILED"
         },
-        "name": "fail_landing_write",
+        "name": "fail_landing_copy",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_write_failed",
+            "activity": "sp_finalize_landing_copy_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -1889,7 +1889,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@substring(concat(\n    'Original Landing write failure: ',\n    substring(string(activity('copy_sftp_to_landing').error.message),0,1900),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_write_failed').error.message),0,1900)\n),0,4000)",
+                "value": "@substring(concat(\n    'Original Landing copy failure: ',\n    substring(string(activity('copy_sftp_to_landing').error.message),0,1900),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_copy_failed').error.message),0,1900)\n),0,4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -2036,10 +2036,10 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "sp_finalize_landing_write_cleanup_failed",
+        "name": "sp_finalize_landing_copy_cleanup_failed",
         "dependsOn": [
           {
-            "activity": "nb_cleanup_landing_write_failed",
+            "activity": "nb_cleanup_landing_copy_failed",
             "dependencyConditions": [
               "Failed"
             ]
@@ -2050,15 +2050,15 @@
         "type": "Fail",
         "typeProperties": {
           "message": {
-            "value": "@concat(\n    'Original Landing write failure: ',\n    activity('copy_sftp_to_landing').error.message,\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_write_failed').error.message\n)",
+            "value": "@concat(\n    'Original Landing copy failure: ',\n    activity('copy_sftp_to_landing').error.message,\n    ' | Landing cleanup failure: ',\n    activity('nb_cleanup_landing_copy_failed').error.message\n)",
             "type": "Expression"
           },
           "errorCode": "LANDING_CLEANUP_FAILED"
         },
-        "name": "fail_landing_write_cleanup",
+        "name": "fail_landing_copy_cleanup",
         "dependsOn": [
           {
-            "activity": "sp_finalize_landing_write_cleanup_failed",
+            "activity": "sp_finalize_landing_copy_cleanup_failed",
             "dependencyConditions": [
               "Succeeded"
             ]
