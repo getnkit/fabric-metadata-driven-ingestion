@@ -21,6 +21,36 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
+            "value": "@and(\n    and(\n        not(empty(pipeline().libraryVariables.control_db_connection_id)),\n        not(empty(pipeline().libraryVariables.control_db_item_id))\n    ),\n    and(\n        not(empty(pipeline().libraryVariables.pipeline_invoke_connection_id)),\n        not(empty(pipeline().libraryVariables.notebook_execution_connection_id))\n    )\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": "Variable Library vl_personal_ingestion must define nonempty control_db_connection_id, control_db_item_id, pipeline_invoke_connection_id, and notebook_execution_connection_id.",
+                "errorCode": "MISSING_RUNTIME_BINDING"
+              },
+              "name": "fail_missing_runtime_binding",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_required_connections_provided",
+        "dependsOn": [
+          {
+            "activity": "set_batch_id",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
             "value": "@greater(length(pipeline().parameters.p_run_requests), 0)",
             "type": "Expression"
           },
@@ -44,11 +74,11 @@
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "50af6a71-1856-904b-4b47-b7169c67fb4e",
+                    "artifactId": "@pipeline().libraryVariables.control_db_item_id",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
+                    "connection": "@pipeline().libraryVariables.control_db_connection_id"
                   },
                   "annotations": []
                 }
@@ -82,7 +112,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                "connection": "@pipeline().libraryVariables.pipeline_invoke_connection_id"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -122,7 +152,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                "connection": "@pipeline().libraryVariables.pipeline_invoke_connection_id"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -139,7 +169,7 @@
         "name": "if_explicit_run_requests",
         "dependsOn": [
           {
-            "activity": "set_batch_id",
+            "activity": "if_required_connections_provided",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -162,6 +192,28 @@
         "type": "String"
       }
     },
-    "concurrency": 1
+    "concurrency": 1,
+    "libraryVariables": {
+      "control_db_connection_id": {
+        "type": "String",
+        "variableName": "control_db_connection_id",
+        "libraryName": "vl_personal_ingestion"
+      },
+      "control_db_item_id": {
+        "type": "String",
+        "variableName": "control_db_item_id",
+        "libraryName": "vl_personal_ingestion"
+      },
+      "pipeline_invoke_connection_id": {
+        "type": "String",
+        "variableName": "pipeline_invoke_connection_id",
+        "libraryName": "vl_personal_ingestion"
+      },
+      "notebook_execution_connection_id": {
+        "type": "String",
+        "variableName": "notebook_execution_connection_id",
+        "libraryName": "vl_personal_ingestion"
+      }
+    }
   }
 }
