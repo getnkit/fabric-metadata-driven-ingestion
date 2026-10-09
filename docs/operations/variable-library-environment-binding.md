@@ -3,7 +3,7 @@
 ## Scope and decision
 
 The Personal metadata-driven ingestion framework uses one Fabric Variable Library:
-`vl_personal_ingestion` (same workspace as `pl_ingest_orchestrator`).
+`vl_ingestion_connections` (same workspace as `pl_ingest_orchestrator`).
 
 It exposes **four String variables** holding environment-specific GUIDs:
 
@@ -59,7 +59,7 @@ own active Library bindings to execute.
 
 ## DEV setup
 
-1. Git sync `vl_personal_ingestion.VariableLibrary` into the Personal DEV
+1. Git sync `vl_ingestion_connections.VariableLibrary` into the Personal DEV
    Fabric workspace **before syncing/validating the updated pipelines**.
 2. In the Variable Library UI, confirm all four types are `String`. Set their
    real environment-specific GUIDs in the active `Default` value set.

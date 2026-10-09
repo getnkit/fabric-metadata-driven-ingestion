@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "VariableLibrary",
-    "displayName": "vl_personal_ingestion",
+    "displayName": "vl_ingestion_connections",
     "description": "Environment-specific runtime bindings for the Personal Fabric metadata-driven ingestion framework."
   },
   "config": {

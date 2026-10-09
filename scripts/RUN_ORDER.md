@@ -56,7 +56,7 @@ Expected metadata state after seeding:
 ## 2a) Fabric runtime connection bindings (Variable Library)
 
 Before validating or running any updated ingestion pipelines, sync
-`fabric/vl_personal_ingestion.VariableLibrary` into the **same** workspace as
+`fabric/vl_ingestion_connections.VariableLibrary` into the **same** workspace as
 `pl_ingest_orchestrator`, then set these four **String** variables in the active
 Fabric Variable Library value set for the current environment:
 
