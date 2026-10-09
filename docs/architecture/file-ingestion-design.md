@@ -382,13 +382,21 @@ source scope as FULL REGULAR execution. The distinction is execution intent and
 lineage; each successful run still appends a new batch-specific Landing/Bronze
 copy.
 
-`p_start_time` is generated in UTC once at the Object Controller, as
-`yyyy-MM-ddTHH:mm:ss.fffZ`. Framework-created timestamp strings (including
-`v_ingestion_timestamp` passed to the file Notebook) carry `Z`. SQL
-`DATETIME2(3)` and the existing SFTP Last Modified connector boundary use
-their native timezone-less representations without changing the UTC instant.
-Source-derived watermark bounds retain their source-specific precision and
-timezone semantics; do not append `Z` to such values without a UTC contract.
+`p_start_time` is generated in UTC once at the Object Controller as
+`yyyy-MM-ddTHH:mm:ss.fffZ`. It continues to supply the FILE REGULAR Last Modified
+HIGH and the UTC `ingestion_date` in the approved batch-scoped Landing path.
+The FILE Bronze Loader Notebook independently captures one UTC instant after
+counting the parsed Landing rows and immediately before the Delta append:
+`_ingestion_timestamp` uses that instant (serialized with millisecond precision
+and `Z` before casting to Spark timestamp), and `_ingestion_date` uses the
+UTC calendar date from the same instant. Existing file Bronze Delta schemas gain
+`_ingestion_date` through the Loader's write-scoped `mergeSchema` option.
+Landing `ingestion_date` and Bronze `_ingestion_date` can differ across UTC
+midnight. The Bronze timestamp is the approximate write-start time, not the
+Delta commit time. SQL `DATETIME2(3)` continues to represent UTC by convention.
+FILE Watermark HIGH is persisted as the exact UTC-with-`Z` Object Run Start;
+source-derived watermark bounds preserve their original precision and timezone
+semantics. Do not append `Z` to a source-native value without a UTC contract.
 
 The current SFTP incremental physical flow is therefore:
 
