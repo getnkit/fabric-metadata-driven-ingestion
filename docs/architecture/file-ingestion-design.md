@@ -414,6 +414,9 @@ pl_ingest_file_router
   -> if_supported_file_format (supported: DELIMITED_TEXT)
   -> sw_file_route (SFTP|INCREMENTAL)
   -> pl_ingest_sftp_incremental_adapter
+      -> if_supported_watermark_field (last_modified_time)
+      -> lkp_current_watermark
+      -> if_state_found
       -> resolve LOW/HIGH for REGULAR or BACKFILL
       -> if_valid_processing_boundary
       -> copy_sftp_to_landing
