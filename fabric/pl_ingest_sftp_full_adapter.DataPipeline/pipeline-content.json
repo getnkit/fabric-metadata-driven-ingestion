@@ -39,7 +39,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.'),0,4000)",
+                      "value": "@concat('Unsupported FILE format: ', pipeline().parameters.p_file_format, '.')",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -425,7 +425,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n),0,4000)",
+                      "value": "@concat(\n    'Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten)\n)",
                       "type": "Expression"
                     },
                     "type": "String"
