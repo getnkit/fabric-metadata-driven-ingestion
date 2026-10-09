@@ -45,10 +45,13 @@ mismatched field** now follows the same `STATE_NOT_FOUND` failure branch, whose
 message includes the requested config ID and watermark field. This intentionally
 replaces the previous dedicated `WATERMARK_FIELD_MISMATCH` audit code.
 
-The SFTP adapter still checks `if_supported_watermark_field` after state
-resolution, because finding a stored field does not establish that the SFTP
-adapter supports its semantics (`last_modified_time`). The checkpoint's
-optimistic comparison during successful finalization remains unchanged.
+The SFTP INCREMENTAL adapter checks `if_supported_watermark_field` **before**
+`lkp_current_watermark` to reject unsupported field types with
+`UNSUPPORTED_FILE_WATERMARK` even when no matching state row exists. For the
+supported `last_modified_time` field, the lookup then checks for the exact
+`ingestion_config_id` and `watermark_field` pair; no matching row produces
+`STATE_NOT_FOUND`. The checkpoint's optimistic comparison during successful
+finalization remains unchanged.
 
 ## Generic processing boundaries
 
