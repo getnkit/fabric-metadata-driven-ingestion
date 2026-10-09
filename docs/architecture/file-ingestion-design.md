@@ -95,7 +95,7 @@ copy_sftp_to_landing
 
 For INCREMENTAL SFTP, this gate runs before the no-new-data decision. Therefore
 `0 filesRead / 0 filesWritten` is a valid consistent transfer and continues to
-the normal no-new-data success path, while a mismatched file count fails the run.
+the no-new-data `SKIPPED` path with zero counts and no watermark advance, while a mismatched file count fails the run.
 
 Landing-to-Bronze does not perform a second independent Bronze recount. The
 notebook counts the parsed Landing DataFrame once, reuses that count as the
@@ -366,9 +366,12 @@ landing:
 
 For REGULAR execution, if the recursive Landing copy finds matching files and
 the Bronze load succeeds, the pipeline watermark advances to `HIGH`. If no
-matching files are found, the run is finalized as `SUCCESS` with zero rows and
-the REGULAR checkpoint can still advance to `HIGH`; this avoids repeatedly
-rescanning the same empty time window.
+matching files are found, the run is finalized as `SKIPPED` with zero rows and
+**does not advance** the checkpoint; the next REGULAR scan retains the original
+LOW. This intentionally allows a subsequent scan to discover late-arriving files
+whose Last Modified falls within the previously empty window, at the cost of
+rescanning that window. It does not guarantee detection of files delivered after
+a later nonempty successful run has already advanced the watermark.
 
 `run_type` and `load_strategy` are independent. The FILE config keeps its
 configured FULL or INCREMENTAL strategy for every execution.
@@ -414,7 +417,7 @@ pl_ingest_sftp_incremental_adapter
        filesRead == filesWritten
   -> if_no_new_data
        filesRead == 0
-       -> true: sp_finalize_no_new_data_success
+       -> true: sp_finalize_no_new_data_skipped (status=SKIPPED, advance_watermark=false)
        -> false: nb_load_file_landing_to_bronze
                     p_file_format
                     p_source_options
