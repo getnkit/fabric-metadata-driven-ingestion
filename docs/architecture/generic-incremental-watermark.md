@@ -70,7 +70,7 @@ For DATABASE timestamp-watermark ingestion, boundary semantics are:
 ```text
 REGULAR:
   upper > lower  -> process
-  upper = lower  -> valid no-new-data window -> SUCCESS with zero rows
+  upper = lower  -> valid no-new-data window -> SKIPPED with zero rows; no watermark advance
   upper < lower  -> invalid boundary -> FAILED
 
 BACKFILL:
@@ -78,7 +78,7 @@ BACKFILL:
   upper <= lower -> invalid boundary -> FAILED
 ```
 
-For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A scan with zero matching files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. This is a FILE-specific no-new-data decision; DATABASE's valid equal-bound `SUCCESS` case above remains unchanged.
+For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A scan with zero matching files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. For DATABASE, a REGULAR `HIGH = LOW` scan also finalizes as `SKIPPED` without invoking the Loader or advancing state. The triggers differ, but both patterns share the same no-new-data audit convention. A DATABASE `HIGH > LOW` run that subsequently copies zero rows is a separate scenario and is not reclassified by this branch.
 
 ## Timestamp ownership and timezone contract
 
