@@ -106,6 +106,14 @@ NULL; the source is resolved through `source_schema` + `source_object`, while
 the Bronze target is resolved through `target_conn_ref`, `target_schema`, and
 `target_table`.
 
+For Azure SQL REGULAR INCREMENTAL, source-derived `HIGH = LOW` is a valid
+no-new-data condition. The adapter finalizes `status = SKIPPED` with zero
+source/target rows, does not invoke the Bronze Loader and does not advance
+`control.pipeline_watermarks`. Test by repeating the ingestion without changing
+the source: audit should be `SKIPPED` and the persisted LOW must remain unchanged.
+A DATABASE `HIGH > LOW` load that copies zero rows is a separate case and is
+not reclassified automatically by this branch.
+
 FILE ingestion uses the same `control.ingestion_config` table:
 
 - `source_path` identifies where the source data is located.
