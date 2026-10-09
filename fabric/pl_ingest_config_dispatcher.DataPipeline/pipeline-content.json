@@ -42,7 +42,7 @@
                 "operationType": "InvokeFabricPipeline"
               },
               "externalReferences": {
-                "connection": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
+                "connection": "@pipeline().libraryVariables.pipeline_invoke_connection_id"
               },
               "policy": {
                 "timeout": "0.12:00:00",
@@ -67,6 +67,13 @@
       "p_run_requests": {
         "type": "array",
         "defaultValue": []
+      }
+    },
+    "libraryVariables": {
+      "pipeline_invoke_connection_id": {
+        "type": "String",
+        "variableName": "pipeline_invoke_connection_id",
+        "libraryName": "vl_personal_ingestion"
       }
     }
   }
