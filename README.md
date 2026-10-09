@@ -1,5 +1,26 @@
 # fabric-metadata-driven-ingestion
 
+## Starter Kit — Fresh Installation
+
+This repository tracks the **current** Microsoft Fabric ingestion framework,
+not a chain of historical upgrade patches.
+
+1. [Starter Kit run order](scripts/RUN_ORDER.md): prepare Fabric items,
+   four Variable Library connections, core SQL, and optional demo fixtures.
+2. **Mandatory Control Plane scripts:** `01_create_control_schema.sql` →
+   `02_create_control_procedures.sql` →
+   `99_verify_control_plane.sql`.
+3. **Optional DEV demo only:** `03_seed_connection_settings.sql` and
+   `04_seed_ingestion_metadata.sql` (Azure SQL + SFTP examples).
+4. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
+   describes constraints, non-destructive bootstrap and release gates.
+
+`scripts/control/migrations/` is intentionally absent from the Starter Kit:
+old upgrades `001–011` remain available in
+[pre-cleanup Git history](https://github.com/getnkit/fabric-metadata-driven-ingestion/tree/bf04ff6e67ed365c58adb8c07b94e1256b005bd1/scripts/control/migrations).
+**Do not run fresh-install SQL as a substitute for upgrading a populated
+older database.** Existing environments need a reviewed targeted migration.
+
 ## Architecture
 
 - [Fabric Data Factory limits and framework guardrails](docs/architecture/fabric-data-factory-limits.md) — platform limits and framework design guardrails.

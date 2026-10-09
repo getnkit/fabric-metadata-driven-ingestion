@@ -10,12 +10,14 @@
              DYNAMIC_RANGE partitioning. parallel_copies is intentionally omitted
              so Fabric keeps service-managed parallelism by default.
 
+    Fresh DEV demo seed ONLY (not generic PROD configuration).
     Re-run behavior:
-      - Existing config rows are updated.
-      - Missing config rows are inserted.
-      - Existing watermark values are preserved.
-      - Missing DATABASE incremental watermark rows start at 1900-01-01.
-      - Missing FILE incremental watermark rows start at 1900-01-01T00:00:00.000.
+      - Existing sample config rows are upserted (review before re-running).
+      - Existing pipeline_watermarks records are NEVER updated/reset.
+      - Only missing DATABASE/FILE incremental state rows are initialized
+        at 1900-01-01T00:00:00.000; unimplemented API is not auto-seeded.
+      - Metadata Watermark Field changes are NOT silently reconciled to
+        persisted checkpoint fields; the adapter intentionally fails mismatch.
 */
 
 SET NOCOUNT ON;
@@ -110,12 +112,6 @@ VALUES
 BEGIN TRY
     BEGIN TRANSACTION;
 
-    UPDATE control.ingestion_config
-    SET
-        source_system = 'ECOMMERCE',
-        updated_at = SYSUTCDATETIME()
-    WHERE source_system = 'ECOMMERCE_AZSQL';
-
     UPDATE c
     SET
         c.source_conn_ref = s.source_conn_ref,
@@ -192,22 +188,6 @@ BEGIN TRY
           AND c.source_object = s.source_object
     );
 
-    /* Align an existing FILE incremental state row with the final Last Modified strategy. */
-    UPDATE w
-    SET
-        w.watermark_field = c.watermark_field,
-        w.last_watermark_value = @InitialFileWatermark,
-        w.last_successful_batch_id = NULL,
-        w.last_successful_pipeline_run_id = NULL,
-        w.watermark_updated_at = SYSUTCDATETIME()
-    FROM control.pipeline_watermarks w
-    JOIN control.ingestion_config c
-      ON c.ingestion_config_id = w.ingestion_config_id
-    WHERE c.source_system = 'LOGISTICS_VENDOR'
-      AND c.source_object = 'inventory_movement'
-      AND c.load_strategy = 'INCREMENTAL'
-      AND w.watermark_field <> c.watermark_field;
-
     INSERT INTO control.pipeline_watermarks
     (
         ingestion_config_id,
@@ -220,10 +200,10 @@ BEGIN TRY
         CASE
             WHEN c.ingestion_pattern = 'DATABASE' THEN @InitialDatabaseWatermark
             WHEN c.ingestion_pattern = 'FILE' THEN @InitialFileWatermark
-            ELSE ''
         END
     FROM control.ingestion_config c
     WHERE c.load_strategy = 'INCREMENTAL'
+      AND c.ingestion_pattern IN ('DATABASE','FILE')
       AND NOT EXISTS
       (
           SELECT 1

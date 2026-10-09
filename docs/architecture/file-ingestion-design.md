@@ -59,7 +59,7 @@ For FILE ingestion, both fields are first-class metadata. The FILE `landing_path
 
 Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
 
-For existing Fabric SQL Database environments, sync both SFTP adapters and apply `scripts/control/migrations/009_normalize_file_landing_path.sql` before the next FILE run. The migration rewrites only the two exact old seeded paths, validates any other FILE config for the strict `landing/...` convention, and does not change watermark state or move existing Lakehouse Files.
+The current SQL Starter Kit seeds FILE `landing_path` directly as a Files-relative `landing/...` location. There is no legacy path-rewrite step in fresh installation. For an older populated environment with `Files/landing/...` metadata, review a targeted migration from Git history before execution; do not rewrite metadata or move historical Lakehouse files automatically.
 
 ## FILE flow
 
