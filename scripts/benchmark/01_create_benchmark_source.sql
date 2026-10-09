@@ -1,6 +1,6 @@
 /*
     01_create_benchmark_source.sql
-    Target: Azure SQL Database (sql_ingestion_benchmark)
+    Target: Amazon RDS for SQL Server database (sql_ingestion_benchmark)
     Purpose: Create two permanent, logically equivalent benchmark source tables:
              one unpartitioned and one physically partitioned.
 

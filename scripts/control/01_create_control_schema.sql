@@ -35,7 +35,7 @@ CREATE TABLE control.connection_settings
         CONSTRAINT DF_connection_settings_updated_at DEFAULT SYSUTCDATETIME(),
 
     CONSTRAINT CK_connection_settings_type
-        CHECK (connection_type IN ('AZURE_SQL','SFTP','LAKEHOUSE')),
+        CHECK (connection_type IN ('AMAZON_RDS_SQL_SERVER','SFTP','LAKEHOUSE')),
 
     CONSTRAINT CK_connection_settings_json
         CHECK (ISJSON(connection_settings, OBJECT) = 1),

@@ -6,7 +6,7 @@
              API patterns share control.pipeline_watermarks.
               FILE landing_path is Lakehouse Files-relative (landing/...; no Files/ prefix).
 
-             sales.order_items demonstrates metadata-driven Azure SQL
+             sales.order_items demonstrates metadata-driven Amazon RDS for SQL Server
              DYNAMIC_RANGE partitioning. parallel_copies is intentionally omitted
              so Fabric keeps service-managed parallelism by default.
 
@@ -66,12 +66,12 @@ INSERT INTO @Seed
     is_active
 )
 VALUES
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'crm',     'customers',          NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'crm',     'customers',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'partner', 'merchants',          NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'product_categories', NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'catalog', 'products',           NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
-    ('ECOMMERCE', 'AZSQL_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, N'{"partition_option":"DYNAMIC_RANGE","partition_column":"order_item_id"}', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'crm',     'customers',          NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'crm',     'customers',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'partner', 'merchants',          NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'partner', 'merchants',          'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'catalog', 'product_categories', NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'product_categories', 'FULL',        NULL,         1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'catalog', 'products',           NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'catalog', 'products',           'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'sales',   'orders',             NULL, 'DATABASE', NULL, NULL, NULL, NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'orders',             'INCREMENTAL', 'updated_at', 1),
+    ('ECOMMERCE', 'RDS_ECOMMERCE', 'sales',   'order_items',        NULL, 'DATABASE', NULL, NULL, N'{"partition_option":"DYNAMIC_RANGE","partition_column":"order_item_id"}', NULL, 'LH_ECOMMERCE_BRONZE', 'sales',   'order_items',        'INCREMENTAL', 'updated_at', 1),
     (
         'LOGISTICS_VENDOR',
         'SFTP_LOGISTICS_VENDOR',

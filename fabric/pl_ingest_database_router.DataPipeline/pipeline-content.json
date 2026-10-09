@@ -10,7 +10,7 @@
           },
           "cases": [
             {
-              "value": "AZURE_SQL|FULL",
+              "value": "AMAZON_RDS_SQL_SERVER|FULL",
               "activities": [
                 {
                   "type": "InvokePipeline",
@@ -108,13 +108,13 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_azure_sql_full_adapter",
+                  "name": "inv_ingest_rds_sql_server_full_adapter",
                   "dependsOn": []
                 }
               ]
             },
             {
-              "value": "AZURE_SQL|INCREMENTAL",
+              "value": "AMAZON_RDS_SQL_SERVER|INCREMENTAL",
               "activities": [
                 {
                   "type": "InvokePipeline",
@@ -224,7 +224,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_azure_sql_incremental_adapter",
+                  "name": "inv_ingest_rds_sql_server_incremental_adapter",
                   "dependsOn": []
                 }
               ]

@@ -1,6 +1,6 @@
 /*
     03_simulate_incremental_changes.sql
-    Target: Azure SQL Database (sql_ecommerce_db)
+    Target: Amazon RDS for SQL Server database (sql_ecommerce_db)
     Purpose: Generate controlled source-side inserts and updates for incremental
              ingestion testing.
 

@@ -1,6 +1,6 @@
 /*
     01_create_source_schema.sql
-    Target: Azure SQL Database (sql_ecommerce_db)
+    Target: Amazon RDS for SQL Server database (sql_ecommerce_db)
     Purpose: Create the mock operational e-commerce source schemas and tables used
              by the metadata-driven ingestion framework.
 */

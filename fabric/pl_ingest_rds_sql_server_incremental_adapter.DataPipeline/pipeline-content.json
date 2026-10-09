@@ -301,7 +301,7 @@
               "type": "Lookup",
               "typeProperties": {
                 "source": {
-                  "type": "AzureSqlSource",
+                  "type": "AmazonRdsForSqlServerSource",
                   "sqlReaderQuery": {
                     "value": "@concat(\n    'SELECT MAX([',\n    pipeline().parameters.p_watermark_field,\n    ']) AS upper_bound ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '];'\n)",
                     "type": "Expression"
@@ -310,13 +310,7 @@
                   "queryTimeout": "02:00:00"
                 },
                 "datasetSettings": {
-                  "type": "AzureSqlTable",
-                  "typeProperties": {
-                    "database": {
-                      "value": "@json(\n    pipeline().parameters.p_source_connection_settings\n).database",
-                      "type": "Expression"
-                    }
-                  },
+                  "type": "AmazonRdsForSqlServerTable",
                   "schema": [],
                   "externalReferences": {
                     "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"
@@ -1129,7 +1123,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_ingest_azure_sql_incremental_loader",
+              "name": "inv_ingest_rds_sql_server_incremental_loader",
               "dependsOn": []
             }
           ]

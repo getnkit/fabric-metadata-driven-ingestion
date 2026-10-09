@@ -35,7 +35,7 @@ Use `scripts/control/`:
 ```
 
 For a new empty Fabric SQL Database, run **01 → 02 → 99**.
-If running sample Azure SQL/SFTP workloads, configure the three logical
+If running sample RDS SQL Server/SFTP workloads, configure the three logical
 Connection references and run demo **03 → 04 → 99** afterward. These
 seeds are optional and **not** generic production metadata.
 
@@ -79,7 +79,7 @@ remain separate acceptance gates.
 - SQL Project table column names/types and key definitions match the
   target environment; verify via schema diff before UAT/PROD.
 - `pl_ingest_orchestrator` works with `vl_ingestion_connections`.
-- Azure SQL FULL / INCREMENTAL and SFTP FILE FULL / INCREMENTAL pass
+- Amazon RDS for SQL Server FULL / INCREMENTAL and SFTP FILE FULL / INCREMENTAL pass
   REGULAR/BACKFILL, SKIPPED, failure compensation and checkpoint
   concurrency acceptance.
 - No demo seed runs against unrelated production metadata or resets
@@ -88,3 +88,16 @@ remain separate acceptance gates.
   workspace-specific user/SID and schema ownership must be reviewed
   for a new environment; the cleanup intentionally does not mutate
   those security artifacts.
+
+## Existing DEV connector cutover (Azure SQL -> RDS SQL Server)
+
+Existing Fabric SQL Control DB may still have old`CK_connection_settings_type`
+restricted to `AZURE_SQL`. After creating the RDS Fabric Connection, execute
+[`scripts/operations/01_cutover_existing_dev_to_rds.sql`](../../scripts/operations/01_cutover_existing_dev_to_rds.sql)
+with the new Fabric `connectionId`. It migrates the ECOMMERCE logical
+Connection Ref from `AZSQL_ECOMMERCE` to `RDS_ECOMMERCE` inside a single
+transaction, replacing the CHECK constraint with the current RDS/SFTP/Lakehouse
+baseline. It leaves ingestion config IDs, Watermark State values, audit
+history and source-boundary semantics unchanged. Check source continuity before
+resuming REGULAR ingestion. It rejects unhandled legacy Azure SQL references
+rather than silently redirecting unrelated sources.

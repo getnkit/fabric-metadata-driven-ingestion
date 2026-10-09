@@ -1,5 +1,7 @@
 # fabric-metadata-driven-ingestion
 
+The current relational demo source is **Amazon RDS for SQL Server**; the Control Plane remains **Fabric SQL Database**. Connection type: `AMAZON_RDS_SQL_SERVER`, logical source ref: `RDS_ECOMMERCE`. Azure SQL adapters are retired from `main` after the connector migration. For an **existing Fabric DEV Control Database**, use the [non-destructive RDS cutover procedure](scripts/operations/01_cutover_existing_dev_to_rds.sql) after creating the RDS Fabric Connection; do not reset Watermarks.
+
 ## Starter Kit — Fresh Installation
 
 This repository tracks the **current** Microsoft Fabric ingestion framework,
@@ -11,7 +13,7 @@ not a chain of historical upgrade patches.
    `02_create_control_procedures.sql` →
    `99_verify_control_plane.sql`.
 3. **Optional DEV demo only:** `03_seed_connection_settings.sql` and
-   `04_seed_ingestion_metadata.sql` (Azure SQL + SFTP examples).
+   `04_seed_ingestion_metadata.sql` (Amazon RDS for SQL Server + SFTP examples).
 4. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
    describes constraints, non-destructive bootstrap and release gates.
 
@@ -25,7 +27,7 @@ older database.** Existing environments need a reviewed targeted migration.
 
 - [Fabric Data Factory limits and framework guardrails](docs/architecture/fabric-data-factory-limits.md) — platform limits and framework design guardrails.
 - [Database copy performance strategy](docs/architecture/database-copy-performance.md) — metadata-driven dynamic-range partitioning and evidence-based parallel-copy overrides.
-- [Azure SQL copy benchmark](scripts/benchmark/README.md) — permanent 10M-row unpartitioned/physically-partitioned fixtures for NONE vs DYNAMIC_RANGE vs PHYSICAL_PARTITIONS testing.
+- [Amazon RDS for SQL Server copy benchmark](scripts/benchmark/README.md) — default 1M-row per table unpartitioned/physically-partitioned fixtures for NONE vs DYNAMIC_RANGE vs PHYSICAL_PARTITIONS testing.
 - [File ingestion design](docs/architecture/file-ingestion-design.md) — SFTP Landing/Bronze design, recursive ingestion, watermarking, and reusable file loader.
 - [Pipeline activity naming](docs/architecture/pipeline-activity-naming.md) — naming and pipeline-vs-notebook responsibility boundaries.
 

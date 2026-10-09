@@ -1,6 +1,6 @@
 /*
     02_generate_source_data.sql
-    Target: Azure SQL Database (sql_ecommerce_db)
+    Target: Amazon RDS for SQL Server database (sql_ecommerce_db)
     Purpose: Populate the mock operational source tables with deterministic synthetic
              data for ingestion testing.
 

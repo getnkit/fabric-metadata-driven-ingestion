@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented for the current Azure SQL -> Bronze adapter.
+Implemented for the current Amazon RDS for SQL Server -> Bronze adapter.
 
 The framework keeps orchestration in Fabric Data Factory Copy activities and uses
 connector-native parallel partitioning rather than moving simple relational
@@ -12,7 +12,7 @@ distributed transformation rather than connector-native data movement.
 Official references:
 
 - https://learn.microsoft.com/en-us/fabric/data-factory/connector-sql-server-copy-activity
-- https://learn.microsoft.com/en-us/azure/data-factory/connector-azure-sql-database
+- https://learn.microsoft.com/en-us/fabric/data-factory/connector-amazon-rds-for-sql-server-copy-activity
 - https://learn.microsoft.com/en-us/azure/data-factory/copy-activity-performance-features
 
 ## Metadata model
@@ -32,7 +32,7 @@ copy_options
 Keeping copy execution hints in one JSON column avoids adding many nullable,
 connector-specific columns to the shared ingestion configuration table.
 
-### Current Azure SQL contract
+### Current Amazon RDS for SQL Server contract
 
 Default:
 
@@ -66,7 +66,7 @@ Optional benchmark-backed override:
 }
 ```
 
-Current Azure SQL support:
+Current Amazon RDS for SQL Server support:
 
 ```text
 FULL:
@@ -95,7 +95,7 @@ Copy activity. The AUTO branch omits the `parallelCopies` property completely.
 
 ## Runtime flow
 
-The current Azure SQL workers normalize metadata to:
+The current Amazon RDS for SQL Server workers normalize metadata to:
 
 ```text
 p_copy_partition_option
@@ -194,7 +194,7 @@ for the normal non-partitioned path.
 
 ## Physical partitions
 
-Azure SQL FULL ingestion now supports:
+Amazon RDS for SQL Server FULL ingestion now supports:
 
 ```json
 {
@@ -203,7 +203,7 @@ Azure SQL FULL ingestion now supports:
 ```
 
 The physical-partition branch deliberately does not use `sqlReaderQuery`.
-Instead it points the Azure SQL dataset at the configured source schema/table and
+Instead it points the Amazon RDS for SQL Server dataset at the configured source schema/table and
 sets:
 
 ```text
@@ -230,10 +230,12 @@ adapter. The benchmark and the initial implementation use the connector's
 documented full-load physical-partition scenario; incremental semantics continue
 to use the existing LOW/HIGH custom query with NONE or DYNAMIC_RANGE.
 
-This is also consistent with the current Fabric Azure SQL Copy UI behavior
-validated on 2026-10-06: when Source uses `Query`, the available partition
-options are `None` and `Dynamic range`, while `Physical partitions of table`
-is disabled. Incremental ingestion requires a custom watermark query, for example:
+The prior Azure SQL Copy UI was observed on 2026-10-06, but that evidence
+must not be treated as an RDS runtime test. Microsoft's RDS connector
+documentation describes Query + Dynamic Range as well as physical-table
+partition modes. This framework uses Query only with NONE/DYNAMIC_RANGE,
+and uses the physical-partition source TABLE mode only for FULL loads.
+Confirm the RDS UI/JSON behavior after connecting to an actual RDS instance. Incremental ingestion requires a custom watermark query, for example:
 
 ```sql
 WHERE <watermark_field> > LOW
@@ -255,12 +257,12 @@ INCREMENTAL:
 
 This is a framework capability decision based on the documented/custom-query
 surface and observed Fabric UI behavior; it should not be interpreted as a
-general claim that Azure SQL can never combine incremental extraction with a
+general claim that Amazon RDS for SQL Server can never combine incremental extraction with a
 physically partitioned source table.
 
 ### Permanent benchmark fixture
 
-The project now includes a dedicated Azure SQL database:
+The benchmark creates a separate **database on the same Amazon RDS for SQL Server instance**:
 
 ```text
 sql_ingestion_benchmark
@@ -276,7 +278,7 @@ benchmark.copy_source_partitioned
 Default scale:
 
 ```text
-10,000,000 rows per table
+1,000,000 rows per table
 CHAR(512) payload per row
 same logical schema and generated values
 ```
@@ -325,3 +327,13 @@ remain connector-aware.
 A future Oracle/PostgreSQL/SQL Server adapter may reuse common keys when the
 connector exposes equivalent behavior, but the DATABASE router must not assume
 that every connector supports the same partition mechanisms.
+
+### RDS Express sizing note
+
+The RDS migration keeps the same NONE/DYNAMIC_RANGE/PHYSICAL_PARTITIONS
+Copy strategy contract and SQL Server timestamp watermark expressions. The
+starter Benchmark Generator targets **1,000,000 rows per table** (not the former
+Azure SQL 10M rows/table) to fit SQL Server Express's per-database limit with
+headroom. More rows or another Edition require explicit budget/storage
+review. Check the Fabric RDS connector source settings at runtime; identical
+SQL syntax does not guarantee identical Connector JSON behavior.

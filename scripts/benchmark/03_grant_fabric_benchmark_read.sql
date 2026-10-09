@@ -1,25 +1,24 @@
 /*
-    03_grant_fabric_benchmark_read.sql
-    Target: Azure SQL Database (sql_ingestion_benchmark)
-    Purpose: Create the read-only contained database user used by the Fabric
-             benchmark Azure SQL connection.
-
-    Replace the placeholder before execution. Never commit the real password.
+    Target: Amazon RDS for SQL Server (sql_ingestion_benchmark).
+    Run as an administrator with CREATE LOGIN permission after the
+    benchmark schema is created. Replace placeholder LOCALLY.
+    No Azure SQL contained database user is assumed.
 */
-
 SET NOCOUNT ON;
-SET XACT_ABORT ON;
 GO
-
-IF DATABASE_PRINCIPAL_ID('fabric_benchmark_user') IS NULL
-BEGIN
-    CREATE USER fabric_benchmark_user
-    WITH PASSWORD = 'REPLACE_WITH_STRONG_PASSWORD';
-END;
+USE [master];
 GO
-
-GRANT SELECT ON SCHEMA::benchmark TO fabric_benchmark_user;
+IF SUSER_ID(N'fabric_benchmark_user') IS NULL
+    CREATE LOGIN [fabric_benchmark_user]
+        WITH PASSWORD = '<REPLACE_WITH_STRONG_PASSWORD>',
+             CHECK_POLICY = ON;
 GO
-
-PRINT 'fabric_benchmark_user has read-only SELECT access to schema benchmark.';
+USE [sql_ingestion_benchmark];
+GO
+IF DATABASE_PRINCIPAL_ID(N'fabric_benchmark_user') IS NULL
+    CREATE USER [fabric_benchmark_user] FOR LOGIN [fabric_benchmark_user];
+GO
+GRANT SELECT ON SCHEMA::[benchmark] TO [fabric_benchmark_user];
+GO
+PRINT 'fabric_benchmark_user granted read-only SELECT on benchmark schema.';
 GO

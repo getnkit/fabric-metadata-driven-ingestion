@@ -1,10 +1,10 @@
 /*
     02_generate_benchmark_data.sql
-    Target: Azure SQL Database (sql_ingestion_benchmark)
-    Purpose: Generate a permanent 10M-row source in each benchmark table.
+    Target: Amazon RDS for SQL Server database (sql_ingestion_benchmark)
+    Purpose: Generate a permanent 1M-row source in each benchmark table.
 
     Design:
-      - 10,000,000 rows per table.
+      - 1,000,000 rows per table.
       - Approximately 512 bytes of explicit payload per row plus fixed columns.
       - Both tables contain the same deterministic logical rows.
       - Inserts are committed in batches to avoid one massive transaction.
@@ -20,7 +20,9 @@
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-DECLARE @TargetRows BIGINT = 10000000;
+/* Express-safe starter workload: ~1M rows per table. Raise only after
+   checking allocated database size, RDS edition and credit budget. */
+DECLARE @TargetRows BIGINT = 1000000;
 DECLARE @BatchSize  INT = 100000;
 DECLARE @BaseDate   DATE = '2026-01-01';
 

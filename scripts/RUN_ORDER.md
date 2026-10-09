@@ -49,7 +49,7 @@ Legacy environments require a reviewed upgrade, not the Fresh-Install script.
 
 ## C. Optional DEV demo source
 
-Prepare demo Azure SQL `sql_ecommerce_db` in this order:
+On the same RDS for SQL Server instance, connect as the RDS database administrator and run `CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
 
 ```text
 scripts/source/01_create_source_schema.sql
@@ -57,8 +57,7 @@ scripts/source/02_generate_source_data.sql
 scripts/security/01_grant_fabric_basic_source_read.sql
 ```
 
-Set a strong contained-user password in the security script without
-committing it. Expected initial demo row counts:
+The RDS security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with an RDS administrator permitted to create logins. Expected initial demo row counts:
 
 | Source | Rows |
 | --- | ---: |
@@ -87,7 +86,7 @@ scripts/control/04_seed_ingestion_metadata.sql
 scripts/control/99_verify_control_plane.sql
 ```
 
-The connection seed creates logical `AZSQL_ECOMMERCE`,
+The connection seed creates logical `RDS_ECOMMERCE`,
 `SFTP_LOGISTICS_VENDOR` and `LH_ECOMMERCE_BRONZE` references;
 the ingestion metadata seed registers **six DATABASE + two FILE**
 sample configs. It creates initial Watermark State only for missing
@@ -103,13 +102,15 @@ an ad hoc seed. There are no default API incremental state rows.
 
 ## E. Execute via Master and verify
 
+Create a Fabric **Amazon RDS for SQL Server** connection (`cn_src_rds_sql_server`) with Basic authentication, RDS endpoint/port 1433, and database `sql_ecommerce_db`. Use the read-only login from the security script; test connectivity and TLS/network restrictions. Populate `@SourceConnectionId` in seed `03` using **this** connector's ID. The RDS database is bound in Fabric Connection; metadata JSON contains its `connectionId` only. Source SQL Server is separate from the Fabric Control SQL Database.
+
 Run only `pl_ingest_orchestrator` as the standard entry point:
 `p_run_requests = []` runs all active configs as REGULAR; a non-empty
 array runs explicit `config_id` and `run_type` requests. Backfill is
 an explicit request with LOW/HIGH for INCREMENTAL. Supported run types
 are REGULAR and BACKFILL; `load_strategy` remains FULL/INCREMENTAL.
 
-- DATABASE: Azure SQL reads directly into Bronze Delta; source-derived
+- DATABASE: Amazon RDS for SQL Server reads directly into Bronze Delta; source-derived
   HIGH comes from the configured watermark column; REGULAR with
   HIGH=LOW is `SKIPPED` without Watermark advancement.
 - FILE: SFTP Binary Copy persists the source file into Lakehouse Files
@@ -141,9 +142,9 @@ More details:
 
 ## F. Optional performance benchmark (separate)
 
-The independent 10M-row performance fixtures and scenario scripts remain in
+The independent 1M-row performance fixtures and scenario scripts remain in
 `scripts/benchmark/` with their own [README](benchmark/README.md).
-Run them only in a separate benchmark Azure SQL database. Benchmark configs
+Run them in a **separate database on the same RDS instance** (not another instance), or a separate instance only when benchmarking warrants its cost. Default is 1M rows per table to stay comfortably below SQL Server Express's 10-GB-per-database limit. Benchmark configs
 are inactive by default and **not part of the starter installation**.
 
 ## Release note
@@ -154,3 +155,15 @@ identities across environments**; review SQL Project security and
 permissions during provisioning. This cleanup intentionally leaves those
 security artifacts untouched to avoid unintended ownership or DROP USER
 changes in the existing DEV database.
+
+## G. RDS connection cutover notes
+
+- New route: `AMAZON_RDS_SQL_SERVER|FULL` and `AMAZON_RDS_SQL_SERVER|INCREMENTAL`.
+- New source ref: `RDS_ECOMMERCE`; keep `source_system = ECOMMERCE` and all existing target schemas.
+- Rename the three pipeline items via Fabric Git sync; their existing `.platform` logicalIds are retained. Confirm parent/child Invoke targets resolve after sync.
+- **Existing DEV metadata**: after RDS Fabric Connection is created and tested, set `@RdsConnectionId` and execute [`scripts/operations/01_cutover_existing_dev_to_rds.sql`](operations/01_cutover_existing_dev_to_rds.sql) in the **Fabric Control SQL Database**, NOT RDS. This transaction adds `RDS_ECOMMERCE`, rebinds only ECOMMERCE config rows without changing their IDs, removes the unreferenced legacy `AZSQL_ECOMMERCE` connection, and enforces the new CHECK. It does **not** reset `control.pipeline_watermarks` or modify audit rows. If other Azure SQL refs remain, it fails closed. Then execute `scripts/control/99_verify_control_plane.sql`. For a fresh empty Fabric Control Database, simply run the normal seeds `03 -> 04` and do **not** run the cutover script.
+- The RDS Connector Dataset takes its database from Fabric Connection, rather than from Azure SQL's `datasetSettings.typeProperties.database`. Verify Source Lookup and Copy in Fabric before treating the migration as accepted.
+- A switch to a different physical source does **not** guarantee Watermark continuity. Check existing LOW against the migrated RDS source's `MAX(updated_at)` and data history; if a deliberate rebaseline is necessary, do it as a separate reviewed operation, never inside an automatic seed/cutover. Rerun/Backfill and old Audit History must be interpreted with source boundaries in mind.
+- RDS SQL Server Express caps each database at 10 GB; avoid the previous 10M x two-table 512-byte benchmark by default. Check source size and billing before scaling up.
+- RDS needs network reachability from the selected Fabric gateway/network. Never expose port 1433 to the entire internet; use the narrowest access path available.
+- **Static JSON/SQL checks are not Fabric runtime acceptance**. Confirm Basic/TLS, Query, Table, partition strategies and incremental semantics before PROD.
