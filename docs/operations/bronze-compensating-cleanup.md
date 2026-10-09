@@ -90,6 +90,34 @@ If cleanup succeeds, the original ingestion failure is finalized with watermark 
 
 If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, and the pipeline fails explicitly. Do not rerun blindly until the failed batch has been reconciled.
 
+## Audit error-message length contract
+
+The Fabric SQL Database stores `audit.ingestion_log.error_message` as
+`NVARCHAR(4000)`; the shared `control.usp_finalize_ingestion_run` parameter
+uses the same limit. Every dynamic `error_message` expression in the Personal
+Fabric Data Pipelines caps its final string to **at most 4,000 characters**
+using Fabric Data Factory `substring(..., 0, 4000)`. This applies to Copy,
+Notebook, Source Lookup, routing, and configuration-validation failures.
+
+- A single activity error uses
+  `@substring(string(activity('some_activity').error.message),0,4000)`.
+- A combined **original failure + cleanup failure** reserves up to **1,900
+  characters per source error** before composing the labeled message. The
+  combined string is bounded again to 4,000 to retain both error categories.
+- A Landing file-count mismatch followed by cleanup failure preserves the
+  numeric mismatch description, then allows up to 3,800 characters from the
+  cleanup exception, with the same outer 4,000-character cap.
+- Short static errors, NULL messages on successful/SKIPPED runs, audit statuses,
+  retry/cleanup dependencies and watermark decisions remain unchanged.
+- Truncation deliberately retains the beginning of an error and can omit later
+  stack-trace detail; inspect the failing Fabric activity run for full diagnostics.
+
+Acceptance: provoke a long Copy/Notebook exception and a cleanup-failure
+scenario in a safe DEV environment. Check `LEN(error_message) <= 4000`,
+that the terminal audit row is written, that original and cleanup labels remain
+present for combined failures, and that no failed run advances the watermark.
+This is a **static-code contract until Fabric runtime acceptance succeeds**.
+
 ## Safety boundary
 
 Do not automatically delete Bronze rows after `sp_finalize_success` itself fails.
