@@ -42,8 +42,8 @@ IF @BenchmarkOnly = 1 AND NOT EXISTS
 )
     THROW 51013, 'Benchmark-only mode requires the benchmark connection registered via seed 03.', 1;
 
-DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
-DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
+DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00Z';
+DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00Z';
 
 DECLARE @Seed TABLE
 (
