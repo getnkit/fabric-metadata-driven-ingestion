@@ -9,8 +9,8 @@ It exposes **four String variables** holding environment-specific GUIDs:
 
 | Variable | Consumer | Value required per environment |
 | --- | --- | --- |
-| `control_db_connection_id` | Control SQL Lookup / Stored Procedure | Fabric SQL Database **Connection** GUID |
-| `control_db_item_id` | Control SQL Lookup / Stored Procedure | `sqldb_ingestion_control` **SQL Database item** GUID |
+| `ingestion_control_connection_id` | Control SQL Lookup / Stored Procedure | Fabric SQL Database **Connection** GUID |
+| `ingestion_control_item_id` | Control SQL Lookup / Stored Procedure | `sqldb_ingestion_control` **SQL Database item** GUID |
 | `pipeline_invoke_connection_id` | Invoke Pipeline | Fabric **Invoke Pipeline Connection** GUID |
 | `notebook_execution_connection_id` | Notebook activities | Fabric **Notebook execution Connection** GUID |
 
@@ -35,10 +35,10 @@ own active Library bindings to execute.
 ## What is and is not parameterized
 
 - Control SQL activity `externalReferences.connection` uses
-  `@pipeline().libraryVariables.control_db_connection_id`.
+  `@pipeline().libraryVariables.ingestion_control_connection_id`.
 - Control SQL activity `connectionSettings.properties.typeProperties.artifactId`
   (including nested Lookup dataset connections) uses
-  `@pipeline().libraryVariables.control_db_item_id`.
+  `@pipeline().libraryVariables.ingestion_control_item_id`.
 - Invoke Pipeline `externalReferences.connection` uses
   `@pipeline().libraryVariables.pipeline_invoke_connection_id`.
 - Notebook activity `externalReferences.connection` uses
@@ -67,9 +67,9 @@ own active Library bindings to execute.
    declared references resolve. **Do not** replace the Library expressions
    with raw DEV GUIDs.
 4. Verify one Control SQL Stored Procedure and one Control Lookup:
-   - Connection: `@pipeline().libraryVariables.control_db_connection_id`
+   - Connection: `@pipeline().libraryVariables.ingestion_control_connection_id`
    - Workspace ID: `00000000-0000-0000-0000-000000000000`
-   - SQL Database ID: `@pipeline().libraryVariables.control_db_item_id`
+   - SQL Database ID: `@pipeline().libraryVariables.ingestion_control_item_id`
 5. Verify an Invoke Pipeline activity uses
    `@pipeline().libraryVariables.pipeline_invoke_connection_id`.
    Its target pipeline still needs to point to the correct Fabric item.

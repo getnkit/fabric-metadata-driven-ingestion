@@ -21,11 +21,11 @@
               "properties": {
                 "type": "FabricSqlDatabase",
                 "typeProperties": {
-                  "artifactId": "@pipeline().libraryVariables.control_db_item_id",
+                  "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
                   "workspaceId": "00000000-0000-0000-0000-000000000000"
                 },
                 "externalReferences": {
-                  "connection": "@pipeline().libraryVariables.control_db_connection_id"
+                  "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
                 },
                 "annotations": []
               }
@@ -216,11 +216,11 @@
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "@pipeline().libraryVariables.control_db_item_id",
+                    "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "@pipeline().libraryVariables.control_db_connection_id"
+                    "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
                   },
                   "annotations": []
                 }
@@ -517,11 +517,11 @@
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "@pipeline().libraryVariables.control_db_item_id",
+                    "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "@pipeline().libraryVariables.control_db_connection_id"
+                    "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
                   },
                   "annotations": []
                 }
@@ -770,11 +770,11 @@
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "@pipeline().libraryVariables.control_db_item_id",
+                    "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "@pipeline().libraryVariables.control_db_connection_id"
+                    "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
                   },
                   "annotations": []
                 }
@@ -994,11 +994,11 @@
                 "properties": {
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
-                    "artifactId": "@pipeline().libraryVariables.control_db_item_id",
+                    "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
                     "workspaceId": "00000000-0000-0000-0000-000000000000"
                   },
                   "externalReferences": {
-                    "connection": "@pipeline().libraryVariables.control_db_connection_id"
+                    "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
                   },
                   "annotations": []
                 }
@@ -1208,14 +1208,14 @@
       }
     },
     "libraryVariables": {
-      "control_db_item_id": {
+      "ingestion_control_item_id": {
         "type": "String",
-        "variableName": "control_db_item_id",
+        "variableName": "ingestion_control_item_id",
         "libraryName": "vl_ingestion_connections"
       },
-      "control_db_connection_id": {
+      "ingestion_control_connection_id": {
         "type": "String",
-        "variableName": "control_db_connection_id",
+        "variableName": "ingestion_control_connection_id",
         "libraryName": "vl_ingestion_connections"
       },
       "pipeline_invoke_connection_id": {

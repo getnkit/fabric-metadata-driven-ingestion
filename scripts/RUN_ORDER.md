@@ -12,7 +12,7 @@ benchmark fixtures are optional and DEV-only.
 - Sync `fabric/vl_ingestion_connections.VariableLibrary` into the same
   workspace as `pl_ingest_orchestrator`.
 - Set four environment-specific **String** values in the active Library:
-  `control_db_connection_id`, `control_db_item_id`,
+  `ingestion_control_connection_id`, `ingestion_control_item_id`,
   `pipeline_invoke_connection_id`, `notebook_execution_connection_id`.
   Committed Library defaults are deliberately blank.
 - Grant access to each Fabric Connection, SQL Database, Notebook, Lakehouse
