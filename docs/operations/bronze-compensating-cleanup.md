@@ -102,11 +102,83 @@ Validation and Routing messages that do not propagate activity errors keep their
 
 Smoke-check one short lookup error and one source-to-Bronze failure path in DEV after synchronizing the Fabric pipeline definitions. Full runtime failure-path coverage has not been performed.
 
-## Safety boundary
+## Finalization failure recovery (incremental DATABASE and FILE)
 
-Do not automatically delete Bronze rows after `sp_finalize_success` itself fails.
+The SQL Server INCREMENTAL Loader and SFTP INCREMENTAL Adapter each call the
+shared `pl_reconcile_finalize_outcome` child pipeline **only when**
+`sp_finalize_success` fails. Successful finalization does not execute a lookup
+or recovery activity.
 
-That stored procedure may have committed the audit/watermark transaction before the client observed the failure. Automatically deleting Bronze after an ambiguous successful finalization could leave committed control state pointing past missing data.
+The child pipeline reads a **committed terminal Audit record** matched by
+`ingestion_config_id`, `batch_id`, and `pipeline_run_id` and classifies it:
+
+| Confirmed audit outcome | Recovery action | Final pipeline status |
+| --- | --- | --- |
+| `SUCCESS` | Keep Bronze and Landing. Finalization committed; do **not** automatically rerun the old execution. | `FAILED / FINALIZE_RESPONSE_FAILED_COMMITTED` (transport ambiguity is still an operational incident) |
+| `FAILED` plus `WATERMARK_CONFLICT` | Remove only the identified failed Bronze rows; for FILE also remove its scoped Landing leaf. Retain the original FAILED audit. | `FAILED / WATERMARK_CONFLICT` |
+| Absent/other terminal result | Preserve Bronze and Landing for operator reconciliation. | `FAILED / FINALIZE_OUTCOME_UNCONFIRMED` |
+| Audit Lookup itself fails | Preserve data; report lookup failure. | `FAILED / FINALIZE_OUTCOME_LOOKUP_FAILED` |
+
+The exact-match `FAILED / WATERMARK_CONFLICT` audit row is emitted *and
+committed by* `control.usp_finalize_ingestion_run` when its guarded watermark
+UPDATE affects no row. That procedure does **not** advance watermark on this
+outcome; it commits the FAILED audit before raising the conflict exception.
+This is why the child pipeline can automatically compensate this specific
+outcome, but **cannot infer safety from a failed Stored Procedure activity
+alone**.
+
+For DATABASE, the existing `nb_cleanup_bronze_batch_rows` removes rows
+matching **both** `_batch_id` and `_pipeline_run_id`. For FILE, that same
+notebook runs first, then `nb_cleanup_landing_batch_files` deletes only the
+corresponding `ingestion_date/ingestion_config_id/batch_id/pipeline_run_id`
+execution leaf. Failed cleanup reports `BRONZE_CLEANUP_FAILED` or
+`LANDING_CLEANUP_FAILED`; the original audit remains a durable
+`WATERMARK_CONFLICT` record.
+
+The stored procedure's idempotent early return now requires the same
+`pipeline_run_id`, `batch_id`, terminal `status`, `run_type`, config ID,
+`error_code`, and processing LOW/HIGH. Retrying the same finalization is
+idempotent; trying to finalize an already-FAILED run as SUCCESS throws
+`FINALIZE_OUTCOME_MISMATCH` instead of reporting false success.
+
+### Limits and production follow-through
+
+- **No unconditional finalize-failure cleanup.** When audit is absent or the
+  connection cannot read it, the stored procedure may have committed without
+  returning a response. Preserve data until the outcome is reconciled.
+- Automatic recovery cannot run after cancellation, pipeline process loss, or
+  outages before the failure branch. Operations must still scan for orphaned
+  batches (no SUCCESS audit) and reconcile them before reruns.
+- Downstream processing must not treat all physical Bronze rows as committed.
+  A consumer/Gold promotion boundary must use only confirmed SUCCESS batches.
+  This ingestion repository does **not** itself implement that downstream gate.
+- Run exactly one supported top-level `pl_ingest_orchestrator` execution when
+  recovering; it reads the latest committed watermark. Never retry an old
+  child Loader with stale LOW/HIGH after a true conflict.
+- This automated finalize reconciliation covers SQL Server INCREMENTAL and
+  SFTP INCREMENTAL with a committed conflict audit. Other finalization failures
+  (including no-data SKIPPED, FULL loads, and uncertain errors) are not silently
+  promoted or deleted.
+
+### Recovery acceptance in DEV
+
+1. Force a deterministic watermark mismatch **after** Bronze Copy but before
+   incremental Finalize; verify Audit `FAILED / WATERMARK_CONFLICT`, state
+   unchanged by the conflicting run, and zero rows for its failed batch/run.
+   For SFTP also verify its Landing execution leaf was deleted.
+2. Simulate a successful Finalize commit whose response is lost; verify Audit
+   `SUCCESS`, no automatic cleanup, and `FINALIZE_RESPONSE_FAILED_COMMITTED`
+   is surfaced to operations.
+3. Fail the Audit Lookup or make its record absent; verify no automatic cleanup
+   and an explicit unconfirmed outcome.
+4. Force cleanup failure and verify error propagation and retained audit.
+5. Run a normal REGULAR ingestion; verify no recovery Lookup/Notebook executes.
+6. Call the finalize procedure again using the same identity and terminal
+   outcome (idempotent), then request a conflicting terminal status for the
+   same RunId (must throw `FINALIZE_OUTCOME_MISMATCH`).
+
+These are runtime acceptance criteria; repository structural checks alone do
+not establish that Microsoft Fabric has executed them successfully.
 
 ## Verification queries
 
