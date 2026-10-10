@@ -168,7 +168,7 @@ Do not replace a simple connector-native Copy activity with a Notebook just to m
 
 Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
 
-Do not automatically delete Bronze rows after `sp_finalize_success` itself fails. That stored procedure may have committed the audit/watermark transaction before the client observed the failure; deleting Bronze after an ambiguous successful finalization could create data loss.
+If `sp_finalize_success` fails, `pl_ingest_finalize_recovery` first checks the committed audit for the exact object run. Automatic compensating cleanup is allowed **only** when the audit confirms `FAILED / WATERMARK_CONFLICT`; successful or unconfirmed finalization outcomes must not delete Bronze (or Landing). See [Bronze compensating cleanup](../operations/bronze-compensating-cleanup.md) for recovery behavior.
 
 ## Pipeline names
 
@@ -202,6 +202,7 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 | `router` | Selects the connector + load-strategy implementation within a generic ingestion pattern such as DATABASE or FILE. |
 | `adapter` | Converts generic ingestion metadata into connector-specific configuration **and executes the connector-specific ingestion flow**. It is not only a metadata translator. |
 | `loader` | Optional physical load sub-step split from an adapter only when a separate execution boundary is technically justified. |
+| `recovery` | Shared finalization-failure reconciliation and confirmed-conflict cleanup; invoked only after incremental finalization fails. |
 
 Current active hierarchy:
 
@@ -218,15 +219,17 @@ pl_ingest_orchestrator
                                         -> SQL_SERVER|INCREMENTAL
                                              -> pl_ingest_sql_server_incremental_adapter
                                                   -> pl_ingest_sql_server_incremental_loader
+                                                       -> (finalize failure) pl_ingest_finalize_recovery
                               -> FILE
                                    -> pl_ingest_file_router
                                         -> SFTP|FULL
                                              -> pl_ingest_sftp_full_adapter
                                         -> SFTP|INCREMENTAL
                                              -> pl_ingest_sftp_incremental_adapter
+                                                  -> (finalize failure) pl_ingest_finalize_recovery
 ```
 
-`pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, and loader pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
+`pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, loader, and finalize recovery pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
 
 Platform Retry/Rerun is treated as execution recovery and is not encoded as a framework `run_type`. Direct manual reruns of internal child pipelines are not part of the supported operational contract; recovery enters through the top-level orchestrator.
 
@@ -238,7 +241,8 @@ Invoke Pipeline activity names mirror the called pipeline name without the `pl_`
 pl_ingest_database_router                 -> inv_ingest_database_router
 pl_ingest_sql_server_incremental_adapter   -> inv_ingest_sql_server_incremental_adapter
 pl_ingest_sql_server_incremental_loader    -> inv_ingest_sql_server_incremental_loader
-pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter
+pl_ingest_sftp_incremental_adapter         -> inv_ingest_sftp_incremental_adapter
+pl_ingest_finalize_recovery               -> inv_ingest_finalize_recovery
 ```
 
 When a parent invokes a child only once, use the child-oriented name directly:
