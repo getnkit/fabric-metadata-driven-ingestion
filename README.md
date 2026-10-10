@@ -27,7 +27,7 @@ older database.** Existing environments need a reviewed targeted migration.
 
 - [Fabric Data Factory limits and framework guardrails](docs/architecture/fabric-data-factory-limits.md) — platform limits and framework design guardrails.
 - [Database copy performance strategy](docs/architecture/database-copy-performance.md) — metadata-driven dynamic-range partitioning and evidence-based parallel-copy overrides.
-- [SQL Server 2022 Developer on EC2 copy benchmark](scripts/benchmark/README.md) — 10M-row per table unpartitioned/physically-partitioned fixtures for NONE vs DYNAMIC_RANGE vs PHYSICAL_PARTITIONS testing.
+- [SQL Server 2022 Developer on EC2 copy benchmark](scripts/source/benchmark-db/README.md) — 10M-row per table unpartitioned/physically-partitioned fixtures for NONE vs DYNAMIC_RANGE vs PHYSICAL_PARTITIONS testing.
 - [File ingestion design](docs/architecture/file-ingestion-design.md) — SFTP Landing/Bronze design, recursive ingestion, watermarking, and reusable file loader.
 - [Pipeline activity naming](docs/architecture/pipeline-activity-naming.md) — naming and pipeline-vs-notebook responsibility boundaries.
 

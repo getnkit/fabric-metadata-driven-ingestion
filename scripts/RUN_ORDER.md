@@ -52,9 +52,9 @@ Legacy environments require a reviewed upgrade, not the Fresh-Install script.
 On the Ubuntu EC2 host, connect to the SQL Server 2022 Developer container as the database administrator and run `CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
 
 ```text
-scripts/source/01_create_source_schema.sql
-scripts/source/02_generate_source_data.sql
-scripts/security/01_grant_fabric_basic_source_read.sql
+scripts/source/ecommerce-db/01_create_source_schema.sql
+scripts/source/ecommerce-db/02_generate_source_data.sql
+scripts/source/ecommerce-db/04_grant_fabric_reader.sql
 ```
 
 The SQL Server security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with a SQL Server administrator permitted to create logins. Expected initial demo row counts:
@@ -69,14 +69,14 @@ The SQL Server security script creates a server-level SQL LOGIN in `master`, map
 | sales.order_items | 60,000 |
 
 For FILE testing, provision the SFTP connection and put the sample files
-from `sample-data/sftp/outbound/inventory/` onto the demo SFTP server.
+from `scripts/source/sftp/outbound/inventory/` onto the demo SFTP server.
 Check remote paths, credentials and permissions.
 
 To simulate later inventory movement deliveries without editing the static fixtures,
-use the [SFTP movement generator](sample-data/README.md):
+use the [SFTP movement generator](source/sftp/README.md):
 
 ```bash
-python3 scripts/sample-data/generate_inventory_movement.py --rows 10
+python3 scripts/source/sftp/generate_inventory_movement.py --rows 10
 ```
 
 Upload generated files to `/outbound/inventory/movements/` through the producer
@@ -155,8 +155,11 @@ More details:
 ## F. Optional performance benchmark (separate)
 
 The independent 10M-row-per-table performance fixtures and scenario scripts remain in
-`scripts/benchmark/` with their own [README](benchmark/README.md).
-Run them in a **separate database on the same EC2 SQL Server instance** (`sql_ingestion_benchmark`). The default is **10,000,000 rows in each of two tables** (`CHAR(512)` payload), using SQL Server Developer Edition for DEV/test only. Watch EBS free space, SQL data/log files, CPU/memory and transfer usage. Benchmark configs are inactive by default and **not part of the starter installation**.
+`scripts/source/benchmark-db/` with their own [README](source/benchmark-db/README.md).
+Run them in a **separate database on the same EC2 SQL Server instance** (`sql_ingestion_benchmark`). The default is **10,000,000 rows in each of two tables** (`CHAR(512)` payload), using SQL Server Developer Edition for DEV/test only. Watch EBS free space, SQL data/log files, CPU/memory and transfer usage. Use `scripts/control/05_register_benchmark_metadata.sql` once to register the optional
+Fabric benchmark connection and two inactive configs. Use
+`scripts/control/06_set_benchmark_scenario.sql` to choose or disable a scenario.
+Benchmark configs are inactive by default and **not part of the starter installation**.
 
 ## Release note
 

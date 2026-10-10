@@ -14,26 +14,26 @@ Generated `movement_id` values include a UTC run token and row number to avoid c
 
 ```bash
 # One new file, six data rows (default)
-python3 scripts/sample-data/generate_inventory_movement.py
+python3 scripts/source/sftp/generate_inventory_movement.py
 
 # One new file, 100 rows
-python3 scripts/sample-data/generate_inventory_movement.py --rows 100
+python3 scripts/source/sftp/generate_inventory_movement.py --rows 100
 
 # Three new files with 1,000 rows each
-python3 scripts/sample-data/generate_inventory_movement.py --files 3 --rows 1000
+python3 scripts/source/sftp/generate_inventory_movement.py --files 3 --rows 1000
 
 # Generate under YYYY/MM/ to test recursive SFTP discovery
-python3 scripts/sample-data/generate_inventory_movement.py --nested --rows 10
+python3 scripts/source/sftp/generate_inventory_movement.py --nested --rows 10
 
 # Choose an alternative local output directory
-python3 scripts/sample-data/generate_inventory_movement.py \
+python3 scripts/source/sftp/generate_inventory_movement.py \
   --output-dir /tmp/inventory-movements --rows 10
 ```
 
 By default, generated files go under:
 
 ```text
-sample-data/sftp/outbound/inventory/movements/
+scripts/source/sftp/outbound/inventory/movements/
   inventory_movement_YYYYMMDDTHHMMSSZ.csv
 ```
 

@@ -29,9 +29,7 @@ MOVEMENT_TYPES = (
 )
 
 DEFAULT_OUTPUT_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "sample-data"
-    / "sftp"
+    Path(__file__).resolve().parent
     / "outbound"
     / "inventory"
     / "movements"
@@ -112,7 +110,7 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
-        help="Local movements root (default: repo sample-data/sftp/outbound/inventory/movements).",
+        help="Local movements root (default: repo scripts/source/sftp/outbound/inventory/movements).",
     )
     parser.add_argument(
         "--nested", action="store_true", help="Generate under YYYY/MM/ to test recursive SFTP discovery."

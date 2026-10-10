@@ -1,2 +1,2 @@
 # Locally generated SFTP movement fixtures (tracked examples stay versioned)
-sample-data/sftp/outbound/inventory/movements/**/inventory_movement_*.csv
+scripts/source/sftp/outbound/inventory/movements/**/inventory_movement_*.csv

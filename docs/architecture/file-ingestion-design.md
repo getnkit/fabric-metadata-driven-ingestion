@@ -214,7 +214,7 @@ cross-source relationship without duplicating the Azure SQL source tables.
 Repository fixture:
 
 ```text
-sample-data/sftp/outbound/inventory/inventory_snapshot.csv
+scripts/source/sftp/outbound/inventory/inventory_snapshot.csv
 ```
 
 Source SFTP path and file pattern:
@@ -513,7 +513,7 @@ The **FILE Router** performs the single framework-level supported-format guard b
 
 The checked-in `inventory_movement_*.csv` files are static reproducible fixtures.
 To simulate new provider deliveries, use the optional [local Python movement
-generator](../../scripts/sample-data/README.md). It preserves the existing CSV
+generator](../../scripts/source/sftp/README.md). It preserves the existing CSV
 columns, writes fresh UTC-stamped filenames without overwriting old fixtures,
 and can place files under `YYYY/MM/` to test recursive SFTP discovery. Upload
 with the vendor/producer account to `/outbound/inventory/movements/`; the
