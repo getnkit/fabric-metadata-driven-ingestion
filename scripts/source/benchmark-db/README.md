@@ -29,7 +29,7 @@ Run:
 ```text
 01_create_benchmark_source.sql
 02_generate_benchmark_data.sql
-03_grant_fabric_benchmark_read.sql
+03_grant_fabric_reader.sql
 ```
 
 Before step 3, replace the password placeholder locally. Never commit the real
@@ -48,18 +48,11 @@ Create a **Fabric SQL Server 2022 Developer on EC2** connection named:
 cn_src_sql_server_ingestion_benchmark
 ```
 
-Point it at `sql_ingestion_benchmark` using `fabric_benchmark_user`.
+Point it at `sql_ingestion_benchmark` using `fabric_benchmark_reader`.
 
-Then open `04_register_benchmark_connection.sql`, paste the Fabric connection ID
-into the local variable, and run it against `sqldb_ingestion_control`.
-
-### Control metadata
-
-Run against `sqldb_ingestion_control`:
-
-```text
-05_register_benchmark_configs.sql
-```
+Open `scripts/control/05_register_benchmark_metadata.sql`, fill its Fabric
+connection ID, and run it against `sqldb_ingestion_control`. This **one**
+script registers both the benchmark connection and its two configs.
 
 The two benchmark configs are registered with `is_active = 0`. This is
 intentional: an ordinary all-config master run must never launch 10M-row
@@ -68,7 +61,7 @@ benchmark copies accidentally.
 ## Scenario selection
 
 Edit only the two local variables in
-`06_set_benchmark_scenario.sql`:
+`scripts/control/06_set_benchmark_scenario.sql`:
 
 ```sql
 DECLARE @Scenario VARCHAR(40) = 'UNPARTITIONED_DYNAMIC';

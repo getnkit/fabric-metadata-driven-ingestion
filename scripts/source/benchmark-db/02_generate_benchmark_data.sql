@@ -29,7 +29,7 @@ DECLARE @BaseDate   DATE = '2026-01-01';
 IF OBJECT_ID('benchmark.copy_source_unpartitioned', 'U') IS NULL
    OR OBJECT_ID('benchmark.copy_source_partitioned', 'U') IS NULL
 BEGIN
-    THROW 51110, 'Run scripts/benchmark/01_create_benchmark_source.sql first.', 1;
+    THROW 51110, 'Run scripts/source/benchmark-db/01_create_benchmark_source.sql first.', 1;
 END;
 
 /* ---------- Phase 1: deterministic unpartitioned source ---------- */

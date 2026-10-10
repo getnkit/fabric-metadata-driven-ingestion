@@ -1,16 +1,64 @@
 /*
-    05_register_benchmark_configs.sql
+    05_register_benchmark_metadata.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
-    Purpose: Register two permanent benchmark source objects.
+    Purpose: Register the benchmark connection and its two INACTIVE source configs.
 
-    Both configs are INACTIVE by default so ordinary master runs never copy
-    10M-row benchmark tables accidentally. Use 06_set_benchmark_scenario.sql
-    to activate exactly one benchmark scenario before a benchmark run.
+    Create Fabric connection cn_src_sql_server_ingestion_benchmark first, then paste its
+    environment-specific connection ID below. Do not commit the real ID.
 */
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
+DECLARE @BenchmarkSourceConnectionId NVARCHAR(100) = NULL;
+
+IF @BenchmarkSourceConnectionId IS NULL
+BEGIN
+    THROW 51120, 'Set BenchmarkSourceConnectionId before running this script.', 1;
+END;
+
+DECLARE @ConnectionSettings NVARCHAR(MAX) =
+    CONCAT(
+        N'{"connectionId":"',
+        @BenchmarkSourceConnectionId,
+        N'"}'
+    );
+
+IF EXISTS
+(
+    SELECT 1
+    FROM control.connection_settings
+    WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK'
+)
+BEGIN
+    UPDATE control.connection_settings
+    SET
+        connection_type = 'SQL_SERVER',
+        connection_settings = @ConnectionSettings,
+        updated_at = SYSUTCDATETIME()
+    WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK';
+END
+ELSE
+BEGIN
+    INSERT INTO control.connection_settings
+    (
+        connection_ref,
+        connection_type,
+        connection_settings
+    )
+    VALUES
+    (
+        'SQL_SERVER_INGESTION_BENCHMARK',
+        'SQL_SERVER',
+        @ConnectionSettings
+    );
+END;
+
+SELECT *
+FROM control.connection_settings
+WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK';
+
+/* Both benchmark configs remain inactive by default. */
 IF NOT EXISTS
 (
     SELECT 1
@@ -18,7 +66,7 @@ IF NOT EXISTS
     WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK'
 )
 BEGIN
-    THROW 51130, 'Register SQL_SERVER_INGESTION_BENCHMARK first.', 1;
+    THROW 51130, 'Benchmark connection reference is missing.', 1;
 END;
 
 IF NOT EXISTS
