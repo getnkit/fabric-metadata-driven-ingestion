@@ -90,7 +90,7 @@ Fabric Connection registration:
 | Logical connection_ref | Fabric connection | Host/port | Authentication |
 |---|---|---|---|
 | `SQL_SERVER_ECOMMERCE` | `cn_sql_server_ecommerce` | Elastic IP:1433, DB `sql_ecommerce_db` | SQL Basic |
-| `SQL_SERVER_BENCHMARK_DB` | `cn_src_sql_server_benchmark_db` | Elastic IP:1433, DB `sql_benchmark_db` | SQL Basic |
+| `SQL_SERVER_BENCHMARK` | `cn_src_sql_server_benchmark_db` | Elastic IP:1433, DB `sql_benchmark_db` | SQL Basic |
 | `SFTP_LOGISTICS_VENDOR` | `cn_sftp_logistics_vendor` | Elastic IP:2222 | SFTP Basic |
 
 For the SFTP host key fingerprint **on EC2**:

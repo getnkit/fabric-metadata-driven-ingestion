@@ -107,7 +107,7 @@ scripts/control/99_verify_control_plane.sql
 The connection seed creates logical `SQL_SERVER_ECOMMERCE`,
 `SFTP_LOGISTICS_VENDOR`, and `LH_ECOMMERCE_BRONZE` references.
 The metadata seed creates **six E-commerce DATABASE + two SFTP FILE**
-demo configs. When a `SQL_SERVER_BENCHMARK_DB` connection reference
+demo configs. When a `SQL_SERVER_BENCHMARK` connection reference
 is present, it also inserts **two INACTIVE benchmark DATABASE** configs
 without overwriting existing benchmark scenario settings. It creates initial
 Watermark State only for missing DATABASE/FILE INCREMENTAL config IDs

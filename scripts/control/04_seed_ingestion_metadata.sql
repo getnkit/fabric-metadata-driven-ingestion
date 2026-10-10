@@ -37,7 +37,7 @@ DECLARE @BenchmarkOnly BIT = 0;
 IF @BenchmarkOnly = 1 AND NOT EXISTS
 (
     SELECT 1 FROM control.connection_settings
-    WHERE connection_ref = 'SQL_SERVER_BENCHMARK_DB'
+    WHERE connection_ref = 'SQL_SERVER_BENCHMARK'
       AND connection_type = 'SQL_SERVER'
 )
     THROW 51013, 'Benchmark-only mode requires the benchmark connection registered via seed 03.', 1;
@@ -135,7 +135,7 @@ IF EXISTS
 (
     SELECT 1
     FROM control.connection_settings
-    WHERE connection_ref = 'SQL_SERVER_BENCHMARK_DB'
+    WHERE connection_ref = 'SQL_SERVER_BENCHMARK'
       AND connection_type = 'SQL_SERVER'
 )
 BEGIN
@@ -148,14 +148,14 @@ BEGIN
     )
     VALUES
     (
-        'BENCHMARK_DB', 'SQL_SERVER_BENCHMARK_DB', 'benchmark',
+        'BENCHMARK', 'SQL_SERVER_BENCHMARK', 'benchmark',
         'copy_source_unpartitioned', NULL, 'DATABASE', NULL, NULL,
         N'{"partition_option":"NONE"}', NULL,
         'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_unpartitioned_none',
         'FULL', NULL, 0
     ),
     (
-        'BENCHMARK_DB', 'SQL_SERVER_BENCHMARK_DB', 'benchmark',
+        'BENCHMARK', 'SQL_SERVER_BENCHMARK', 'benchmark',
         'copy_source_partitioned', NULL, 'DATABASE', NULL, NULL,
         N'{"partition_option":"PHYSICAL_PARTITIONS"}', NULL,
         'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_partitioned_physical',
@@ -191,7 +191,7 @@ BEGIN TRY
          OR (s.source_schema IS NULL AND c.source_schema IS NULL)
      )
      AND s.source_object = c.source_object
-    WHERE s.source_system <> 'BENCHMARK_DB';
+    WHERE s.source_system <> 'BENCHMARK';
 
     INSERT INTO control.ingestion_config
     (
@@ -298,7 +298,7 @@ SELECT
     created_at,
     updated_at
 FROM control.ingestion_config
-WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR','BENCHMARK_DB')
+WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR','BENCHMARK')
 ORDER BY ingestion_config_id;
 
 SELECT *

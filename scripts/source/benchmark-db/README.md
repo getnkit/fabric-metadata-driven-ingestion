@@ -63,8 +63,8 @@ cn_src_sql_server_benchmark_db
 ```
 
 Point it at `sql_benchmark_db` using `fabric_benchmark_reader`.
-The Control Plane logical connection reference is `SQL_SERVER_BENCHMARK_DB`
-and benchmark `source_system` is `BENCHMARK_DB`.
+The Control Plane logical connection reference is `SQL_SERVER_BENCHMARK`
+and benchmark `source_system` is `BENCHMARK`.
 
 Benchmark registration is integrated into the core Control Plane seeds;
 there is **no separate benchmark-registration script**:
