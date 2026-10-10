@@ -1190,7 +1190,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_file_count_mismatch').error.message),0,3800)\n),0,4000)",
+                      "value": "@concat(\n    'Original Landing file count mismatch. filesRead=',\n    string(activity('copy_sftp_to_landing').output.filesRead),\n    ', filesWritten=',\n    string(activity('copy_sftp_to_landing').output.filesWritten),\n    ' | Landing cleanup failure: ',\n    take(string(activity('nb_cleanup_landing_file_count_mismatch').error.message),3000)\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -1970,7 +1970,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(string(activity('nb_load_file_landing_to_bronze').error.message),0,4000)",
+                      "value": "@take(string(activity('nb_load_file_landing_to_bronze').error.message),4000)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2165,7 +2165,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(concat(\n    'Original Bronze write failure: ',\n    substring(string(activity('nb_load_file_landing_to_bronze').error.message),0,1900),\n    ' | Bronze cleanup failure: ',\n    substring(string(activity('nb_cleanup_bronze_write_failed').error.message),0,1900)\n),0,4000)",
+                      "value": "@concat(\n    'Original Bronze write failure: ',\n    take(string(activity('nb_load_file_landing_to_bronze').error.message),1500),\n    ' | Bronze cleanup failure: ',\n    take(string(activity('nb_cleanup_bronze_write_failed').error.message),1500)\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -2480,7 +2480,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@substring(string(activity('copy_sftp_to_landing').error.message),0,4000)",
+                "value": "@take(string(activity('copy_sftp_to_landing').error.message),4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -2694,7 +2694,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@substring(concat(\n    'Original Landing copy failure: ',\n    substring(string(activity('copy_sftp_to_landing').error.message),0,1900),\n    ' | Landing cleanup failure: ',\n    substring(string(activity('nb_cleanup_landing_copy_failed').error.message),0,1900)\n),0,4000)",
+                "value": "@concat(\n    'Original Landing copy failure: ',\n    take(string(activity('copy_sftp_to_landing').error.message),1500),\n    ' | Landing cleanup failure: ',\n    take(string(activity('nb_cleanup_landing_copy_failed').error.message),1500)\n)",
                 "type": "Expression"
               },
               "type": "String"
