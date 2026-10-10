@@ -2,28 +2,28 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
   "variables": [
     {
-      "name": "control_db_connection_id",
+      "name": "ingestion_control_connection_id",
       "note": "Environment-specific Fabric SQL Database connection GUID. Configure in workspace.",
       "type": "String",
-      "value": ""
+      "value": "d65b2109-99c2-4bde-b50a-db0ebf5093da"
     },
     {
-      "name": "control_db_item_id",
+      "name": "ingestion_control_item_id",
       "note": "Environment-specific sqldb_ingestion_control Fabric SQL Database item GUID. Configure in workspace.",
       "type": "String",
-      "value": ""
+      "value": "9c67fb4e-b716-4b47-904b-185650af6a71"
     },
     {
       "name": "pipeline_invoke_connection_id",
       "note": "Environment-specific Invoke Pipeline connection GUID. Configure in workspace.",
       "type": "String",
-      "value": ""
+      "value": "8812ab7f-ca15-4116-9e1e-df9c91d0eec3"
     },
     {
       "name": "notebook_execution_connection_id",
       "note": "Environment-specific Notebook execution connection GUID. Configure in workspace.",
       "type": "String",
-      "value": ""
+      "value": "012037b4-5887-4ccd-b8e0-43219198308f"
     }
   ]
 }
