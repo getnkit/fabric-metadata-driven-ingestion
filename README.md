@@ -2,6 +2,10 @@
 
 The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. For an **existing Fabric DEV Control Database**, use the [non-destructive SQL Server cutover procedure](scripts/operations/01_cutover_existing_dev_to_sql_server.sql) **after** creating and testing the new Fabric SQL Server Connection; do not reset Watermarks.
 
+## EC2 Source Infrastructure
+
+- [Docker Compose source stack](infrastructure/fabric-source/README.md) — SQL Server 2022 Developer + SFTP on one EC2 host, environment template, persistent SFTP host identity and safe deployment/upload instructions.
+
 ## Starter Kit — Fresh Installation
 
 This repository tracks the **current** Microsoft Fabric ingestion framework,
