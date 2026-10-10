@@ -7,7 +7,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT COALESCE((',\n    'SELECT CASE ',\n    'WHEN a.status = ''SUCCESS'' THEN ''COMMITTED_SUCCESS'' ',\n    'WHEN a.status = ''FAILED'' AND a.error_code = ''WATERMARK_CONFLICT'' THEN ''CONFIRMED_CONFLICT'' ',\n    'ELSE ''OTHER'' END ',\n    'FROM audit.ingestion_log AS a ',\n    'WHERE a.pipeline_run_id = ''',\n    replace(pipeline().parameters.p_audit_pipeline_run_id, '''', ''''''),\n    ''' AND a.batch_id = TRY_CONVERT(uniqueidentifier, ''',\n    replace(pipeline().parameters.p_batch_id, '''', ''''''),\n    ''') AND a.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '), ''OTHER'') AS finalize_outcome;'\n)",
+              "value": "@concat(\n    'SELECT COALESCE((',\n    'SELECT CASE ',\n    'WHEN a.status = ''SUCCESS'' THEN ''COMMITTED_SUCCESS'' ',\n    'WHEN a.status = ''FAILED'' AND a.error_code = ''WATERMARK_CONFLICT'' THEN ''CONFIRMED_CONFLICT'' ',\n    'ELSE ''OTHER'' END ',\n    'FROM audit.ingestion_log AS a ',\n    'WHERE a.pipeline_run_id = ''',\n    replace(pipeline().parameters.p_audit_pipeline_run_id, '''', ''''''),\n    ''' AND a.batch_id = ''',\n    replace(pipeline().parameters.p_batch_id, '''', ''''''),\n    ''' AND a.ingestion_config_id = ',\n    string(pipeline().parameters.p_ingestion_config_id),\n    '), ''OTHER'') AS finalize_outcome;'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -48,7 +48,7 @@
         "type": "Switch",
         "typeProperties": {
           "on": {
-            "value": "@if(\n    equals(activity('lkp_finalize_outcome').output.firstRow.finalize_outcome, 'CONFIRMED_CONFLICT'),\n    if(equals(pipeline().parameters.p_ingestion_pattern, 'FILE'), 'CONFIRMED_CONFLICT_FILE', 'CONFIRMED_CONFLICT_DATABASE'),\n    activity('lkp_finalize_outcome').output.firstRow.finalize_outcome\n)",
+            "value": "@if(\n    equals(activity('lkp_finalize_outcome').output.firstRow.finalize_outcome, 'CONFIRMED_CONFLICT'),\n    concat('CONFIRMED_CONFLICT_', pipeline().parameters.p_ingestion_pattern),\n    activity('lkp_finalize_outcome').output.firstRow.finalize_outcome\n)",
             "type": "Expression"
           },
           "cases": [
@@ -122,7 +122,7 @@
                   "type": "Fail",
                   "typeProperties": {
                     "message": {
-                      "value": "@concat(\n    'WATERMARK_CONFLICT: Bronze cleanup completed; audit remains FAILED.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    '. Rerun through top-level orchestrator.'\n)",
+                      "value": "@concat(\n    'WATERMARK_CONFLICT: Bronze cleanup completed; audit remains FAILED.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "errorCode": "WATERMARK_CONFLICT"
@@ -298,7 +298,7 @@
                   "type": "Fail",
                   "typeProperties": {
                     "message": {
-                      "value": "@concat(\n    'WATERMARK_CONFLICT: Bronze and Landing cleanup completed; audit remains FAILED.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    '. Rerun through top-level orchestrator.'\n)",
+                      "value": "@concat(\n    'WATERMARK_CONFLICT: Bronze and Landing cleanup completed; audit remains FAILED.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    '.'\n)",
                       "type": "Expression"
                     },
                     "errorCode": "WATERMARK_CONFLICT"
@@ -376,7 +376,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Finalization outcome unconfirmed; no cleanup. Reconcile before rerun.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    ' | Finalize error: ', take(pipeline().parameters.p_finalize_error_message,1500)\n)",
+                  "value": "@concat(\n    'Finalization requires review; no cleanup. Check audit before rerun.',\n    ', ingestion_config_id=',\n    string(pipeline().parameters.p_ingestion_config_id),\n    ', batch_id=', pipeline().parameters.p_batch_id,\n    ', pipeline_run_id=', pipeline().parameters.p_audit_pipeline_run_id,\n    ' | Finalize error: ', take(pipeline().parameters.p_finalize_error_message,1500)\n)",
                   "type": "Expression"
                 },
                 "errorCode": "FINALIZE_OUTCOME_UNCONFIRMED"
