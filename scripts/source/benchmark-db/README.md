@@ -27,9 +27,9 @@ overhead.
 Run:
 
 ```text
-01_create_benchmark_source.sql
-02_generate_benchmark_data.sql
-03_grant_fabric_reader.sql
+01_create_schema.sql
+02_generate_data.sql
+03_grant_reader.sql
 ```
 
 Before step 3, replace the password placeholder locally. Never commit the real
@@ -50,18 +50,27 @@ cn_src_sql_server_ingestion_benchmark
 
 Point it at `sql_ingestion_benchmark` using `fabric_benchmark_reader`.
 
-Open `scripts/control/05_register_benchmark_metadata.sql`, fill its Fabric
-connection ID, and run it against `sqldb_ingestion_control`. This **one**
-script registers both the benchmark connection and its two configs.
+Benchmark registration is integrated into the core Control Plane seeds;
+there is **no separate benchmark-registration script**:
 
-The two benchmark configs are registered with `is_active = 0`. This is
-intentional: an ordinary all-config master run must never launch 10M-row
-benchmark copies accidentally.
+1. **Fresh DEV:** set optional `@BenchmarkSourceConnectionId` alongside
+   the five core IDs in `scripts/control/03_seed_connection_settings.sql`;
+   run `03` followed by `scripts/control/04_seed_ingestion_metadata.sql`.
+2. **Existing seeded DEV:** set **only** `@BenchmarkSourceConnectionId` in
+   seed `03` (leave all five core IDs `NULL`) and run it.
+   Then set `@BenchmarkOnly = 1` in seed `04` and run it to insert just the
+   two missing benchmark configs without updating existing demo settings.
+
+The two benchmark configs are `is_active = 0` when created. The core metadata
+seed never overwrites existing benchmark configs, so an active benchmark
+scenario is not changed by a later seed run. The scenario selector below
+controls activation; an all-config master run should not include benchmarks
+until one is explicitly enabled.
 
 ## Scenario selection
 
 Edit only the two local variables in
-`scripts/control/06_set_benchmark_scenario.sql`:
+`scripts/control/05_set_benchmark_scenario.sql`:
 
 ```sql
 DECLARE @Scenario VARCHAR(40) = 'UNPARTITIONED_DYNAMIC';
@@ -81,7 +90,7 @@ DISABLE
 `@ParallelCopies = NULL` is the baseline and preserves Fabric service-managed
 parallelism. Use a positive integer only for a later benchmark-backed tuning test.
 
-The scenario script disables both benchmark configs, activates exactly one, sets
+The scenario script atomically disables other benchmark configs, activates exactly one, sets
 its `copy_options`, selects a scenario-specific Bronze target table, and returns
 the `ingestion_config_id`.
 

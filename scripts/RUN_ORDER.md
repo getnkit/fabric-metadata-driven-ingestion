@@ -52,9 +52,9 @@ Legacy environments require a reviewed upgrade, not the Fresh-Install script.
 On the Ubuntu EC2 host, connect to the SQL Server 2022 Developer container as the database administrator and run `CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
 
 ```text
-scripts/source/ecommerce-db/01_create_source_schema.sql
-scripts/source/ecommerce-db/02_generate_source_data.sql
-scripts/source/ecommerce-db/04_grant_fabric_reader.sql
+scripts/source/ecommerce-db/01_create_schema.sql
+scripts/source/ecommerce-db/02_generate_data.sql
+scripts/source/ecommerce-db/03_grant_reader.sql
 ```
 
 The SQL Server security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with a SQL Server administrator permitted to create logins. Expected initial demo row counts:
@@ -86,9 +86,11 @@ or filename timestamps. Review remote mtime after upload.
 
 ## D. Optional DEV demo Control metadata
 
-Set the **five connection/item/workspace IDs** at the start of
+For a **fresh DEV**, set the five required source/SFTP/Lakehouse IDs at the start of
 `scripts/control/03_seed_connection_settings.sql` to real DEV values.
-The script does not contain committed environment GUIDs.
+The script does not contain committed environment GUIDs. If preparing the
+benchmark too, also set optional `@BenchmarkSourceConnectionId`; otherwise
+leave it `NULL`.
 
 Then run:
 
@@ -99,11 +101,14 @@ scripts/control/99_verify_control_plane.sql
 ```
 
 The connection seed creates logical `SQL_SERVER_ECOMMERCE`,
-`SFTP_LOGISTICS_VENDOR` and `LH_ECOMMERCE_BRONZE` references;
-the ingestion metadata seed registers **six DATABASE + two FILE**
-sample configs. It creates initial Watermark State only for missing
-DATABASE/FILE INCREMENTAL config IDs (five DATABASE and one FILE).
-FULL configs have no watermark row.
+`SFTP_LOGISTICS_VENDOR`, and `LH_ECOMMERCE_BRONZE` references.
+The metadata seed creates **six E-commerce DATABASE + two SFTP FILE**
+demo configs. When a `SQL_SERVER_INGESTION_BENCHMARK` connection reference
+is present, it also inserts **two INACTIVE benchmark DATABASE** configs
+without overwriting existing benchmark scenario settings. It creates initial
+Watermark State only for missing DATABASE/FILE INCREMENTAL config IDs
+(five E-commerce DATABASE and one SFTP FILE). FULL configs have no
+watermark row.
 
 **Seed safety:** `04_seed_ingestion_metadata.sql` can UPDATE existing
 sample configs; review before rerun. It **does not UPDATE existing
@@ -154,12 +159,40 @@ More details:
 
 ## F. Optional performance benchmark (separate)
 
-The independent 10M-row-per-table performance fixtures and scenario scripts remain in
-`scripts/source/benchmark-db/` with their own [README](source/benchmark-db/README.md).
-Run them in a **separate database on the same EC2 SQL Server instance** (`sql_ingestion_benchmark`). The default is **10,000,000 rows in each of two tables** (`CHAR(512)` payload), using SQL Server Developer Edition for DEV/test only. Watch EBS free space, SQL data/log files, CPU/memory and transfer usage. Use `scripts/control/05_register_benchmark_metadata.sql` once to register the optional
-Fabric benchmark connection and two inactive configs. Use
-`scripts/control/06_set_benchmark_scenario.sql` to choose or disable a scenario.
-Benchmark configs are inactive by default and **not part of the starter installation**.
+Source benchmark SQL lives in
+[`scripts/source/benchmark-db/`](source/benchmark-db/README.md).
+Run the following scripts on the **EC2 SQL Server** in
+`sql_ingestion_benchmark` (create the database first):
+
+```text
+scripts/source/benchmark-db/01_create_schema.sql
+scripts/source/benchmark-db/02_generate_data.sql
+scripts/source/benchmark-db/03_grant_reader.sql
+```
+
+Each benchmark table contains **10,000,000 rows** with `CHAR(512)` payload.
+Check EBS free space, SQL transaction logs and compute usage before generation.
+
+Create/test the Fabric SQL Server connection to `sql_ingestion_benchmark`
+using `fabric_benchmark_reader`. The **optional benchmark connection** and
+**two INACTIVE benchmark configs** reuse the core setup scripts, with no
+standalone benchmark registration SQL:
+
+- **Fresh DEV:** set `@BenchmarkSourceConnectionId` in
+  `03_seed_connection_settings.sql`, then run `03 -> 04` as in section D.
+- **Already-seeded DEV:** in `03_seed_connection_settings.sql`, set
+  `@BenchmarkSourceConnectionId` and leave *all five core connection IDs NULL*
+  so existing bindings are untouched. Execute only seed `03`. Then set
+  `@BenchmarkOnly = 1` in `04_seed_ingestion_metadata.sql` and execute
+  seed `04`: only missing benchmark configs are inserted; existing
+  E-commerce/SFTP settings, watermark state and benchmark scenario selection
+  remain unchanged.
+- Run `scripts/control/05_set_benchmark_scenario.sql` to activate a
+  scenario or select `DISABLE` afterward.
+
+Benchmark is **optional DEV-only**; standard installs need no additional
+IDs or configs. See the [benchmark README](source/benchmark-db/README.md)
+for scenario details and execution examples.
 
 ## Release note
 
