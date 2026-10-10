@@ -1,5 +1,5 @@
 /*
-    01_create_source_schema.sql
+    01_create_schema.sql
     Target: SQL Server 2022 Developer on EC2 database (sql_ecommerce_db)
     Purpose: Create the mock operational e-commerce source schemas and tables used
              by the metadata-driven ingestion framework.

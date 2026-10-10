@@ -1,5 +1,5 @@
 /*
-    03_simulate_incremental_changes.sql
+    04_simulate_incremental_changes.sql
     Target: SQL Server 2022 Developer on EC2 database (sql_ecommerce_db)
     Purpose: Generate controlled source-side inserts and updates for incremental
              ingestion testing.
@@ -42,10 +42,10 @@ SELECT
 FROM P;
 
 IF @ExistingCustomerId IS NULL
-    THROW 51101, 'No existing customer found. Run 02_generate_source_data.sql first.', 1;
+    THROW 51101, 'No existing customer found. Run 02_generate_data.sql first.', 1;
 
 IF @Product1 IS NULL OR @Product2 IS NULL OR @Product3 IS NULL
-    THROW 51102, 'At least three products are required. Run 02_generate_source_data.sql first.', 1;
+    THROW 51102, 'At least three products are required. Run 02_generate_data.sql first.', 1;
 
 BEGIN TRY
     BEGIN TRANSACTION;

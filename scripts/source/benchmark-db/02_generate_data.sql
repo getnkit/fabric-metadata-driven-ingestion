@@ -1,5 +1,5 @@
 /*
-    02_generate_benchmark_data.sql
+    02_generate_data.sql
     Target: SQL Server 2022 Developer on EC2 database (sql_ingestion_benchmark)
     Purpose: Generate a permanent 10M-row source in each benchmark table.
 
@@ -29,7 +29,7 @@ DECLARE @BaseDate   DATE = '2026-01-01';
 IF OBJECT_ID('benchmark.copy_source_unpartitioned', 'U') IS NULL
    OR OBJECT_ID('benchmark.copy_source_partitioned', 'U') IS NULL
 BEGIN
-    THROW 51110, 'Run scripts/source/benchmark-db/01_create_benchmark_source.sql first.', 1;
+    THROW 51110, 'Run scripts/source/benchmark-db/01_create_schema.sql first.', 1;
 END;
 
 /* ---------- Phase 1: deterministic unpartitioned source ---------- */
