@@ -12,10 +12,10 @@ pl_ingest_orchestrator
       -> DATABASE
           -> pl_ingest_database_router
               -> source_connection_type|load_strategy
-                  -> AMAZON_RDS_SQL_SERVER|FULL
-                      -> pl_ingest_rds_sql_server_full_adapter
-                  -> AMAZON_RDS_SQL_SERVER|INCREMENTAL
-                      -> pl_ingest_rds_sql_server_incremental_adapter
+                  -> SQL_SERVER|FULL
+                      -> pl_ingest_sql_server_full_adapter
+                  -> SQL_SERVER|INCREMENTAL
+                      -> pl_ingest_sql_server_incremental_adapter
 ```
 
 The DATABASE router is intentionally a thin pattern-level connector/strategy
@@ -71,13 +71,13 @@ When native verification is unsupported or inapplicable, the adapter must use a
 pattern-appropriate framework fallback instead of silently skipping consistency
 validation.
 
-The current Amazon RDS for SQL Server FULL and INCREMENTAL Copy paths enable native Data
+The current SQL Server 2022 Developer on EC2 FULL and INCREMENTAL Copy paths enable native Data
 Consistency Verification. Future database adapters must confirm support for their
 actual Copy pair and execution mode rather than inheriting this setting blindly.
 
 ## Copy type-conversion policy
 
-All six Amazon RDS for SQL Server -> Lakehouse Bronze Copy branches (FULL Query/Table AUTO/TUNED
+All six SQL Server 2022 Developer on EC2 -> Lakehouse Bronze Copy branches (FULL Query/Table AUTO/TUNED
 and INCREMENTAL Query AUTO/TUNED) use automatic source-schema mapping with
 `TabularTranslator.typeConversion = true` and
 `typeConversionSettings.allowDataTruncation = false`.
@@ -97,7 +97,7 @@ connector/reader-specific behavior.
 ## Copy performance metadata
 
 Connector-native performance hints are stored in the optional
-`control.ingestion_config.copy_options` JSON envelope. The current Amazon RDS for SQL Server
+`control.ingestion_config.copy_options` JSON envelope. The current SQL Server 2022 Developer on EC2
 adapter supports `NONE` and `DYNAMIC_RANGE` partition strategies plus an
 optional benchmark-backed `parallel_copies` override.
 
@@ -108,7 +108,7 @@ not interpret connector-specific partition semantics itself.
 
 ## Extension rule
 
-When a second database connector such as Oracle, SQL Server, or PostgreSQL is
+When a second database connector such as Oracle or PostgreSQL is
 implemented, add it behind the DATABASE connector router first.
 
 Do not permanently clone framework semantics across vendor pipelines. Compare the
@@ -120,8 +120,8 @@ The likely future shape is:
 ```text
 pl_ingest_database_router
   -> source_connection_type|load_strategy
-       -> AMAZON_RDS_SQL_SERVER|FULL        -> Amazon RDS for SQL Server FULL adapter
-       -> AMAZON_RDS_SQL_SERVER|INCREMENTAL -> Amazon RDS for SQL Server INCREMENTAL adapter
+       -> SQL_SERVER|FULL        -> SQL Server 2022 Developer on EC2 FULL adapter
+       -> SQL_SERVER|INCREMENTAL -> SQL Server 2022 Developer on EC2 INCREMENTAL adapter
        -> ORACLE|FULL           -> Oracle FULL adapter
        -> ORACLE|INCREMENTAL    -> Oracle INCREMENTAL adapter
        -> ...

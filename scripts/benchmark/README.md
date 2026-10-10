@@ -1,4 +1,4 @@
-# Amazon RDS for SQL Server Copy Performance Benchmark
+# SQL Server 2022 Developer on EC2 Copy Performance Benchmark
 
 ## Purpose
 
@@ -22,7 +22,7 @@ overhead.
 
 ## One-time setup
 
-### Amazon RDS for SQL Server: `sql_ingestion_benchmark`
+### SQL Server 2022 Developer on EC2: `sql_ingestion_benchmark`
 
 Run:
 
@@ -35,17 +35,17 @@ Run:
 Before step 3, replace the password placeholder locally. Never commit the real
 password.
 
-Create database `sql_ingestion_benchmark` on the **existing RDS instance** as administrator first; select that database before running source/fixture scripts. Script 03 creates a SQL Server login in master and user mapped to the benchmark database. The generator is resumable. It inserts the unpartitioned table in 100,000-row
+Create database `sql_ingestion_benchmark` on the **existing EC2 SQL Server instance** as administrator first; select that database before running source/fixture scripts. Script 03 creates a SQL Server login in master and user mapped to the benchmark database. The generator is resumable. It inserts the unpartitioned table in 100,000-row
 batches and then copies the same ID ranges into the physically partitioned table.
-At completion it validates 1M rows per table, compares a deterministic checksum,
+At completion it validates 10M rows per table, compares a deterministic checksum,
 and reports actual reserved/used storage.
 
 ### Fabric connection
 
-Create a **Fabric Amazon RDS for SQL Server** connection named:
+Create a **Fabric SQL Server 2022 Developer on EC2** connection named:
 
 ```text
-cn_rds_sql_server_ingestion_benchmark
+cn_sql_server_ingestion_benchmark
 ```
 
 Point it at `sql_ingestion_benchmark` using `fabric_benchmark_user`.
@@ -62,7 +62,7 @@ Run against `sqldb_ingestion_control`:
 ```
 
 The two benchmark configs are registered with `is_active = 0`. This is
-intentional: an ordinary all-config master run must never launch 1M-row
+intentional: an ordinary all-config master run must never launch 10M-row
 benchmark copies accidentally.
 
 ## Scenario selection
@@ -114,7 +114,7 @@ After the benchmark session, run the scenario script with:
 @Scenario = 'DISABLE'
 ```
 
-Source benchmark data stays in Amazon RDS for SQL Server permanently.
+Source benchmark data stays in the EC2 SQL Server Developer test database between runs.
 
 ## Core comparison
 
@@ -129,7 +129,7 @@ Run at least:
 
 Record the Copy Activity output/monitoring metrics for each run, especially
 duration, rows, data volume, throughput, and used parallel copies. Also observe
-Amazon RDS for SQL Server resource pressure during the run.
+SQL Server 2022 Developer on EC2 resource pressure during the run.
 
 Do not define success as "parallel must be X% faster." A useful benchmark explains
 where the bottleneck moves. If source compute or I/O saturates, increased
@@ -137,16 +137,10 @@ parallelism may provide little benefit; that is a valid result.
 
 ## Storage safety
 
-The benchmark uses the existing RDS SQL Server **instance**, with a separate database `sql_ingestion_benchmark`. The default fixture is deliberately reduced to **1M rows per table** to leave storage margin within SQL Server Express's **10 GB per database** limit. The original Azure SQL 10M x two tables profile is NOT portable unchanged to Express.
-
-After generation, use the storage result set from
-`02_generate_benchmark_data.sql` as the source of truth. If actual allocated
-storage is unexpectedly high, stop before adding any additional benchmark data.
-Do not scale the fixture beyond 1M rows per table until actual storage headroom
-has been reviewed.
+The benchmark uses a **separate database on the existing EC2 SQL Server 2022 Developer container**. Default is **10,000,000 rows in each of two tables** with `CHAR(512)` payload. Data is generated in resumable 100,000-row batches and is retained for repeatable Copy performance tests. Confirm sufficient free space before starting (an 80 GiB gp3 root EBS volume is only an initial sizing assumption, not a guarantee). Review allocated MDF/LDF size, free disk space, tempdb, indexing overhead and memory pressure while generating data. The e-commerce source data volume is unchanged.
 
 ## Cost and reproducibility guardrails
 
-RDS **SQL Server Express** has a 10 GB maximum *per database*. Keep the e-commerce and benchmark fixtures in **separate databases on one RDS instance**, and monitor allocated DB size and AWS charges. Default `02_generate_benchmark_data.sql` now generates 1,000,000 rows **in each** table (two copies). A later 10M-row benchmark requires a capacity/edition/storage and budget review; don't simply change `@TargetRows` on Express. Capture instance class, edition, IOPS, CPU load, network egress, row counts and parallelism for each run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
+SQL Server **Developer Edition is for development/testing, not production use**. Capture EC2 instance type, EBS size/IOPS, SQL Server edition, CPU and memory load, network egress, row counts and effective parallelism for each run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
 
-`PARTITIONED_PHYSICAL` also requires a source table that is genuinely partitioned; validate DDL support, actual partition layout and copy behavior on the chosen SQL Server version/edition before reporting a result. Do not assume higher parallelism is faster on a burstable RDS instance.
+`PARTITIONED_PHYSICAL` also requires a source table that is genuinely partitioned; validate DDL support, actual partition layout and copy behavior on the chosen SQL Server version/edition before reporting a result. Do not assume higher parallelism is faster on a burstable EC2 SQL Server instance.
