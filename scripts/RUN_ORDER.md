@@ -185,7 +185,7 @@ standalone benchmark registration SQL:
 - **Fresh DEV:** set `@BenchmarkSourceConnectionId` in
   `03_seed_connection_settings.sql`, then run `03 -> 04` as in section D.
 - **Already-seeded DEV:** in `03_seed_connection_settings.sql`, set
-  `@BenchmarkSourceConnectionId` and leave *all five core connection IDs NULL*
+  `@BenchmarkSourceConnectionId` and leave *all five core bindings NULL*
   so existing bindings are untouched. Execute only seed `03`. Then set
   `@BenchmarkOnly = 1` in `04_seed_ingestion_metadata.sql` and execute
   seed `04`: only missing benchmark configs are inserted; existing
