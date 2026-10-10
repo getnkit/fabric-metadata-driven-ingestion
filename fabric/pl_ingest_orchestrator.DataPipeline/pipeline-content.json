@@ -21,7 +21,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@and(\n    and(\n        not(empty(pipeline().libraryVariables.ingestion_control_connection_id)),\n        not(empty(pipeline().libraryVariables.ingestion_control_item_id))\n    ),\n    and(\n        not(empty(pipeline().libraryVariables.pipeline_invoke_connection_id)),\n        not(empty(pipeline().libraryVariables.notebook_execution_connection_id))\n    )\n)",
+            "value": "@and(\n    not(empty(pipeline().libraryVariables.ingestion_control_workspace_id)),\n    and(\n        and(\n            not(empty(pipeline().libraryVariables.ingestion_control_connection_id)),\n            not(empty(pipeline().libraryVariables.ingestion_control_item_id))\n        ),\n        and(\n            not(empty(pipeline().libraryVariables.pipeline_invoke_connection_id)),\n            not(empty(pipeline().libraryVariables.notebook_execution_connection_id))\n        )\n    )\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -30,7 +30,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@string('Variable Library vl_ingestion_connections must define nonempty ingestion_control_connection_id, ingestion_control_item_id, pipeline_invoke_connection_id, and notebook_execution_connection_id.')",
+                  "value": "@string('Variable Library vl_ingestion_connections must define nonempty ingestion_control_connection_id, ingestion_control_item_id, ingestion_control_workspace_id, pipeline_invoke_connection_id, and notebook_execution_connection_id.')",
                   "type": "Expression"
                 },
                 "errorCode": "MISSING_RUNTIME_BINDING"
@@ -78,7 +78,7 @@
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
                     "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
-                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                    "workspaceId": "@pipeline().libraryVariables.ingestion_control_workspace_id"
                   },
                   "externalReferences": {
                     "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
@@ -191,6 +191,11 @@
       }
     },
     "libraryVariables": {
+      "ingestion_control_workspace_id": {
+        "type": "String",
+        "variableName": "ingestion_control_workspace_id",
+        "libraryName": "vl_ingestion_connections"
+      },
       "ingestion_control_connection_id": {
         "type": "String",
         "variableName": "ingestion_control_connection_id",

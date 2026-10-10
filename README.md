@@ -12,7 +12,7 @@ This repository tracks the **current** Microsoft Fabric ingestion framework,
 not a chain of historical upgrade patches.
 
 1. [Starter Kit run order](scripts/RUN_ORDER.md): prepare Fabric items,
-   four Variable Library runtime bindings, core SQL, and optional demo fixtures.
+   five Variable Library runtime bindings, core SQL, and optional demo fixtures.
 2. **Mandatory Control Plane scripts:** `01_create_control_schema.sql` →
    `02_create_control_procedures.sql` →
    `99_verify_control_plane.sql`.

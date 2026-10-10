@@ -395,7 +395,7 @@
                   "type": "FabricSqlDatabase",
                   "typeProperties": {
                     "artifactId": "@pipeline().libraryVariables.ingestion_control_item_id",
-                    "workspaceId": "00000000-0000-0000-0000-000000000000"
+                    "workspaceId": "@pipeline().libraryVariables.ingestion_control_workspace_id"
                   },
                   "externalReferences": {
                     "connection": "@pipeline().libraryVariables.ingestion_control_connection_id"
@@ -516,6 +516,11 @@
       }
     },
     "libraryVariables": {
+      "ingestion_control_workspace_id": {
+        "type": "String",
+        "variableName": "ingestion_control_workspace_id",
+        "libraryName": "vl_ingestion_connections"
+      },
       "pipeline_invoke_connection_id": {
         "type": "String",
         "variableName": "pipeline_invoke_connection_id",

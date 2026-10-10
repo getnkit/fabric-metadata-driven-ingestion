@@ -11,15 +11,16 @@ benchmark fixtures are optional and DEV-only.
   framework Data Pipelines and the three Notebook items from `fabric/`.
 - Sync `fabric/vl_ingestion_connections.VariableLibrary` into the same
   workspace as `pl_ingest_orchestrator`.
-- Set four environment-specific **String** values in the active Library:
+- Set five environment-specific **String** values in the active Library:
   `ingestion_control_connection_id`, `ingestion_control_item_id`,
+  `ingestion_control_workspace_id`,
   `pipeline_invoke_connection_id`, `notebook_execution_connection_id`.
-  Committed Library defaults are deliberately blank.
+  Set the workspace variable to the real GUID of the Control SQL Database workspace (from the Fabric URL `/groups/<workspace-id>/`).
 - Grant access to each Fabric Connection, SQL Database, Notebook, Lakehouse
   and child Pipeline as appropriate. Verify Invoke and Notebook targets
   are correctly rebound after workspace deployment.
 - Source and target Copy Connections come from SQL
-  `control.connection_settings`, NOT the four runtime variables.
+  `control.connection_settings`, NOT the five runtime variables.
   See [Variable Library configuration](../docs/operations/variable-library-environment-binding.md).
 
 ## B. Core Control Plane — mandatory SQL
