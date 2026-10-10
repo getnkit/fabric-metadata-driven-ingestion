@@ -11,7 +11,7 @@
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* Bind a Fabric Amazon RDS for SQL Server Connection to sql_ecommerce_db. */
+/* Bind a Fabric SQL Server Connection to sql_ecommerce_db. */
 DECLARE @SourceConnectionId NVARCHAR(100) = NULL;
 DECLARE @SftpConnectionId   NVARCHAR(100) = NULL;
 DECLARE @TargetConnectionId NVARCHAR(100) = NULL;
@@ -42,8 +42,8 @@ INSERT INTO @Seed
 )
 VALUES
 (
-    'RDS_ECOMMERCE',
-    'AMAZON_RDS_SQL_SERVER',
+    'SQL_SERVER_ECOMMERCE',
+    'SQL_SERVER',
     CONCAT(
         N'{"connectionId":"',
         @SourceConnectionId,

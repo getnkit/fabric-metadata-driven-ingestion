@@ -15,10 +15,10 @@ IF NOT EXISTS
 (
     SELECT 1
     FROM control.connection_settings
-    WHERE connection_ref = 'RDS_INGESTION_BENCHMARK'
+    WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK'
 )
 BEGIN
-    THROW 51130, 'Register RDS_INGESTION_BENCHMARK first.', 1;
+    THROW 51130, 'Register SQL_SERVER_INGESTION_BENCHMARK first.', 1;
 END;
 
 IF NOT EXISTS
@@ -53,7 +53,7 @@ VALUES
 
 UPDATE c
 SET
-    c.source_conn_ref = 'RDS_INGESTION_BENCHMARK',
+    c.source_conn_ref = 'SQL_SERVER_INGESTION_BENCHMARK',
     c.source_path = NULL,
     c.ingestion_pattern = 'DATABASE',
     c.file_format = NULL,
@@ -94,7 +94,7 @@ INSERT INTO control.ingestion_config
 )
 SELECT
     'INGESTION_BENCHMARK',
-    'RDS_INGESTION_BENCHMARK',
+    'SQL_SERVER_INGESTION_BENCHMARK',
     'benchmark',
     s.source_object,
     NULL,

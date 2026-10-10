@@ -7,7 +7,7 @@ CREATE TABLE [control].[connection_settings] (
     CONSTRAINT [PK_connection_settings] PRIMARY KEY CLUSTERED ([connection_ref] ASC),
     CONSTRAINT [CK_connection_settings_json] CHECK (ISJSON([connection_settings], OBJECT) = 1),
     CONSTRAINT [CK_connection_settings_ref_not_blank] CHECK (LEN(TRIM(NCHAR(9) + NCHAR(10) + NCHAR(13) + N' ' FROM [connection_ref])) > 0),
-    CONSTRAINT [CK_connection_settings_type] CHECK ([connection_type]='LAKEHOUSE' OR [connection_type]='SFTP' OR [connection_type]='AMAZON_RDS_SQL_SERVER')
+    CONSTRAINT [CK_connection_settings_type] CHECK ([connection_type]='LAKEHOUSE' OR [connection_type]='SFTP' OR [connection_type]='SQL_SERVER')
 );
 
 
