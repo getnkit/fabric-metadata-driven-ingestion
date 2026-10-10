@@ -301,7 +301,7 @@
               "type": "Lookup",
               "typeProperties": {
                 "source": {
-                  "type": "AmazonRdsForSqlServerSource",
+                  "type": "SqlServerSource",
                   "sqlReaderQuery": {
                     "value": "@concat(\n    'SELECT MAX([',\n    pipeline().parameters.p_watermark_field,\n    ']) AS upper_bound ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    '];'\n)",
                     "type": "Expression"
@@ -310,7 +310,7 @@
                   "queryTimeout": "02:00:00"
                 },
                 "datasetSettings": {
-                  "type": "AmazonRdsForSqlServerTable",
+                  "type": "SqlServerTable",
                   "schema": [],
                   "externalReferences": {
                     "connection": "@json(\n    pipeline().parameters.p_source_connection_settings\n).connectionId"

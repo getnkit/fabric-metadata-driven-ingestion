@@ -10,7 +10,7 @@
           },
           "cases": [
             {
-              "value": "AMAZON_RDS_SQL_SERVER|FULL",
+              "value": "SQL_SERVER|FULL",
               "activities": [
                 {
                   "type": "InvokePipeline",
@@ -114,7 +114,7 @@
               ]
             },
             {
-              "value": "AMAZON_RDS_SQL_SERVER|INCREMENTAL",
+              "value": "SQL_SERVER|INCREMENTAL",
               "activities": [
                 {
                   "type": "InvokePipeline",

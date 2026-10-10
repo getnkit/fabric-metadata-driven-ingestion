@@ -55,7 +55,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@concat(\n    'Invalid Amazon RDS for SQL Server FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                      "value": "@concat(\n    'Invalid SQL Server FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
                       "type": "Expression"
                     },
                     "type": "String"
@@ -209,7 +209,7 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'Invalid Amazon RDS for SQL Server FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
+                  "value": "@concat(\n    'Invalid SQL Server FULL copy options: partition_option=',\n    pipeline().parameters.p_copy_partition_option,\n    ', partition_column=',\n    pipeline().parameters.p_copy_partition_column,\n    ', parallel_copies=',\n    string(pipeline().parameters.p_copy_parallel_copies),\n    '. Supported partition options are NONE, DYNAMIC_RANGE, and PHYSICAL_PARTITIONS; ',\n    'DYNAMIC_RANGE requires partition_column; parallel_copies must be >= 0 ',\n    '(0 means service-managed AUTO).'\n)",
                   "type": "Expression"
                 },
                 "errorCode": "INVALID_COPY_OPTIONS"
@@ -251,7 +251,7 @@
                   "type": "Copy",
                   "typeProperties": {
                     "source": {
-                      "type": "AmazonRdsForSqlServerSource",
+                      "type": "SqlServerSource",
                       "sqlReaderQuery": {
                         "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    formatDateTime(variables('v_ingestion_timestamp'), 'yyyy-MM-ddTHH:mm:ss.fff'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    )\n)",
                         "type": "Expression"
@@ -268,7 +268,7 @@
                       },
                       "queryTimeout": "02:00:00",
                       "datasetSettings": {
-                        "type": "AmazonRdsForSqlServerTable",
+                        "type": "SqlServerTable",
                         "schema": [],
                         "externalReferences": {
                           "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
@@ -389,7 +389,7 @@
                   "type": "Copy",
                   "typeProperties": {
                     "source": {
-                      "type": "AmazonRdsForSqlServerSource",
+                      "type": "SqlServerSource",
                       "sqlReaderQuery": {
                         "value": "@concat(\n    'SELECT *, ',\n    'CAST(''',\n    pipeline().parameters.p_batch_id,\n    ''' AS VARCHAR(36)) AS [_batch_id], ',\n    'CAST(''',\n    pipeline().parameters.p_audit_pipeline_run_id,\n    ''' AS VARCHAR(100)) AS [_pipeline_run_id], ',\n    'CAST(''',\n    formatDateTime(variables('v_ingestion_timestamp'), 'yyyy-MM-ddTHH:mm:ss.fff'),\n    ''' AS DATETIME2(3)) AS [_ingestion_timestamp] ',\n    'FROM [',\n    pipeline().parameters.p_source_schema,\n    '].[',\n    pipeline().parameters.p_source_object,\n    ']',\n    if(\n        equals(\n            toUpper(pipeline().parameters.p_copy_partition_option),\n            'DYNAMIC_RANGE'\n        ),\n        ' WHERE ?DfDynamicRangePartitionCondition',\n        ''\n    )\n)",
                         "type": "Expression"
@@ -406,7 +406,7 @@
                       },
                       "queryTimeout": "02:00:00",
                       "datasetSettings": {
-                        "type": "AmazonRdsForSqlServerTable",
+                        "type": "SqlServerTable",
                         "schema": [],
                         "externalReferences": {
                           "connection": "@json(pipeline().parameters.p_source_connection_settings).connectionId"
@@ -531,7 +531,7 @@
                   "type": "Copy",
                   "typeProperties": {
                     "source": {
-                      "type": "AmazonRdsForSqlServerSource",
+                      "type": "SqlServerSource",
                       "partitionOption": "PhysicalPartitionsOfTable",
                       "queryTimeout": "02:00:00",
                       "additionalColumns": [
@@ -558,7 +558,7 @@
                         }
                       ],
                       "datasetSettings": {
-                        "type": "AmazonRdsForSqlServerTable",
+                        "type": "SqlServerTable",
                         "typeProperties": {
                           "schema": {
                             "value": "@pipeline().parameters.p_source_schema",
@@ -689,7 +689,7 @@
                   "type": "Copy",
                   "typeProperties": {
                     "source": {
-                      "type": "AmazonRdsForSqlServerSource",
+                      "type": "SqlServerSource",
                       "partitionOption": "PhysicalPartitionsOfTable",
                       "queryTimeout": "02:00:00",
                       "additionalColumns": [
@@ -716,7 +716,7 @@
                         }
                       ],
                       "datasetSettings": {
-                        "type": "AmazonRdsForSqlServerTable",
+                        "type": "SqlServerTable",
                         "typeProperties": {
                           "schema": {
                             "value": "@pipeline().parameters.p_source_schema",
