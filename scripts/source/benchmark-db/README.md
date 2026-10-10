@@ -8,7 +8,7 @@ ingestion framework. It is deliberately separate from `sql_ecommerce_db`.
 The source data is generated once and kept permanently:
 
 ```text
-sql_ingestion_benchmark
+sql_benchmark_db
 └─ benchmark
    ├─ copy_source_unpartitioned  10,000,000 rows
    └─ copy_source_partitioned    10,000,000 rows
@@ -22,7 +22,7 @@ overhead.
 
 ## One-time setup
 
-### SQL Server 2022 Developer on EC2: `sql_ingestion_benchmark`
+### SQL Server 2022 Developer on EC2: `sql_benchmark_db`
 
 Run:
 
@@ -35,7 +35,21 @@ Run:
 Before step 3, replace the password placeholder locally. Never commit the real
 password.
 
-Create database `sql_ingestion_benchmark` on the **existing EC2 SQL Server instance** as administrator first; select that database before running source/fixture scripts. Script 03 creates a SQL Server login in master and user mapped to the benchmark database. The generator is resumable. It inserts the unpartitioned table in 100,000-row
+Create database `sql_benchmark_db` on the **existing EC2 SQL Server instance** as administrator first; select that database before running source/fixture scripts. If a database named `sql_ingestion_benchmark` already exists **and you need to preserve its contents**, connect to `master` (not the database being renamed), close other active sessions, and run once:
+
+```sql
+ALTER DATABASE [sql_ingestion_benchmark] MODIFY NAME = [sql_benchmark_db];
+```
+
+Do not recreate or drop populated tables just to rename the database. The
+login `fabric_benchmark_reader` and SQL database USER retain their existing
+names; recreate/test the Fabric Connection pointing at the renamed database.
+The legacy database name above appears only for this one-time migration.
+
+When executing SQL files through DBeaver, use **Execute SQL Script**
+(`Option+X` on macOS) with SQL Server's `GO` batch delimiter enabled.
+
+Script 03 creates a SQL Server login in master and user mapped to the benchmark database. The generator is resumable. It inserts the unpartitioned table in 100,000-row
 batches and then copies the same ID ranges into the physically partitioned table.
 At completion it validates 10M rows per table, compares a deterministic checksum,
 and reports actual reserved/used storage.
@@ -45,10 +59,12 @@ and reports actual reserved/used storage.
 Create a **Fabric SQL Server 2022 Developer on EC2** connection named:
 
 ```text
-cn_src_sql_server_ingestion_benchmark
+cn_src_sql_server_benchmark_db
 ```
 
-Point it at `sql_ingestion_benchmark` using `fabric_benchmark_reader`.
+Point it at `sql_benchmark_db` using `fabric_benchmark_reader`.
+The Control Plane logical connection reference is `SQL_SERVER_BENCHMARK_DB`
+and benchmark `source_system` is `BENCHMARK_DB`.
 
 Benchmark registration is integrated into the core Control Plane seeds;
 there is **no separate benchmark-registration script**:

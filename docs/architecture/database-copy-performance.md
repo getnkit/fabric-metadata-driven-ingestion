@@ -258,7 +258,7 @@ general claim that SQL Server cannot combine incremental extraction with a physi
 The benchmark creates a separate **database on the same EC2 SQL Server 2022 Developer container**:
 
 ```text
-sql_ingestion_benchmark
+sql_benchmark_db
 ```
 
 with two permanent tables containing the same deterministic logical rows:

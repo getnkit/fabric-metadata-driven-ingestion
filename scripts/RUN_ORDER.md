@@ -57,7 +57,11 @@ scripts/source/ecommerce-db/02_generate_data.sql
 scripts/source/ecommerce-db/03_grant_reader.sql
 ```
 
-The SQL Server security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with a SQL Server administrator permitted to create logins. Expected initial demo row counts:
+The SQL Server security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with a SQL Server administrator permitted to create logins.
+
+**DBeaver / SQL Server scripts:** choose the correct target database and use **Execute SQL Script** (macOS `Option+X`, or the editor menu), not `Select All → Execute SQL Statement`. The SQL `GO` lines are client-side batch separators, not T-SQL; verify DBeaver recognizes SQL Server's native `GO` delimiter in SQL Editor preferences. An error `Incorrect syntax near 'GO'` means the client sent `GO` to SQL Server instead of separating batches.
+
+Expected initial demo row counts:
 
 | Source | Rows |
 | --- | ---: |
@@ -103,7 +107,7 @@ scripts/control/99_verify_control_plane.sql
 The connection seed creates logical `SQL_SERVER_ECOMMERCE`,
 `SFTP_LOGISTICS_VENDOR`, and `LH_ECOMMERCE_BRONZE` references.
 The metadata seed creates **six E-commerce DATABASE + two SFTP FILE**
-demo configs. When a `SQL_SERVER_INGESTION_BENCHMARK` connection reference
+demo configs. When a `SQL_SERVER_BENCHMARK_DB` connection reference
 is present, it also inserts **two INACTIVE benchmark DATABASE** configs
 without overwriting existing benchmark scenario settings. It creates initial
 Watermark State only for missing DATABASE/FILE INCREMENTAL config IDs
@@ -162,7 +166,7 @@ More details:
 Source benchmark SQL lives in
 [`scripts/source/benchmark-db/`](source/benchmark-db/README.md).
 Run the following scripts on the **EC2 SQL Server** in
-`sql_ingestion_benchmark` (create the database first):
+`sql_benchmark_db` (create the database first):
 
 ```text
 scripts/source/benchmark-db/01_create_schema.sql
@@ -173,7 +177,7 @@ scripts/source/benchmark-db/03_grant_reader.sql
 Each benchmark table contains **10,000,000 rows** with `CHAR(512)` payload.
 Check EBS free space, SQL transaction logs and compute usage before generation.
 
-Create/test the Fabric SQL Server connection to `sql_ingestion_benchmark`
+Create/test the Fabric SQL Server connection to `sql_benchmark_db`
 using `fabric_benchmark_reader`. The **optional benchmark connection** and
 **two INACTIVE benchmark configs** reuse the core setup scripts, with no
 standalone benchmark registration SQL:
@@ -191,8 +195,12 @@ standalone benchmark registration SQL:
   scenario or select `DISABLE` afterward.
 
 Benchmark is **optional DEV-only**; standard installs need no additional
-IDs or configs. See the [benchmark README](source/benchmark-db/README.md)
-for scenario details and execution examples.
+IDs or configs. If the old physical `sql_ingestion_benchmark` database
+already exists, rename it manually in SQL Server (or create the new empty
+`sql_benchmark_db` if no data must be retained), then rebuild/test the Fabric
+Connection against the canonical name. This does **not** rename the database
+automatically; see the [benchmark README](source/benchmark-db/README.md).
+The old name appears here only as a migration instruction.
 
 ## Release note
 
@@ -206,10 +214,10 @@ changes in the existing DEV database.
 ## G. Generic SQL Server connection cutover (existing DEV only)
 
 - New route: `SQL_SERVER|FULL` and `SQL_SERVER|INCREMENTAL`.
-- New logical refs: `SQL_SERVER_ECOMMERCE` and optional `SQL_SERVER_INGESTION_BENCHMARK`. Preserve `source_system`, existing config IDs, target schemas, watermarks and audit history.
+- New logical refs: `SQL_SERVER_ECOMMERCE` and optional `SQL_SERVER_BENCHMARK_DB`, with benchmark `source_system = BENCHMARK_DB`. Preserve existing config IDs, target schemas, watermarks and audit history.
 - Rename the three Fabric database workers via Git sync; their `.platform` `logicalId` values stay unchanged. **Verify Invoke Pipeline target rebinding** after sync.
-- Create/test a **generic SQL Server** Fabric Connection for `sql_ecommerce_db` first. If the dedicated benchmark source already exists, create/test a separate Fabric SQL Server Connection for `sql_ingestion_benchmark` too.
-- Set `@SourceConnectionId` and (if an old RDS benchmark ref exists) `@BenchmarkConnectionId` in [`scripts/operations/01_cutover_existing_dev_to_sql_server.sql`](operations/01_cutover_existing_dev_to_sql_server.sql); execute it in the **Fabric Control SQL Database**, NOT on EC2. It migrates Azure SQL/RDS demo references transactionally, leaving config IDs, `control.pipeline_watermarks` and audit rows intact. Then run `scripts/control/99_verify_control_plane.sql`.
+- Create/test a **generic SQL Server** Fabric Connection for `sql_ecommerce_db` first. If the dedicated benchmark source already exists, create/test a separate Fabric SQL Server Connection for `sql_benchmark_db` too.
+- Set `@SourceConnectionId` and (if a legacy benchmark ref exists) `@BenchmarkConnectionId` in [`scripts/operations/01_cutover_existing_dev_to_sql_server.sql`](operations/01_cutover_existing_dev_to_sql_server.sql); execute it in the **Fabric Control SQL Database**, NOT on EC2. It migrates Azure SQL/RDS demo references transactionally, leaving config IDs, `control.pipeline_watermarks` and audit rows intact. Then run `scripts/control/99_verify_control_plane.sql`.
 - For fresh DEV SQL Control Database, run the standard seed scripts `03 -> 04` instead; **do not** run the cutover.
 - The generic SQL Server Connector uses `SqlServerSource` and `SqlServerTable`; the database selection comes from the Fabric Connection. Verify Copy/Lookup and the actual connection-binding behavior in Fabric DEV.
 - Repointing a logical source does **not** guarantee previous watermark LOW/HIGH values exist in the new EC2 database. Check against its `MAX(updated_at)` and available source history before enabling REGULAR, or explicitly plan a reviewed rebaseline. Never reset watermarks as a side effect of this cutover.
