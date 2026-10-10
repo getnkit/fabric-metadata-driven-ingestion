@@ -59,7 +59,7 @@ For FILE ingestion, both fields are first-class metadata. The FILE `landing_path
 
 Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
 
-The current SQL Starter Kit seeds FILE `landing_path` directly as a Files-relative `landing/...` location. There is no legacy path-rewrite step in fresh installation. For an older populated environment with `Files/landing/...` metadata, review a targeted migration from Git history before execution; do not rewrite metadata or move historical Lakehouse files automatically.
+The current SQL Starter Kit seeds FILE `landing_path` directly as a Files-relative `landing/...` location.  For an older populated environment with `Files/landing/...` metadata, review a targeted migration from Git history before execution; do not rewrite metadata or move historical Lakehouse files automatically.
 
 ## FILE flow
 

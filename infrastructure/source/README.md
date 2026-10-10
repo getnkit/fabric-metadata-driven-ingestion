@@ -17,7 +17,7 @@ The current machine keeps:
 - **Persistent SFTP host identity:** `/opt/fabric-sftp/hostkeys/ssh_host_ed25519_key*` (do not regenerate when Fabric already trusts the host key).
 - **Real credentials:** local `.env`, excluded from Git.
 
-Do **not** re-run migration/removal commands from the historical troubleshooting session on a working instance. This file documents the desired-state artifacts, not an instruction to recreate current containers.
+Do not remove working containers or persisted volumes during routine updates. This file documents the desired-state artifacts, not an instruction to recreate current containers.
 
 From the EC2 shell, inspect first:
 
@@ -111,4 +111,4 @@ sudo docker inspect fabric-sqlserver --format '{{range .Mounts}}{{println .Name 
 sudo docker logs --tail 30 fabric-sftp
 ```
 
-Expected SQL Server mount: `fabric_sqlserver_data /var/opt/mssql`. Verify `sql_ecommerce_db` and `sql_benchmark_db` from DBeaver after any migration. The SFTP host-key private file, real `.env`, SQL Server database files and any user-uploaded data must never be checked into Git.
+Expected SQL Server mount: `fabric_sqlserver_data /var/opt/mssql`. Verify `sql_ecommerce_db` and `sql_benchmark_db` from DBeaver after container restart. The SFTP host-key private file, real `.env`, SQL Server database files and any user-uploaded data must never be checked into Git.

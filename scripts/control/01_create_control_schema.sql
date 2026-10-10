@@ -6,7 +6,7 @@
 
     SQL Database Project definitions are the schema source of truth.
     CREATE-IF-ABSENT is NOT a schema migration: existing tables are preserved
-    unchanged. For existing DEV, apply reviewed migrations 001-011 and run 99.
+    unchanged. Fresh installs should begin with empty Control/Audit tables.
     NEVER drop state or audit tables in a bootstrap.
 */
 

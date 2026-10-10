@@ -35,16 +35,7 @@ Run:
 Before step 3, replace the password placeholder locally. Never commit the real
 password.
 
-Create database `sql_benchmark_db` on the **existing EC2 SQL Server instance** as administrator first; select that database before running source/fixture scripts. If a database named `sql_ingestion_benchmark` already exists **and you need to preserve its contents**, connect to `master` (not the database being renamed), close other active sessions, and run once:
-
-```sql
-ALTER DATABASE [sql_ingestion_benchmark] MODIFY NAME = [sql_benchmark_db];
-```
-
-Do not recreate or drop populated tables just to rename the database. The
-login `fabric_benchmark_reader` and SQL database USER retain their existing
-names; recreate/test the Fabric Connection pointing at the renamed database.
-The legacy database name above appears only for this one-time migration.
+Create `sql_benchmark_db` on the existing EC2 SQL Server instance first, then select it before running the source scripts.
 
 When executing SQL files through DBeaver, use **Execute SQL Script**
 (`Option+X` on macOS) with SQL Server's `GO` batch delimiter enabled.

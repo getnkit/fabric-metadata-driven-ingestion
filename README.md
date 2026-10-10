@@ -1,6 +1,6 @@
 # fabric-metadata-driven-ingestion
 
-The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. Fresh installations use the SQL Server connection seed in `scripts/control/03_seed_connection_settings.sql`; historical DEV cutovers remain in Git history, not the current Starter Kit.
+The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. Fresh installations use `scripts/control/03_seed_connection_settings.sql` to register source and target connections.
 
 ## EC2 Source Infrastructure
 
@@ -21,11 +21,7 @@ not a chain of historical upgrade patches.
 4. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
    describes constraints, non-destructive bootstrap and release gates.
 
-`scripts/control/migrations/` is intentionally absent from the Starter Kit:
-old upgrades `001–011` remain available in
-[pre-cleanup Git history](https://github.com/getnkit/fabric-metadata-driven-ingestion/tree/bf04ff6e67ed365c58adb8c07b94e1256b005bd1/scripts/control/migrations).
-**Do not run fresh-install SQL as a substitute for upgrading a populated
-older database.** Existing environments need a reviewed targeted migration.
+**Note:** Installation scripts do not upgrade existing populated Control Databases. Review migrations separately.
 
 ## Architecture
 

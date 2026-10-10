@@ -42,10 +42,7 @@ is the physical schema source of truth.
 **Important:** CREATE-IF-ABSENT does not migrate an old populated database.
 Only run these steps on an empty/new SQL Database or one already verified
 to match this Baseline. Never run demo seeds against UAT/PROD by default.
-The confirmed DEV migration history was removed from `main` during Starter
-Kit cleanup; it remains accessible through
-[Git history at the pre-cleanup revision](https://github.com/getnkit/fabric-metadata-driven-ingestion/tree/bf04ff6e67ed365c58adb8c07b94e1256b005bd1/scripts/control/migrations).
-Legacy environments require a reviewed upgrade, not the Fresh-Install script.
+Existing populated environments require a separate reviewed upgrade; these scripts are for fresh installation.
 
 ## C. Optional DEV demo source
 
@@ -194,20 +191,12 @@ standalone benchmark registration SQL:
 - Run `scripts/control/05_set_benchmark_scenario.sql` to activate a
   scenario or select `DISABLE` afterward.
 
-Benchmark is **optional DEV-only**; standard installs need no additional
-IDs or configs. If the old physical `sql_ingestion_benchmark` database
-already exists, rename it manually in SQL Server (or create the new empty
-`sql_benchmark_db` if no data must be retained), then rebuild/test the Fabric
-Connection against the canonical name. This does **not** rename the database
-automatically; see the [benchmark README](source/benchmark-db/README.md).
-The old name appears here only as a migration instruction.
+Benchmark is **optional DEV-only**; standard installs need no additional IDs or configs.
 
 ## Release note
 
 The SQL Database Project may include Fabric-exported, workspace-specific
 security principals and schema owners. **Do not blindly deploy these
 identities across environments**; review SQL Project security and
-permissions during provisioning. This cleanup intentionally leaves those
-security artifacts untouched to avoid unintended ownership or DROP USER
-changes in the existing DEV database.
+permissions during provisioning. Do not change schema ownership or database users as part of a Control Plane reseed.
 

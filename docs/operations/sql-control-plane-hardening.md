@@ -50,28 +50,6 @@ only missing DATABASE/FILE INCREMENTAL states. It contains no historical
 source-system rename or legacy FILE watermark reset branch.
 A changed `watermark_field` must never silently reuse/reset a checkpoint.
 
-## Existing DEV / historic upgrade scripts
-
-Historical migration scripts `001–011` have already been used in this
-project and are **not required to create the current baseline from scratch**.
-They were removed from the current Starter Kit tree so fresh installation
-contains no ad hoc historical patches. They remain recoverable from the
-immutable pre-cleanup revision:
-
-[Historical migrations — commit bf04ff6](https://github.com/getnkit/fabric-metadata-driven-ingestion/tree/bf04ff6e67ed365c58adb8c07b94e1256b005bd1/scripts/control/migrations)
-
-Never replay the old migration sequence blindly on an existing environment.
-First inspect its actual schema and data, pause ingestion, preserve/export
-the checkpoint and audit rows, and plan a reviewed targeted upgrade.
-In-place schema upgrades and SQL Project deployments must not race each
-other. Avoid deploying a fresh-install package as a data migration.
-
-DEV has been reported to pass constraint checks (12 upgraded constraints
-enabled/trusted) and `99` returned the expected four table column counts.
-That evidence confirms the reported structural state only; functional
-negative tests, Source Copy, Notebook runtime and PROD portability
-remain separate acceptance gates.
-
 ## Release checks
 
 - `99_verify_control_plane.sql` completes without THROW and all
@@ -86,6 +64,5 @@ remain separate acceptance gates.
   a persisted Watermark State.
 - Inspect Fabric-exported SQL Project security principals separately:
   workspace-specific user/SID and schema ownership must be reviewed
-  for a new environment; the cleanup intentionally does not mutate
-  those security artifacts.
+  for a new environment; do not modify them during routine Control/Audit reseeding.
 

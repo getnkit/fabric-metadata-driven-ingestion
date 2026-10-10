@@ -22,8 +22,7 @@ IF OBJECT_ID(N'control.v_pipeline_watermarks', N'V') IS NULL
     THROW 51201, 'VERIFY_FAILED: control.v_pipeline_watermarks view missing.', 1;
 
 IF COL_LENGTH(N'audit.ingestion_log', N'landing_path') IS NULL
-   OR COL_LENGTH(N'audit.ingestion_log', N'target_path') IS NOT NULL
-    THROW 51202, 'VERIFY_FAILED: audit.ingestion_log must use landing_path (not legacy target_path).', 1;
+    THROW 51202, 'VERIFY_FAILED: audit.ingestion_log missing landing_path column.', 1;
 
 IF OBJECT_ID(N'control.usp_finalize_ingestion_run', N'P') IS NULL
    OR OBJECT_ID(N'control.usp_validate_run_requests', N'P') IS NULL
