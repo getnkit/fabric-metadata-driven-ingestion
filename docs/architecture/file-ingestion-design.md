@@ -508,3 +508,18 @@ SFTP
 ```
 
 The **FILE Router** performs the single framework-level supported-format guard before connector/strategy routing; SFTP FULL and INCREMENTAL do not repeat that check. It does not route to a different pipeline branch per file format. Reader selection lives inside the reusable notebook so future `PARQUET` or `JSON` support can reuse the same Landing, lineage, Bronze-write, row-count, and recovery behavior. When additional connector adapters support different subsets of formats, revisit the Router guard as an explicit route/adapter capability policy rather than assuming one global list fits every adapter.
+
+## Generating new incremental SFTP fixtures for DEV tests
+
+The checked-in `inventory_movement_*.csv` files are static reproducible fixtures.
+To simulate new provider deliveries, use the optional [local Python movement
+generator](../../scripts/sample-data/README.md). It preserves the existing CSV
+columns, writes fresh UTC-stamped filenames without overwriting old fixtures,
+and can place files under `YYYY/MM/` to test recursive SFTP discovery. Upload
+with the vendor/producer account to `/outbound/inventory/movements/`; the
+generator does not automate SFTP upload or modify Fabric state.
+
+For end-to-end incremental acceptance, observe **remote SFTP Last Modified**
+time after upload, then verify REGULAR ingestion and watermark behavior.
+The generated filename and row-level `occurred_at` are not used for FILE
+watermark selection.

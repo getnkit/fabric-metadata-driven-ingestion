@@ -72,6 +72,18 @@ For FILE testing, provision the SFTP connection and put the sample files
 from `sample-data/sftp/outbound/inventory/` onto the demo SFTP server.
 Check remote paths, credentials and permissions.
 
+To simulate later inventory movement deliveries without editing the static fixtures,
+use the [SFTP movement generator](sample-data/README.md):
+
+```bash
+python3 scripts/sample-data/generate_inventory_movement.py --rows 10
+```
+
+Upload generated files to `/outbound/inventory/movements/` through the producer
+SFTP account. This is a **local-only fixture generator**; the Fabric FILE
+INCREMENTAL checkpoint uses **remote SFTP Last Modified**, not CSV `occurred_at`
+or filename timestamps. Review remote mtime after upload.
+
 ## D. Optional DEV demo Control metadata
 
 Set the **five connection/item/workspace IDs** at the start of
