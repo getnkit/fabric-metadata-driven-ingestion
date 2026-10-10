@@ -1903,6 +1903,10 @@
                   "p_landing_relative_path": {
                     "value": "@variables('v_landing_relative_path')",
                     "type": "Expression"
+                  },
+                  "p_finalize_error_message": {
+                    "value": "@take(string(activity('sp_finalize_success').error.message),1500)",
+                    "type": "Expression"
                   }
                 },
                 "waitOnCompletion": true,
@@ -1920,7 +1924,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_reconcile_finalize_failure",
+              "name": "inv_ingest_finalize_recovery",
               "dependsOn": [
                 {
                   "activity": "sp_finalize_success",
