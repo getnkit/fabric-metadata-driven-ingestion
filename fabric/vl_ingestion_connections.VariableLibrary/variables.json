@@ -11,7 +11,7 @@
       "name": "ingestion_control_workspace_id",
       "note": "Workspace GUID containing sqldb_ingestion_control. Set in active Fabric Variable Library value set.",
       "type": "String",
-      "value": ""
+      "value": "98eb44f1-b997-44bc-b4d5-1ab8064f9f57"
     },
     {
       "name": "ingestion_control_item_id",
