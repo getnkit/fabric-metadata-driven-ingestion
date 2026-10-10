@@ -108,7 +108,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_rds_sql_server_full_adapter",
+                  "name": "inv_ingest_sql_server_full_adapter",
                   "dependsOn": []
                 }
               ]
@@ -224,7 +224,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "inv_ingest_rds_sql_server_incremental_adapter",
+                  "name": "inv_ingest_sql_server_incremental_adapter",
                   "dependsOn": []
                 }
               ]
