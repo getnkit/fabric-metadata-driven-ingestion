@@ -1872,6 +1872,65 @@
               ]
             },
             {
+              "type": "InvokePipeline",
+              "typeProperties": {
+                "parameters": {
+                  "p_batch_id": {
+                    "value": "@pipeline().parameters.p_batch_id",
+                    "type": "Expression"
+                  },
+                  "p_ingestion_config_id": {
+                    "value": "@pipeline().parameters.p_ingestion_config_id",
+                    "type": "Expression"
+                  },
+                  "p_audit_pipeline_run_id": {
+                    "value": "@pipeline().parameters.p_audit_pipeline_run_id",
+                    "type": "Expression"
+                  },
+                  "p_ingestion_pattern": "FILE",
+                  "p_target_connection_settings": {
+                    "value": "@pipeline().parameters.p_target_connection_settings",
+                    "type": "Expression"
+                  },
+                  "p_target_schema": {
+                    "value": "@pipeline().parameters.p_target_schema",
+                    "type": "Expression"
+                  },
+                  "p_target_table": {
+                    "value": "@pipeline().parameters.p_target_table",
+                    "type": "Expression"
+                  },
+                  "p_landing_relative_path": {
+                    "value": "@variables('v_landing_relative_path')",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true,
+                "workspaceId": "00000000-0000-0000-0000-000000000000",
+                "pipelineId": "c8a3312f-991b-4712-952a-46bdc09f45ce",
+                "operationType": "InvokeFabricPipeline"
+              },
+              "externalReferences": {
+                "connection": "@pipeline().libraryVariables.pipeline_invoke_connection_id"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "inv_reconcile_finalize_failure",
+              "dependsOn": [
+                {
+                  "activity": "sp_finalize_success",
+                  "dependencyConditions": [
+                    "Failed"
+                  ]
+                }
+              ]
+            },
+            {
               "type": "TridentNotebook",
               "typeProperties": {
                 "notebookId": "7b8c5a1d-4f23-4c0a-a9e7-21d8b2f4c6a1",
@@ -2967,6 +3026,11 @@
       "notebook_execution_connection_id": {
         "type": "String",
         "variableName": "notebook_execution_connection_id",
+        "libraryName": "vl_ingestion_connections"
+      },
+      "pipeline_invoke_connection_id": {
+        "type": "String",
+        "variableName": "pipeline_invoke_connection_id",
         "libraryName": "vl_ingestion_connections"
       }
     },
