@@ -92,32 +92,15 @@ If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, a
 
 ## Audit error-message length contract
 
-The Fabric SQL Database stores `audit.ingestion_log.error_message` as
-`NVARCHAR(4000)`; the shared `control.usp_finalize_ingestion_run` parameter
-uses the same limit. **Only Finalizer expressions that propagate an Activity
-`.error.message`** have the Fabric Data Factory `substring(...,0,4000)`
-boundary guard (15 Finalizers across the Personal repo).
+The Fabric SQL Database stores `audit.ingestion_log.error_message` and the finalize procedure parameter as `NVARCHAR(4000)`. All 15 Finalizers that consume activity error messages use `take()` instead of `substring()`; `take()` safely handles shorter messages.
 
-- Single Copy, Notebook, or Lookup Activity errors (including error propagation
-  through a Switch/If Activity) use
-  `@substring(string(activity('some_activity').error.message),0,4000)`.
-- A combined **original activity failure + cleanup activity failure** reserves up
-  to **1,900 characters for each source error**, then caps the labeled combined
-  result at 4,000 so both categories are retained.
-- Landing file-count mismatch followed by a cleanup Activity failure retains
-  the numeric mismatch description and up to 3,800 characters of cleanup
-  `.error.message`, then caps the composed result at 4,000.
-- Framework-composed Validation and Routing `concat()` messages **do not use
-  `substring()`** under this scoped change. NULL error messages, statuses,
-  retry/cleanup dependencies, and watermark behavior remain unchanged.
-- Truncation can omit a later stack-trace tail. Inspect the failing Fabric
-  Activity run for complete diagnostics.
+- **One failing activity:** `@take(string(activity('some_activity').error.message),4000)`.
+- **Original failure plus cleanup failure:** use `take(...,1500)` on **each** error, then `concat()` the two labeled segments. The resulting message stays below 4,000 characters without an outer `take()`, and neither failure can displace the other.
+- **Landing file-count mismatch plus cleanup failure:** include `filesRead` / `filesWritten` and `take(cleanup_error,3000)`; no outer `take()` is required.
 
-Acceptance: in DEV, provoke long Copy/Notebook/Lookup errors and cleanup
-failures. Confirm terminal audit entries are written; activity-derived
-`error_message` values have `LEN(error_message) <= 4000`; both labels remain
-visible for combined failures; and failed executions do not advance the watermark.
-The implementation has undergone static verification, not Fabric runtime testing.
+Validation and Routing messages that do not propagate activity errors keep their existing `concat()` expressions. The Error Handler activity dependencies, audit statuses, retries, cleanup, and watermark semantics do not change.
+
+Smoke-check one short lookup error and one source-to-Bronze failure path in DEV after synchronizing the Fabric pipeline definitions. Full runtime failure-path coverage has not been performed.
 
 ## Safety boundary
 
