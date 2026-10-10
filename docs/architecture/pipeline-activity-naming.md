@@ -213,11 +213,11 @@ pl_ingest_orchestrator
                          -> pl_ingest_object_controller
                               -> DATABASE
                                    -> pl_ingest_database_router
-                                        -> AZURE_SQL|FULL
-                                             -> pl_ingest_azure_sql_full_adapter
-                                        -> AZURE_SQL|INCREMENTAL
-                                             -> pl_ingest_azure_sql_incremental_adapter
-                                                  -> pl_ingest_azure_sql_incremental_loader
+                                        -> SQL_SERVER|FULL
+                                             -> pl_ingest_sql_server_full_adapter
+                                        -> SQL_SERVER|INCREMENTAL
+                                             -> pl_ingest_sql_server_incremental_adapter
+                                                  -> pl_ingest_sql_server_incremental_loader
                               -> FILE
                                    -> pl_ingest_file_router
                                         -> SFTP|FULL
@@ -236,8 +236,8 @@ Invoke Pipeline activity names mirror the called pipeline name without the `pl_`
 
 ```text
 pl_ingest_database_router                 -> inv_ingest_database_router
-pl_ingest_azure_sql_incremental_adapter   -> inv_ingest_azure_sql_incremental_adapter
-pl_ingest_azure_sql_incremental_loader    -> inv_ingest_azure_sql_incremental_loader
+pl_ingest_sql_server_incremental_adapter   -> inv_ingest_sql_server_incremental_adapter
+pl_ingest_sql_server_incremental_loader    -> inv_ingest_sql_server_incremental_loader
 pl_ingest_sftp_incremental_adapter        -> inv_ingest_sftp_incremental_adapter
 ```
 
@@ -251,4 +251,4 @@ pl_ingest_config_paginator  -> inv_ingest_config_paginator
 
 Add a context suffix only when the same child is invoked more than once inside the same parent and the suffix is needed to distinguish those sibling activities.
 
-Do not add a loader merely for naming symmetry. For example, Azure SQL FULL and the SFTP adapters remain single connector-specific adapter pipelines because their native activity structure does not require the additional pipeline boundary. The Azure SQL incremental loader exists because the adapter needs a separate physical-load execution boundary for its nested branching structure.
+Do not add a loader merely for naming symmetry. For example, SQL Server FULL and the SFTP adapters remain single connector-specific adapter pipelines because their native activity structure does not require the additional pipeline boundary. The SQL Server incremental loader exists because the adapter needs a separate physical-load execution boundary for its nested branching structure.

@@ -54,7 +54,7 @@ WHERE r.name = N'fabric_ingestion_reader';
 GO
 /*
     Fabric Connection: SQL Server 2022 Developer on EC2
-    Connection name: cn_src_sql_server
+    Connection name: cn_sql_server_ecommerce
     Server: <EC2 private hostname / approved public endpoint>, port 1433
     Database: sql_ecommerce_db
     Authentication: Basic

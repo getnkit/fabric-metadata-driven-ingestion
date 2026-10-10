@@ -57,9 +57,9 @@ For FILE ingestion, both fields are first-class metadata. The FILE `landing_path
 
 `source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The current delimited-text feeds require `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and `escape`.
 
-Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the Azure SQL adapter can use it for connector-native partitioned Copy behavior.
+Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate optional execution-tuning envelope; current FILE configs leave it NULL, while the SQL Server adapter can use it for connector-native partitioned Copy behavior.
 
-The current SQL Starter Kit seeds FILE `landing_path` directly as a Files-relative `landing/...` location.  For an older populated environment with `Files/landing/...` metadata, review a targeted migration from Git history before execution; do not rewrite metadata or move historical Lakehouse files automatically.
+The current SQL Starter Kit seeds FILE `landing_path` directly as a Files-relative `landing/...` location.
 
 ## FILE flow
 
@@ -207,7 +207,7 @@ corresponding relative `landing/...` path (the notebooks prepend `/Files/`).
 
 The source inventory rows use the same SKU convention as the ECOMMERCE catalog
 (`SKU000001`, `SKU000002`, and so on), which gives the demo a realistic
-cross-source relationship without duplicating the Azure SQL source tables.
+cross-source relationship without duplicating the SQL Server source tables.
 
 ## Initial FILE fixture
 

@@ -2,7 +2,6 @@
     Target: SQL Server 2022 Developer on EC2 (sql_benchmark_db).
     Run as an administrator with CREATE LOGIN permission after the
     benchmark schema is created. Replace placeholder LOCALLY.
-    No Azure SQL contained database user is assumed.
 */
 SET NOCOUNT ON;
 GO

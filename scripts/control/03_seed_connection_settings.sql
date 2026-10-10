@@ -11,28 +11,30 @@
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* Bind the core DEV connections. To register benchmark only in an existing DEV,
-   fill BenchmarkSourceConnectionId and leave ALL five core IDs NULL. */
-DECLARE @SourceConnectionId NVARCHAR(100) = NULL;
-DECLARE @SftpConnectionId   NVARCHAR(100) = NULL;
-DECLARE @TargetConnectionId NVARCHAR(100) = NULL;
-DECLARE @TargetWorkspaceId  NVARCHAR(100) = NULL;
-DECLARE @TargetItemId       NVARCHAR(100) = NULL;
-DECLARE @BenchmarkSourceConnectionId NVARCHAR(100) = NULL; -- optional (SQL Server benchmark DB)
+/* Fresh DEV: replace the five required NULLs with actual Fabric GUIDs in a
+   local execution copy. NULL means "not supplied"; never commit DEV GUIDs.
+   Benchmark is optional. For benchmark-only registration in an existing DEV,
+   supply only the benchmark ID and leave the five core IDs NULL. */
+DECLARE @EcommerceSourceConnectionId NVARCHAR(100)   = NULL; -- Required: E-commerce SQL Server connection
+DECLARE @LogisticsSftpConnectionId NVARCHAR(100)      = NULL; -- Required: Logistics SFTP connection
+DECLARE @BronzeLakehouseConnectionId NVARCHAR(100)    = NULL; -- Required: Bronze Lakehouse connection
+DECLARE @BronzeLakehouseWorkspaceId NVARCHAR(100)     = NULL; -- Required: Bronze Lakehouse workspace
+DECLARE @BronzeLakehouseItemId NVARCHAR(100)          = NULL; -- Required: Bronze Lakehouse item
+DECLARE @BenchmarkSourceConnectionId NVARCHAR(100)   = NULL; -- Optional: Benchmark SQL Server connection
 
 /* All five core IDs are required together; none are required for benchmark-only setup.
    Existing core bindings are never rewritten when only benchmark ID is supplied. */
-DECLARE @CoreProvided INT =
-    CASE WHEN @SourceConnectionId IS NULL THEN 0 ELSE 1 END
-  + CASE WHEN @SftpConnectionId IS NULL THEN 0 ELSE 1 END
-  + CASE WHEN @TargetConnectionId IS NULL THEN 0 ELSE 1 END
-  + CASE WHEN @TargetWorkspaceId IS NULL THEN 0 ELSE 1 END
-  + CASE WHEN @TargetItemId IS NULL THEN 0 ELSE 1 END;
+DECLARE @CoreConnectionIdCount INT =
+    CASE WHEN @EcommerceSourceConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @LogisticsSftpConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @BronzeLakehouseConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @BronzeLakehouseWorkspaceId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @BronzeLakehouseItemId IS NULL THEN 0 ELSE 1 END;
 
-IF @CoreProvided NOT IN (0, 5)
+IF @CoreConnectionIdCount NOT IN (0, 5)
     THROW 51010, 'Supply all five core IDs together, or none for benchmark-only registration.', 1;
 
-IF @CoreProvided = 0 AND @BenchmarkSourceConnectionId IS NULL
+IF @CoreConnectionIdCount = 0 AND @BenchmarkSourceConnectionId IS NULL
     THROW 51011, 'Set all five core IDs or the optional BenchmarkSourceConnectionId.', 1;
 
 IF @BenchmarkSourceConnectionId IS NOT NULL
@@ -46,7 +48,7 @@ DECLARE @Seed TABLE
     connection_settings  NVARCHAR(MAX) NOT NULL
 );
 
-IF @CoreProvided = 5
+IF @CoreConnectionIdCount = 5
 INSERT INTO @Seed
 (
     connection_ref,
@@ -59,7 +61,7 @@ VALUES
     'SQL_SERVER',
     CONCAT(
         N'{"connectionId":"',
-        @SourceConnectionId,
+        @EcommerceSourceConnectionId,
         N'"}'
     )
 ),
@@ -68,7 +70,7 @@ VALUES
     'SFTP',
     CONCAT(
         N'{"connectionId":"',
-        @SftpConnectionId,
+        @LogisticsSftpConnectionId,
         N'"}'
     )
 ),
@@ -77,11 +79,11 @@ VALUES
     'LAKEHOUSE',
     CONCAT(
         N'{"connectionId":"',
-        @TargetConnectionId,
+        @BronzeLakehouseConnectionId,
         N'","workspaceId":"',
-        @TargetWorkspaceId,
+        @BronzeLakehouseWorkspaceId,
         N'","itemId":"',
-        @TargetItemId,
+        @BronzeLakehouseItemId,
         N'"}'
     )
 );

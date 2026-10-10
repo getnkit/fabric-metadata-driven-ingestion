@@ -87,11 +87,14 @@ or filename timestamps. Review remote mtime after upload.
 
 ## D. Optional DEV demo Control metadata
 
-For a **fresh DEV**, set the five required source/SFTP/Lakehouse IDs at the start of
-`scripts/control/03_seed_connection_settings.sql` to real DEV values.
-The script does not contain committed environment GUIDs. If preparing the
-benchmark too, also set optional `@BenchmarkSourceConnectionId`; otherwise
-leave it `NULL`.
+For a **fresh DEV**, replace the five required `NULL` declarations in
+`scripts/control/03_seed_connection_settings.sql` with the corresponding
+Fabric GUIDs: `@EcommerceSourceConnectionId`, `@LogisticsSftpConnectionId`,
+`@BronzeLakehouseConnectionId`, `@BronzeLakehouseWorkspaceId`, and
+`@BronzeLakehouseItemId`. The optional `@BenchmarkSourceConnectionId`
+may remain `NULL` to omit the benchmark. For a fresh-core install, leaving any of those five IDs as `NULL`
+causes the seed to stop; a quoted placeholder is **not** a valid Connection ID.
+Fill IDs in a local execution copy, not in Git.
 
 Then run:
 
@@ -120,7 +123,7 @@ an ad hoc seed. There are no default API incremental state rows.
 
 ## E. Execute via Master and verify
 
-Create a Fabric **SQL Server** connection (`cn_src_sql_server`) with Basic authentication, the approved EC2 SQL Server host/port 1433, and database `sql_ecommerce_db`. Use the read-only login from the security script; test connectivity and TLS/network restrictions. Populate `@SourceConnectionId` in seed `03` using **this** connector's ID. The source database is bound in the Fabric Connection; metadata JSON contains its `connectionId` only. Source SQL Server is separate from the Fabric Control SQL Database.
+Create a Fabric **SQL Server** connection (`cn_sql_server_ecommerce`) with Basic authentication, the approved EC2 SQL Server host/port 1433, and database `sql_ecommerce_db`. Use the read-only login from the security script; test connectivity and TLS/network restrictions. Populate `@EcommerceSourceConnectionId` in seed `03` using **this** connector's ID. The source database is bound in the Fabric Connection; metadata JSON contains its `connectionId` only. Source SQL Server is separate from the Fabric Control SQL Database.
 
 Run only `pl_ingest_orchestrator` as the standard entry point:
 `p_run_requests = []` runs all active configs as REGULAR; a non-empty

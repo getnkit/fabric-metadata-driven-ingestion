@@ -24,7 +24,7 @@ A Bronze write and the control/audit finalization are not one distributed transa
 The recovery scope is the pair **(`batch_id`, `pipeline_run_id`)** in the
 specific target Delta table. The orchestrator intentionally shares a batch ID
 across different configs for correlation; the object controller has its own
-pipeline run ID. Both metadata columns are present in the Azure SQL and SFTP
+pipeline run ID. Both metadata columns are present in the SQL Server and SFTP
 Bronze outputs. Filtering only by batch ID could remove another config's rows
 if two configs write to the same target in one orchestrator batch.
 
