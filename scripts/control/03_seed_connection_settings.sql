@@ -14,7 +14,7 @@ SET XACT_ABORT ON;
 /* Fresh DEV: replace the five required NULLs with their Fabric GUIDs in a
    local execution copy. NULL means "not supplied"; never commit DEV GUIDs.
    Benchmark is optional. For benchmark-only registration in an existing DEV,
-   supply only the benchmark ID and leave the five core IDs NULL. */
+   supply only the benchmark ID and leave the five core bindings NULL. */
 DECLARE @EcommerceSourceConnectionId NVARCHAR(100)   = NULL; -- Required: E-commerce SQL Server connection
 DECLARE @LogisticsSftpConnectionId NVARCHAR(100)      = NULL; -- Required: Logistics SFTP connection
 DECLARE @BronzeLakehouseConnectionId NVARCHAR(100)    = NULL; -- Required: Bronze Lakehouse connection
