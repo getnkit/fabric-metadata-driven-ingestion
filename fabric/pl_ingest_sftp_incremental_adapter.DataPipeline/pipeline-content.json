@@ -1924,7 +1924,7 @@
                 "secureInput": false,
                 "secureOutput": false
               },
-              "name": "inv_ingest_finalize_recovery",
+              "name": "inv_ingest_finalize_success_recovery",
               "dependsOn": [
                 {
                   "activity": "sp_finalize_success",
