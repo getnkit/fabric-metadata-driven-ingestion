@@ -211,15 +211,3 @@ permissions during provisioning. This cleanup intentionally leaves those
 security artifacts untouched to avoid unintended ownership or DROP USER
 changes in the existing DEV database.
 
-## G. Generic SQL Server connection cutover (existing DEV only)
-
-- New route: `SQL_SERVER|FULL` and `SQL_SERVER|INCREMENTAL`.
-- New logical refs: `SQL_SERVER_ECOMMERCE` and optional `SQL_SERVER_BENCHMARK_DB`, with benchmark `source_system = BENCHMARK_DB`. Preserve existing config IDs, target schemas, watermarks and audit history.
-- Rename the three Fabric database workers via Git sync; their `.platform` `logicalId` values stay unchanged. **Verify Invoke Pipeline target rebinding** after sync.
-- Create/test a **generic SQL Server** Fabric Connection for `sql_ecommerce_db` first. If the dedicated benchmark source already exists, create/test a separate Fabric SQL Server Connection for `sql_benchmark_db` too.
-- Set `@SourceConnectionId` and (if a legacy benchmark ref exists) `@BenchmarkConnectionId` in [`scripts/operations/01_cutover_existing_dev_to_sql_server.sql`](operations/01_cutover_existing_dev_to_sql_server.sql); execute it in the **Fabric Control SQL Database**, NOT on EC2. It migrates Azure SQL/RDS demo references transactionally, leaving config IDs, `control.pipeline_watermarks` and audit rows intact. Then run `scripts/control/99_verify_control_plane.sql`.
-- For fresh DEV SQL Control Database, run the standard seed scripts `03 -> 04` instead; **do not** run the cutover.
-- The generic SQL Server Connector uses `SqlServerSource` and `SqlServerTable`; the database selection comes from the Fabric Connection. Verify Copy/Lookup and the actual connection-binding behavior in Fabric DEV.
-- Repointing a logical source does **not** guarantee previous watermark LOW/HIGH values exist in the new EC2 database. Check against its `MAX(updated_at)` and available source history before enabling REGULAR, or explicitly plan a reviewed rebaseline. Never reset watermarks as a side effect of this cutover.
-- Keep port 1433 limited to approved access. Use a private network or supported on-premises/VNet gateway when practical; do not expose it to `0.0.0.0/0`.
-- **Static JSON/SQL checks are not Fabric runtime acceptance**. Confirm Basic/TLS, NONE/DYNAMIC_RANGE/PHYSICAL_PARTITIONS, FULL/INCREMENTAL, REGULAR/BACKFILL, Bronze, audit, watermarks and failure paths.
