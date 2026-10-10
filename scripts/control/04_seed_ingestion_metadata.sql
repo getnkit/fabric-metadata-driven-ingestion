@@ -15,6 +15,8 @@
     are NEVER updated by this seed, protecting active scenario settings.
 
     Fresh DEV demo seed ONLY (not generic PROD configuration).
+    @BenchmarkOnly = 1 is an explicit safe mode for existing DEV: insert
+    missing benchmark configs without updating demo E-commerce/SFTP configs.
     Re-run behavior:
       - Existing sample config rows are upserted (review before re-running).
       - Existing pipeline_watermarks records are NEVER updated/reset.
@@ -26,6 +28,18 @@
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+
+/* Existing DEV: set to 1 to register ONLY missing benchmark configs.
+   Do not re-seed/overwrite E-commerce or SFTP demo ingestion settings. */
+DECLARE @BenchmarkOnly BIT = 0;
+
+IF @BenchmarkOnly = 1 AND NOT EXISTS
+(
+    SELECT 1 FROM control.connection_settings
+    WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK'
+      AND connection_type = 'SQL_SERVER'
+)
+    THROW 51013, 'Benchmark-only mode requires the benchmark connection registered via seed 03.', 1;
 
 DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
 DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
@@ -50,6 +64,7 @@ DECLARE @Seed TABLE
     is_active        BIT NOT NULL
 );
 
+IF @BenchmarkOnly = 0
 INSERT INTO @Seed
 (
     source_system,
