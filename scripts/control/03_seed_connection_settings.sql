@@ -1,8 +1,8 @@
 /*
     03_seed_connection_settings.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
-    Purpose: Seed logical connection references used by the metadata-driven
-             ingestion framework.
+    Purpose: Seed core logical connections and optionally register one benchmark
+             SQL Server source connection without requiring separate script.
 
     Environment-specific IDs are intentionally not committed.
     Set the variables below before running this script in each environment.
@@ -11,21 +11,33 @@
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* Bind a Fabric SQL Server Connection to sql_ecommerce_db. */
+/* Bind the core DEV connections. To register benchmark only in an existing DEV,
+   fill BenchmarkSourceConnectionId and leave ALL five core IDs NULL. */
 DECLARE @SourceConnectionId NVARCHAR(100) = NULL;
 DECLARE @SftpConnectionId   NVARCHAR(100) = NULL;
 DECLARE @TargetConnectionId NVARCHAR(100) = NULL;
 DECLARE @TargetWorkspaceId  NVARCHAR(100) = NULL;
 DECLARE @TargetItemId       NVARCHAR(100) = NULL;
+DECLARE @BenchmarkSourceConnectionId NVARCHAR(100) = NULL; -- optional (SQL Server benchmark DB)
 
-IF @SourceConnectionId IS NULL
-   OR @SftpConnectionId IS NULL
-   OR @TargetConnectionId IS NULL
-   OR @TargetWorkspaceId IS NULL
-   OR @TargetItemId IS NULL
-BEGIN
-    THROW 51010, 'Set SourceConnectionId, SftpConnectionId, TargetConnectionId, TargetWorkspaceId, and TargetItemId before running this seed.', 1;
-END;
+/* All five core IDs are required together; none are required for benchmark-only setup.
+   Existing core bindings are never rewritten when only benchmark ID is supplied. */
+DECLARE @CoreProvided INT =
+    CASE WHEN @SourceConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @SftpConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @TargetConnectionId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @TargetWorkspaceId IS NULL THEN 0 ELSE 1 END
+  + CASE WHEN @TargetItemId IS NULL THEN 0 ELSE 1 END;
+
+IF @CoreProvided NOT IN (0, 5)
+    THROW 51010, 'Supply all five core IDs together, or none for benchmark-only registration.', 1;
+
+IF @CoreProvided = 0 AND @BenchmarkSourceConnectionId IS NULL
+    THROW 51011, 'Set all five core IDs or the optional BenchmarkSourceConnectionId.', 1;
+
+IF @BenchmarkSourceConnectionId IS NOT NULL
+   AND NULLIF(LTRIM(RTRIM(@BenchmarkSourceConnectionId)), N'') IS NULL
+    THROW 51012, 'BenchmarkSourceConnectionId cannot be empty.', 1;
 
 DECLARE @Seed TABLE
 (
@@ -34,6 +46,7 @@ DECLARE @Seed TABLE
     connection_settings  NVARCHAR(MAX) NOT NULL
 );
 
+IF @CoreProvided = 5
 INSERT INTO @Seed
 (
     connection_ref,
@@ -72,6 +85,19 @@ VALUES
         N'"}'
     )
 );
+
+/* Optional dedicated benchmark connection; omitted entirely when NULL.
+   Register this independently without touching live E-commerce/SFTP/target bindings. */
+IF @BenchmarkSourceConnectionId IS NOT NULL
+BEGIN
+    INSERT INTO @Seed(connection_ref, connection_type, connection_settings)
+    VALUES
+    (
+        'SQL_SERVER_INGESTION_BENCHMARK',
+        'SQL_SERVER',
+        CONCAT(N'{"connectionId":"', @BenchmarkSourceConnectionId, N'"}')
+    );
+END;
 
 BEGIN TRY
     BEGIN TRANSACTION;

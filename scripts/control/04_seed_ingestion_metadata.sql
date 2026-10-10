@@ -10,6 +10,10 @@
              DYNAMIC_RANGE partitioning. parallel_copies is intentionally omitted
              so Fabric keeps service-managed parallelism by default.
 
+    Benchmark configs are optional: inserted (INACTIVE) only when the dedicated
+    SQL Server benchmark connection reference exists. Existing benchmark configs
+    are NEVER updated by this seed, protecting active scenario settings.
+
     Fresh DEV demo seed ONLY (not generic PROD configuration).
     Re-run behavior:
       - Existing sample config rows are upserted (review before re-running).
@@ -109,6 +113,40 @@ VALUES
         1
     );
 
+/* Optional benchmark metadata belongs in the same ingestion-config seed.
+   Existing scenario configs are NOT overwritten, even when this seed is rerun. */
+IF EXISTS
+(
+    SELECT 1
+    FROM control.connection_settings
+    WHERE connection_ref = 'SQL_SERVER_INGESTION_BENCHMARK'
+      AND connection_type = 'SQL_SERVER'
+)
+BEGIN
+    INSERT INTO @Seed
+    (
+        source_system, source_conn_ref, source_schema, source_object, source_path,
+        ingestion_pattern, file_format, source_options, copy_options, landing_path,
+        target_conn_ref, target_schema, target_table, load_strategy,
+        watermark_field, is_active
+    )
+    VALUES
+    (
+        'INGESTION_BENCHMARK', 'SQL_SERVER_INGESTION_BENCHMARK', 'benchmark',
+        'copy_source_unpartitioned', NULL, 'DATABASE', NULL, NULL,
+        N'{"partition_option":"NONE"}', NULL,
+        'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_unpartitioned_none',
+        'FULL', NULL, 0
+    ),
+    (
+        'INGESTION_BENCHMARK', 'SQL_SERVER_INGESTION_BENCHMARK', 'benchmark',
+        'copy_source_partitioned', NULL, 'DATABASE', NULL, NULL,
+        N'{"partition_option":"PHYSICAL_PARTITIONS"}', NULL,
+        'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_partitioned_physical',
+        'FULL', NULL, 0
+    );
+END;
+
 BEGIN TRY
     BEGIN TRANSACTION;
 
@@ -136,7 +174,8 @@ BEGIN TRY
          s.source_schema = c.source_schema
          OR (s.source_schema IS NULL AND c.source_schema IS NULL)
      )
-     AND s.source_object = c.source_object;
+     AND s.source_object = c.source_object
+    WHERE s.source_system <> 'INGESTION_BENCHMARK';
 
     INSERT INTO control.ingestion_config
     (
@@ -239,7 +278,7 @@ SELECT
     created_at,
     updated_at
 FROM control.ingestion_config
-WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR')
+WHERE source_system IN ('ECOMMERCE','LOGISTICS_VENDOR','INGESTION_BENCHMARK')
 ORDER BY ingestion_config_id;
 
 SELECT *

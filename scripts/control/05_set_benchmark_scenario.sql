@@ -1,5 +1,5 @@
 /*
-    06_set_benchmark_scenario.sql
+    05_set_benchmark_scenario.sql
     Target: Microsoft Fabric SQL Database (sqldb_ingestion_control)
     Purpose: Select exactly one benchmark scenario without recreating source data.
 
@@ -42,6 +42,10 @@ IF @ParallelCopies IS NOT NULL AND @ParallelCopies <= 0
 BEGIN
     THROW 51141, 'ParallelCopies must be NULL (AUTO) or a positive integer.', 1;
 END;
+
+/* Atomically switch scenarios so a missing config cannot leave everything disabled. */
+BEGIN TRY
+    BEGIN TRANSACTION;
 
 /* Safety first: benchmark configs are disabled unless one scenario is selected. */
 UPDATE control.ingestion_config
@@ -100,8 +104,15 @@ BEGIN
       AND source_object = @SourceObject;
 
     IF @@ROWCOUNT <> 1
-        THROW 51142, 'Expected exactly one benchmark config; run 05_register_benchmark_configs.sql first.', 1;
+        THROW 51142, 'Expected exactly one benchmark config; run control/03_seed_connection_settings.sql then 04_seed_ingestion_metadata.sql first.', 1;
 END;
+
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    THROW;
+END CATCH;
 
 SELECT
     @Scenario AS selected_scenario,
