@@ -42,6 +42,26 @@ IF @BenchmarkOnly = 1 AND NOT EXISTS
 )
     THROW 51013, 'Benchmark-only mode requires the benchmark connection registered via seed 03.', 1;
 
+/* Reject obsolete logical names rather than silently mixing seed versions.
+   This script is not a legacy migration. Reset DEV state using the reviewed
+   fresh-install workflow before executing the current baseline seed. */
+IF EXISTS
+(
+    SELECT 1
+    FROM control.connection_settings
+    WHERE connection_ref = 'SQL_SERVER_BENCHMARK_DB'
+)
+OR EXISTS
+(
+    SELECT 1
+    FROM control.ingestion_config
+    WHERE source_system = 'BENCHMARK_DB'
+       OR source_conn_ref = 'SQL_SERVER_BENCHMARK_DB'
+)
+BEGIN
+    THROW 51014, 'LEGACY_BENCHMARK_NAMING: current seed requires BENCHMARK / SQL_SERVER_BENCHMARK; reset the DEV Control Plane before fresh seeding.', 1;
+END;
+
 DECLARE @InitialDatabaseWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
 DECLARE @InitialFileWatermark NVARCHAR(1000) = '1900-01-01T00:00:00.000';
 
