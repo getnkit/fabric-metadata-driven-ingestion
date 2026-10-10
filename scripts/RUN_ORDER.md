@@ -44,6 +44,14 @@ Only run these steps on an empty/new SQL Database or one already verified
 to match this Baseline. Never run demo seeds against UAT/PROD by default.
 Existing populated environments require a separate reviewed upgrade; these scripts are for fresh installation.
 
+### Optional DEV reset (destructive)
+
+If reusing the same DEV Control SQL Database for a clean reinstall, stop all ingestion
+runs and execute `scripts/dev/00_reset_control_plane.sql` **before** the core
+install scripts above. This deletes existing Control/Audit data, including
+watermarks and audit history. It preserves the `control` and `audit` schemas.
+Never run this script in UAT/PROD or as part of a normal installation.
+
 ## C. Optional DEV demo source
 
 On the Ubuntu EC2 host, connect to the SQL Server 2022 Developer container as the database administrator and run `CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
