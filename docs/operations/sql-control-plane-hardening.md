@@ -35,7 +35,7 @@ Use `scripts/control/`:
 ```
 
 For a new empty Fabric SQL Database, run **01 → 02 → 99**.
-If running sample RDS SQL Server/SFTP workloads, configure the three logical
+If running sample SQL Server/SFTP workloads, configure the three logical
 Connection references and run demo **03 → 04 → 99** afterward. These
 seeds are optional and **not** generic production metadata.
 
@@ -79,7 +79,7 @@ remain separate acceptance gates.
 - SQL Project table column names/types and key definitions match the
   target environment; verify via schema diff before UAT/PROD.
 - `pl_ingest_orchestrator` works with `vl_ingestion_connections`.
-- Amazon RDS for SQL Server FULL / INCREMENTAL and SFTP FILE FULL / INCREMENTAL pass
+- SQL Server 2022 Developer on EC2 FULL / INCREMENTAL and SFTP FILE FULL / INCREMENTAL pass
   REGULAR/BACKFILL, SKIPPED, failure compensation and checkpoint
   concurrency acceptance.
 - No demo seed runs against unrelated production metadata or resets
@@ -89,15 +89,6 @@ remain separate acceptance gates.
   for a new environment; the cleanup intentionally does not mutate
   those security artifacts.
 
-## Existing DEV connector cutover (Azure SQL -> RDS SQL Server)
+## Existing DEV connector cutover (Azure SQL/RDS -> generic SQL Server)
 
-Existing Fabric SQL Control DB may still have old`CK_connection_settings_type`
-restricted to `AZURE_SQL`. After creating the RDS Fabric Connection, execute
-[`scripts/operations/01_cutover_existing_dev_to_rds.sql`](../../scripts/operations/01_cutover_existing_dev_to_rds.sql)
-with the new Fabric `connectionId`. It migrates the ECOMMERCE logical
-Connection Ref from `AZSQL_ECOMMERCE` to `RDS_ECOMMERCE` inside a single
-transaction, replacing the CHECK constraint with the current RDS/SFTP/Lakehouse
-baseline. It leaves ingestion config IDs, Watermark State values, audit
-history and source-boundary semantics unchanged. Check source continuity before
-resuming REGULAR ingestion. It rejects unhandled legacy Azure SQL references
-rather than silently redirecting unrelated sources.
+Existing Fabric SQL Control DB may still have an old `CK_connection_settings_type` constraint that permits `AZURE_SQL` or `AMAZON_RDS_SQL_SERVER` but not `SQL_SERVER`. After creating and testing the generic SQL Server Fabric Connection(s), execute [`scripts/operations/01_cutover_existing_dev_to_sql_server.sql`](../../scripts/operations/01_cutover_existing_dev_to_sql_server.sql) against **Fabric Control SQL Database** (never the EC2 source database). Set `@SourceConnectionId` and, if a legacy benchmark ref exists, `@BenchmarkConnectionId`. The transaction rebinds only ECOMMERCE and INGESTION_BENCHMARK logical refs and replaces the connector CHECK. It preserves `ingestion_config_id`, existing Watermark State, audit rows and historical processing boundaries. Before resuming REGULAR ingestion, independently check the new SQL Server source history against the persisted LOW/HIGH checkpoint. Other legacy SQL refs require their own reviewed migration.

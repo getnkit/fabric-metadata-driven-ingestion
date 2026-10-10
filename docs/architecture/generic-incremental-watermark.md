@@ -36,7 +36,7 @@ The physical adapter owns interpretation of the STRING checkpoint.
 
 ## Watermark-state lookup contract
 
-For the implemented Amazon RDS for SQL Server and SFTP INCREMENTAL adapters, the initial
+For the implemented SQL Server and SFTP INCREMENTAL adapters, the initial
 `lkp_current_watermark` filters **both** `ingestion_config_id` and
 `watermark_field` in SQL. The `if_state_found` gate therefore checks whether
 a checkpoint exists for that exact requested pair; no separate
@@ -106,7 +106,7 @@ For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > low
   `DATETIME2(3)` is stored as a timezone-less UTC value, by data type.
 - Source-derived watermarks preserve their native type, precision and timezone
   interpretation. Do not blanket-convert watermarks to UTC or add `Z`.
-  Amazon RDS for SQL Server `DATETIME2(7)` source boundaries remain source-local and can
+  SQL Server `DATETIME2(7)` source boundaries remain source-local and can
   retain seven fractional digits; watermark state stores them exactly.
 - At connector boundaries, adapt representation only where required. SFTP
   Last Modified filtering uses Microsoft's UTC `yyyy-MM-ddTHH:mm:ss.fffZ`
@@ -119,7 +119,7 @@ For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > low
 
 ## SQL Server DATETIME2 timestamp-watermark precision
 
-For Amazon RDS for SQL Server incremental ingestion, the adapter preserves LOW/HIGH checkpoint values
+For SQL Server incremental ingestion, the adapter preserves LOW/HIGH checkpoint values
 from the control state and source Lookup without rounding or timestamp reformatting.
 The shared `control.pipeline_watermarks.last_watermark_value` remains a STRING
 (`NVARCHAR(1000)`) for exact optimistic-watermark comparison.
@@ -162,7 +162,7 @@ is persisted as the next committed watermark. The optimistic comparison
 retains the exact original stored LOW value, including its old representation.
 BACKFILL LOW/HIGH must represent UTC instants (with `Z` preferred); explicit
 non-UTC offsets must first be converted to UTC, not relabeled by formatting.
-This change does not apply to Amazon RDS for SQL Server `DATETIME2` source watermarks.
+This change does not apply to SQL Server `DATETIME2` source watermarks.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a

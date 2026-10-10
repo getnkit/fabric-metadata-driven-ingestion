@@ -1,6 +1,6 @@
 /*
     01_create_source_schema.sql
-    Target: Amazon RDS for SQL Server database (sql_ecommerce_db)
+    Target: SQL Server 2022 Developer on EC2 database (sql_ecommerce_db)
     Purpose: Create the mock operational e-commerce source schemas and tables used
              by the metadata-driven ingestion framework.
 */

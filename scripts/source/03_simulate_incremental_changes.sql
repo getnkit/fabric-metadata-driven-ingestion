@@ -1,6 +1,6 @@
 /*
     03_simulate_incremental_changes.sql
-    Target: Amazon RDS for SQL Server database (sql_ecommerce_db)
+    Target: SQL Server 2022 Developer on EC2 database (sql_ecommerce_db)
     Purpose: Generate controlled source-side inserts and updates for incremental
              ingestion testing.
 

@@ -10,8 +10,8 @@ The source data is generated once and kept permanently:
 ```text
 sql_ingestion_benchmark
 └─ benchmark
-   ├─ copy_source_unpartitioned   1,000,000 rows
-   └─ copy_source_partitioned     1,000,000 rows
+   ├─ copy_source_unpartitioned  10,000,000 rows
+   └─ copy_source_partitioned    10,000,000 rows
 ```
 
 Both tables have the same logical columns and deterministic values. The
@@ -45,7 +45,7 @@ and reports actual reserved/used storage.
 Create a **Fabric SQL Server 2022 Developer on EC2** connection named:
 
 ```text
-cn_sql_server_ingestion_benchmark
+cn_src_sql_server_ingestion_benchmark
 ```
 
 Point it at `sql_ingestion_benchmark` using `fabric_benchmark_user`.
