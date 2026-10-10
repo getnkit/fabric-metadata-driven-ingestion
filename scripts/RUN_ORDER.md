@@ -79,8 +79,8 @@ use the [SFTP movement generator](source/sftp/README.md):
 python3 scripts/source/sftp/generate_inventory_movement.py
 ```
 
-Upload generated files to `/outbound/inventory/movements/` through the producer
-SFTP account. The generator creates one new 6-row CSV locally per run; the Fabric FILE
+Upload generated files to `/outbound/inventory/movements/YYYY/MM/` through the producer
+SFTP account, preserving their UTC year/month folders. The generator creates one new 6-row CSV locally per run; the Fabric FILE
 INCREMENTAL checkpoint uses **remote SFTP Last Modified**, not CSV `occurred_at`
 or filename timestamps. Review remote mtime after upload.
 

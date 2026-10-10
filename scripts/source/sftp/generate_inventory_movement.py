@@ -17,7 +17,7 @@ ROWS = [
 ]
 
 now = datetime.now(timezone.utc)
-folder = Path(__file__).resolve().parent / "outbound/inventory/movements"
+folder = Path(__file__).resolve().parent / "outbound/inventory/movements" / now.strftime("%Y/%m")
 folder.mkdir(parents=True, exist_ok=True)
 path = folder / f"inventory_movement_{now:%Y%m%dT%H%M%S%fZ}.csv"
 

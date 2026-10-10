@@ -1,2 +1,2 @@
-# Generated demo movements; the two versioned fixtures remain tracked.
-scripts/source/sftp/outbound/inventory/movements/inventory_movement_*.csv
+# Ignore newly generated movement CSVs; original checked-in fixtures remain tracked.
+scripts/source/sftp/outbound/inventory/movements/**/inventory_movement_*.csv
