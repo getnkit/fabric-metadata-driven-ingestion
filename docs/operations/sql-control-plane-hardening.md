@@ -89,6 +89,3 @@ remain separate acceptance gates.
   for a new environment; the cleanup intentionally does not mutate
   those security artifacts.
 
-## Existing DEV connector cutover (Azure SQL/RDS -> generic SQL Server)
-
-Existing Fabric SQL Control DB may still have an old `CK_connection_settings_type` constraint that permits `AZURE_SQL` or `AMAZON_RDS_SQL_SERVER` but not `SQL_SERVER`. After creating and testing the generic SQL Server Fabric Connection(s), execute [`scripts/operations/01_cutover_existing_dev_to_sql_server.sql`](../../scripts/operations/01_cutover_existing_dev_to_sql_server.sql) against **Fabric Control SQL Database** (never the EC2 source database). Set `@SourceConnectionId` and, if a legacy benchmark ref exists, `@BenchmarkConnectionId`. The transaction rebinds ECOMMERCE and legacy benchmark connection/config references to `SQL_SERVER_BENCHMARK_DB` / `BENCHMARK_DB`, and replaces the connector CHECK. It preserves `ingestion_config_id`, existing Watermark State, audit rows and historical processing boundaries. Before resuming REGULAR ingestion, independently check the new SQL Server source history against the persisted LOW/HIGH checkpoint. Other legacy SQL refs require their own reviewed migration.
