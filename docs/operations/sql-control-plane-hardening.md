@@ -14,7 +14,7 @@ history. The physical schema source of truth is
 | `control.pipeline_watermarks` | One checkpoint per `ingestion_config_id`; nonblank field/value; no automatic reset; optimistic advancement only in `usp_finalize_ingestion_run` |
 | `audit.ingestion_log` | One terminal result per child pipeline RunId; valid status/run type; nonnegative counts and duration; nonblank run identity; `landing_path` is the canonical physical audit column |
 | `control.v_pipeline_watermarks` | Read-only combined view over state and configuration |
-| `control.usp_finalize_ingestion_run` | Transactional final audit + guarded state advancement; retry idempotence |
+| `control.usp_finalize_ingestion_run` | Transactional final audit + guarded state advancement; exact terminal-outcome retry idempotence (reject mismatched retry) |
 | `control.usp_validate_run_requests` | Explicit request array/object/type/duplicate validation; rejects NULL envelope |
 
 The FILE `file_format` CHECK explicitly requires a non-NULL value. SQL CHECK
