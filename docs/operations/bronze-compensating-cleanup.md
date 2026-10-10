@@ -105,11 +105,11 @@ Smoke-check one short lookup error and one source-to-Bronze failure path in DEV 
 ## Finalization failure recovery (incremental DATABASE and FILE)
 
 The SQL Server INCREMENTAL Loader and SFTP INCREMENTAL Adapter each call the
-shared `pl_ingest_finalize_recovery` child pipeline **only when**
+shared `pl_ingest_finalize_success_recovery` child pipeline **only when**
 `sp_finalize_success` fails. Successful finalization does not execute a lookup
 or recovery activity.
 
-The parent activity is `inv_ingest_finalize_recovery`. It passes a bounded
+The parent activity is `inv_ingest_finalize_success_recovery`. It passes a bounded
 original finalization error message alongside config/batch/run identifiers, so
 recovery Fail messages retain diagnostic context without complex expressions.
 
