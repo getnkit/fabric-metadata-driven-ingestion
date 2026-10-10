@@ -380,7 +380,7 @@
                   },
                   "error_message": {
                     "value": {
-                      "value": "@substring(string(activity('lkp_source_upper_bound').error.message),0,4000)",
+                      "value": "@take(string(activity('lkp_source_upper_bound').error.message),4000)",
                       "type": "Expression"
                     },
                     "type": "String"
