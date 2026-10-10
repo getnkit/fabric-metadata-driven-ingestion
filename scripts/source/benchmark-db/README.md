@@ -64,7 +64,7 @@ there is **no separate benchmark-registration script**:
    the five core IDs in `scripts/control/03_seed_connection_settings.sql`;
    run `03` followed by `scripts/control/04_seed_ingestion_metadata.sql`.
 2. **Existing seeded DEV:** set **only** `@BenchmarkSourceConnectionId` in
-   seed `03` (leave all five core IDs `NULL`) and run it.
+   seed `03` (leave all five core bindings `NULL`) and run it.
    Then set `@BenchmarkOnly = 1` in seed `04` and run it to insert just the
    two missing benchmark configs without updating existing demo settings.
 
