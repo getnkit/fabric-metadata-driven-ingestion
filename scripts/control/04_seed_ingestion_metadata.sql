@@ -16,7 +16,8 @@
 
     Fresh DEV demo seed ONLY (not generic PROD configuration).
     @BenchmarkOnly = 1 is an explicit safe mode for existing DEV: insert
-    missing benchmark configs without updating demo E-commerce/SFTP configs.
+    missing benchmark configs without updating E-commerce/SFTP configs or
+    initializing any watermark state.
     Re-run behavior:
       - Existing sample config rows are upserted (review before re-running).
       - Existing pipeline_watermarks records are NEVER updated/reset.
@@ -242,28 +243,32 @@ BEGIN TRY
           AND c.source_object = s.source_object
     );
 
-    INSERT INTO control.pipeline_watermarks
-    (
-        ingestion_config_id,
-        watermark_field,
-        last_watermark_value
-    )
-    SELECT
-        c.ingestion_config_id,
-        c.watermark_field,
-        CASE
-            WHEN c.ingestion_pattern = 'DATABASE' THEN @InitialDatabaseWatermark
-            WHEN c.ingestion_pattern = 'FILE' THEN @InitialFileWatermark
-        END
-    FROM control.ingestion_config c
-    WHERE c.load_strategy = 'INCREMENTAL'
-      AND c.ingestion_pattern IN ('DATABASE','FILE')
-      AND NOT EXISTS
-      (
-          SELECT 1
-          FROM control.pipeline_watermarks w
-          WHERE w.ingestion_config_id = c.ingestion_config_id
-      );
+    /* Benchmark-only setup must not touch watermark state for any source. */
+    IF @BenchmarkOnly = 0
+    BEGIN
+        INSERT INTO control.pipeline_watermarks
+        (
+            ingestion_config_id,
+            watermark_field,
+            last_watermark_value
+        )
+        SELECT
+            c.ingestion_config_id,
+            c.watermark_field,
+            CASE
+                WHEN c.ingestion_pattern = 'DATABASE' THEN @InitialDatabaseWatermark
+                WHEN c.ingestion_pattern = 'FILE' THEN @InitialFileWatermark
+            END
+        FROM control.ingestion_config c
+        WHERE c.load_strategy = 'INCREMENTAL'
+          AND c.ingestion_pattern IN ('DATABASE','FILE')
+          AND NOT EXISTS
+          (
+              SELECT 1
+              FROM control.pipeline_watermarks w
+              WHERE w.ingestion_config_id = c.ingestion_config_id
+          );
+    END;
 
     COMMIT TRANSACTION;
 END TRY
