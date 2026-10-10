@@ -51,6 +51,9 @@ BEGIN
     IF @DurationSeconds < 0
         THROW 51000, 'INVALID_AUDIT_TIME_RANGE: end_time is earlier than start_time.', 1;
 
+    -- A retry is idempotent only when it matches the previously committed
+    -- terminal audit outcome. A prior FAILED run must not masquerade as
+    -- SUCCESS on a subsequent finalization attempt for the same RunId.
     IF EXISTS
     (
         SELECT 1
@@ -58,7 +61,40 @@ BEGIN
         WHERE pipeline_run_id = @pipeline_run_id
     )
     BEGIN
-        RETURN 0;
+        IF EXISTS
+        (
+            SELECT 1
+            FROM audit.ingestion_log AS a
+            WHERE a.pipeline_run_id = @pipeline_run_id
+              AND a.batch_id = @batch_id
+              AND a.status = @status
+              AND a.run_type = @run_type
+              AND
+              (
+                  a.ingestion_config_id = @ingestion_config_id
+                  OR (a.ingestion_config_id IS NULL AND @ingestion_config_id IS NULL)
+              )
+              AND
+              (
+                  a.error_code = @error_code
+                  OR (a.error_code IS NULL AND @error_code IS NULL)
+              )
+              AND
+              (
+                  a.processing_lower_bound = @processing_lower_bound
+                  OR (a.processing_lower_bound IS NULL AND @processing_lower_bound IS NULL)
+              )
+              AND
+              (
+                  a.processing_upper_bound = @processing_upper_bound
+                  OR (a.processing_upper_bound IS NULL AND @processing_upper_bound IS NULL)
+              )
+        )
+        BEGIN
+            RETURN 0;
+        END;
+
+        THROW 51007, 'FINALIZE_OUTCOME_MISMATCH: existing audit does not match requested finalization.', 1;
     END;
 
     IF @advance_watermark = 1
