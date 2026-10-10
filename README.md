@@ -4,7 +4,7 @@ The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2*
 
 ## EC2 Source Infrastructure
 
-- [Docker Compose source stack](infrastructure/fabric-source/README.md) — SQL Server 2022 Developer + SFTP on one EC2 host, environment template, persistent SFTP host identity and safe deployment/upload instructions.
+- [Docker Compose source stack](infrastructure/source/README.md) — SQL Server 2022 Developer + SFTP on one EC2 host, environment template, persistent SFTP host identity and safe deployment/upload instructions.
 
 ## Starter Kit — Fresh Installation
 
