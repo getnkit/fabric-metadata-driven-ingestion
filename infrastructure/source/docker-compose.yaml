@@ -1,0 +1,36 @@
+# EC2 source services for Microsoft Fabric ingestion DEV.
+# Keep the existing SQL Server named volume when migrating Compose projects.
+name: fabric-source
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fabric-sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+      MSSQL_MEMORY_LIMIT_MB: "5120"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    stop_grace_period: 60s
+
+  sftp:
+    image: atmoz/sftp:alpine
+    container_name: fabric-sftp
+    restart: unless-stopped
+    ports:
+      - "2222:22"
+    volumes:
+      - /opt/fabric-sftp/data/outbound:/home/sftp_logistics_vendor/outbound
+      - /opt/fabric-sftp/hostkeys/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
+      - /opt/fabric-sftp/hostkeys/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
+    command: "sftp_logistics_vendor:${SFTP_PASSWORD:?Set SFTP_PASSWORD in .env}:1001:1001:outbound"
+
+volumes:
+  sqlserver_data:
+    external: true
+    name: fabric_sqlserver_data
