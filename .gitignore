@@ -1,2 +1,6 @@
 # Ignore newly generated movement CSVs; original checked-in fixtures remain tracked.
 scripts/source/sftp/outbound/inventory/movements/**/inventory_movement_*.csv
+
+# EC2 runtime credentials and SSH host identity (never commit)
+infrastructure/fabric-source/.env
+infrastructure/fabric-source/hostkeys/
