@@ -1,6 +1,6 @@
 /*
     02_generate_data.sql
-    Target: SQL Server 2022 Developer on EC2 database (sql_ingestion_benchmark)
+    Target: SQL Server 2022 Developer on EC2 database (sql_benchmark_db)
     Purpose: Generate a permanent 10M-row source in each benchmark table.
 
     Design:

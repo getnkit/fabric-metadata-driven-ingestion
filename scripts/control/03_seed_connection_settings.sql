@@ -93,7 +93,7 @@ BEGIN
     INSERT INTO @Seed(connection_ref, connection_type, connection_settings)
     VALUES
     (
-        'SQL_SERVER_INGESTION_BENCHMARK',
+        'SQL_SERVER_BENCHMARK_DB',
         'SQL_SERVER',
         CONCAT(N'{"connectionId":"', @BenchmarkSourceConnectionId, N'"}')
     );

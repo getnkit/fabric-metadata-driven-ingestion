@@ -52,7 +52,7 @@ UPDATE control.ingestion_config
 SET
     is_active = 0,
     updated_at = SYSUTCDATETIME()
-WHERE source_system = 'INGESTION_BENCHMARK';
+WHERE source_system = 'BENCHMARK_DB';
 
 IF @Scenario <> 'DISABLE'
 BEGIN
@@ -99,7 +99,7 @@ BEGIN
         target_table = @TargetTable,
         is_active = 1,
         updated_at = SYSUTCDATETIME()
-    WHERE source_system = 'INGESTION_BENCHMARK'
+    WHERE source_system = 'BENCHMARK_DB'
       AND source_schema = 'benchmark'
       AND source_object = @SourceObject;
 
@@ -124,5 +124,5 @@ SELECT
     target_table,
     is_active
 FROM control.ingestion_config
-WHERE source_system = 'INGESTION_BENCHMARK'
+WHERE source_system = 'BENCHMARK_DB'
 ORDER BY source_object;

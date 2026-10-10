@@ -1,5 +1,5 @@
 /*
-    Target: SQL Server 2022 Developer on EC2 (sql_ingestion_benchmark).
+    Target: SQL Server 2022 Developer on EC2 (sql_benchmark_db).
     Run as an administrator with CREATE LOGIN permission after the
     benchmark schema is created. Replace placeholder LOCALLY.
     No Azure SQL contained database user is assumed.
@@ -13,7 +13,7 @@ IF SUSER_ID(N'fabric_benchmark_reader') IS NULL
         WITH PASSWORD = '<REPLACE_WITH_STRONG_PASSWORD>',
              CHECK_POLICY = ON;
 GO
-USE [sql_ingestion_benchmark];
+USE [sql_benchmark_db];
 GO
 IF DATABASE_PRINCIPAL_ID(N'fabric_benchmark_reader') IS NULL
     CREATE USER [fabric_benchmark_reader] FOR LOGIN [fabric_benchmark_reader];

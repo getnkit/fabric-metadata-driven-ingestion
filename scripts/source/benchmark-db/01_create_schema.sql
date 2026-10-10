@@ -1,6 +1,6 @@
 /*
     01_create_schema.sql
-    Target: SQL Server 2022 Developer on EC2 database (sql_ingestion_benchmark)
+    Target: SQL Server 2022 Developer on EC2 database (sql_benchmark_db)
     Purpose: Create two permanent, logically equivalent benchmark source tables:
              one unpartitioned and one physically partitioned.
 
