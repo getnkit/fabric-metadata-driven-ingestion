@@ -1,5 +1,5 @@
 
-CREATE VIEW control.v_pipeline_watermarks
+CREATE   VIEW control.v_pipeline_watermarks
 AS
 SELECT
     c.ingestion_config_id,
