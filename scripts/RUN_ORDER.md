@@ -76,11 +76,11 @@ To simulate later inventory movement deliveries without editing the static fixtu
 use the [SFTP movement generator](source/sftp/README.md):
 
 ```bash
-python3 scripts/source/sftp/generate_inventory_movement.py --rows 10
+python3 scripts/source/sftp/generate_inventory_movement.py
 ```
 
 Upload generated files to `/outbound/inventory/movements/` through the producer
-SFTP account. This is a **local-only fixture generator**; the Fabric FILE
+SFTP account. The generator creates one new 6-row CSV locally per run; the Fabric FILE
 INCREMENTAL checkpoint uses **remote SFTP Last Modified**, not CSV `occurred_at`
 or filename timestamps. Review remote mtime after upload.
 

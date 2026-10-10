@@ -357,7 +357,7 @@ under the batch root, for example:
 
 ```text
 source:
-  /outbound/inventory/movements/2026/10/file.csv
+  /outbound/inventory/movements/inventory_movement_*.csv
 
 landing:
   Files/landing/logistics_vendor/inventory_movement/
@@ -365,9 +365,7 @@ landing:
       ingestion_config_id=<config_id>/
         batch_id=<batch_id>/
           pipeline_run_id=<object_controller_run_id>/
-            2026/
-              10/
-                file.csv
+            inventory_movement_*.csv
 ```
 
 For REGULAR execution, if the recursive Landing copy finds matching files and
@@ -442,14 +440,17 @@ connector.
 The source filename remains evidence and lineage metadata in Bronze
 (`_source_file_name`, `_source_file_path`) but is not used as the checkpoint.
 
-Fixture names therefore do not need sortable sequence suffixes. The current
-fixtures use delivery timestamps only to keep the example files unique:
+Fixture names therefore do not need sortable sequence suffixes. The two
+checked-in movement fixtures use delivery timestamps to keep files unique:
 
 ```text
 inventory_movement_20260927T081500Z.csv
 inventory_movement_20260927T131500Z.csv
-2026/10/inventory_movement_20261002T150000Z.csv
 ```
+
+The SFTP adapter still supports recursive subfolders if a producer delivers
+them, but the checked-in fixtures and local generator use the flat
+`movements/` directory.
 
 This strategy assumes the SFTP server exposes a reliable UTC Last Modified value
 that reflects delivery/update time. A source that preserves stale timestamps
@@ -511,13 +512,12 @@ The **FILE Router** performs the single framework-level supported-format guard b
 
 ## Generating new incremental SFTP fixtures for DEV tests
 
-The checked-in `inventory_movement_*.csv` files are static reproducible fixtures.
-To simulate new provider deliveries, use the optional [local Python movement
-generator](../../scripts/source/sftp/README.md). It preserves the existing CSV
-columns, writes fresh UTC-stamped filenames without overwriting old fixtures,
-and can place files under `YYYY/MM/` to test recursive SFTP discovery. Upload
-with the vendor/producer account to `/outbound/inventory/movements/`; the
-generator does not automate SFTP upload or modify Fabric state.
+The two checked-in `inventory_movement_*.csv` files are static reproducible
+fixtures. To simulate new provider deliveries, run the [local Python movement
+generator](../../scripts/source/sftp/README.md): one new 6-row CSV, no arguments,
+flat `movements/` directory, unique UTC-stamped filename and movement IDs.
+Upload with the vendor/producer account to `/outbound/inventory/movements/`;
+the generator does not automate SFTP upload or modify Fabric state.
 
 For end-to-end incremental acceptance, observe **remote SFTP Last Modified**
 time after upload, then verify REGULAR ingestion and watermark behavior.

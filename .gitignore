@@ -1,2 +1,2 @@
-# Locally generated SFTP movement fixtures (tracked examples stay versioned)
-scripts/source/sftp/outbound/inventory/movements/**/inventory_movement_*.csv
+# Generated demo movements; the two versioned fixtures remain tracked.
+scripts/source/sftp/outbound/inventory/movements/inventory_movement_*.csv
