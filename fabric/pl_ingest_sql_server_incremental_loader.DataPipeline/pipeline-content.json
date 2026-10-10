@@ -767,7 +767,11 @@
               "value": "@pipeline().parameters.p_target_table",
               "type": "Expression"
             },
-            "p_landing_relative_path": ""
+            "p_landing_relative_path": "",
+            "p_finalize_error_message": {
+              "value": "@take(string(activity('sp_finalize_success').error.message),1500)",
+              "type": "Expression"
+            }
           },
           "waitOnCompletion": true,
           "workspaceId": "00000000-0000-0000-0000-000000000000",
@@ -784,7 +788,7 @@
           "secureInput": false,
           "secureOutput": false
         },
-        "name": "inv_reconcile_finalize_failure",
+        "name": "inv_ingest_finalize_recovery",
         "dependsOn": [
           {
             "activity": "sp_finalize_success",
