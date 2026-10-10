@@ -1,10 +1,10 @@
 /*
     02_generate_benchmark_data.sql
-    Target: Amazon RDS for SQL Server database (sql_ingestion_benchmark)
-    Purpose: Generate a permanent 1M-row source in each benchmark table.
+    Target: SQL Server 2022 Developer on EC2 database (sql_ingestion_benchmark)
+    Purpose: Generate a permanent 10M-row source in each benchmark table.
 
     Design:
-      - 1,000,000 rows per table.
+      - 10,000,000 rows per table.
       - Approximately 512 bytes of explicit payload per row plus fixed columns.
       - Both tables contain the same deterministic logical rows.
       - Inserts are committed in batches to avoid one massive transaction.
@@ -20,9 +20,9 @@
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-/* Express-safe starter workload: ~1M rows per table. Raise only after
-   checking allocated database size, RDS edition and credit budget. */
-DECLARE @TargetRows BIGINT = 1000000;
+/* Developer Edition benchmark: 10M rows in EACH table from the start.
+   Run in resumable 100k-row batches. Verify EC2 disk/log free space first. */
+DECLARE @TargetRows BIGINT = 10000000;
 DECLARE @BatchSize  INT = 100000;
 DECLARE @BaseDate   DATE = '2026-01-01';
 
@@ -274,7 +274,7 @@ JOIN sys.partitions p
 GROUP BY p.partition_number
 ORDER BY p.partition_number;
 
-/* Allocated database-file size; compare with the Azure SQL free-tier ceiling in the portal. */
+/* Allocated database-file size; check EC2 EBS free space and SQL log growth separately. */
 SELECT
     name AS logical_file_name,
     type_desc,

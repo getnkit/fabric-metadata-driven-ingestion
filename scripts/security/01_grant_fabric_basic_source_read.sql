@@ -1,8 +1,8 @@
 /*
-    Target: Amazon RDS for SQL Server; run on the RDS instance as an
+    Target: SQL Server 2022 Developer on EC2; run on the EC2 SQL Server instance as an
             administrator with CREATE LOGIN permission.
     Run after creating database [sql_ecommerce_db] and source schemas.
-    Fabric Amazon RDS for SQL Server connector uses Basic (SQL login).
+    Fabric SQL Server 2022 Developer on EC2 connector uses Basic (SQL login).
     Replace the password placeholder LOCALLY, never commit credentials.
     Running again does not change an existing login password; rotate
     explicitly in SQL Server and Fabric Connection when necessary.
@@ -53,9 +53,9 @@ JOIN sys.database_principals m ON m.principal_id = drm.member_principal_id
 WHERE r.name = N'fabric_ingestion_reader';
 GO
 /*
-    Fabric Connection: Amazon RDS for SQL Server
-    Connection name: cn_src_rds_sql_server
-    Server: <RDS endpoint>, port 1433
+    Fabric Connection: SQL Server 2022 Developer on EC2
+    Connection name: cn_src_sql_server
+    Server: <EC2 private hostname / approved public endpoint>, port 1433
     Database: sql_ecommerce_db
     Authentication: Basic
     Username: fabric_ingestion_user
