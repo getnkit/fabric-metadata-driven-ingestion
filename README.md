@@ -1,6 +1,6 @@
 # fabric-metadata-driven-ingestion
 
-The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. For an **existing Fabric DEV Control Database**, use the [non-destructive SQL Server cutover procedure](scripts/operations/01_cutover_existing_dev_to_sql_server.sql) **after** creating and testing the new Fabric SQL Server Connection; do not reset Watermarks.
+The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. Fresh installations use the SQL Server connection seed in `scripts/control/03_seed_connection_settings.sql`; historical DEV cutovers remain in Git history, not the current Starter Kit.
 
 ## EC2 Source Infrastructure
 
