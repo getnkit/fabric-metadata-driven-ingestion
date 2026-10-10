@@ -168,7 +168,7 @@ Do not replace a simple connector-native Copy activity with a Notebook just to m
 
 Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
 
-If `sp_finalize_success` fails, `pl_ingest_finalize_recovery` first checks the committed audit for the exact object run. Automatic compensating cleanup is allowed **only** when the audit confirms `FAILED / WATERMARK_CONFLICT`; successful or unconfirmed finalization outcomes must not delete Bronze (or Landing). See [Bronze compensating cleanup](../operations/bronze-compensating-cleanup.md) for recovery behavior.
+If `sp_finalize_success` fails, `pl_ingest_finalize_success_recovery` first checks the committed audit for the exact object run. Automatic compensating cleanup is allowed **only** when the audit confirms `FAILED / WATERMARK_CONFLICT`; successful or unconfirmed finalization outcomes must not delete Bronze (or Landing). See [Bronze compensating cleanup](../operations/bronze-compensating-cleanup.md) for recovery behavior.
 
 ## Pipeline names
 
@@ -219,14 +219,14 @@ pl_ingest_orchestrator
                                         -> SQL_SERVER|INCREMENTAL
                                              -> pl_ingest_sql_server_incremental_adapter
                                                   -> pl_ingest_sql_server_incremental_loader
-                                                       -> (finalize failure) pl_ingest_finalize_recovery
+                                                       -> (finalize failure) pl_ingest_finalize_success_recovery
                               -> FILE
                                    -> pl_ingest_file_router
                                         -> SFTP|FULL
                                              -> pl_ingest_sftp_full_adapter
                                         -> SFTP|INCREMENTAL
                                              -> pl_ingest_sftp_incremental_adapter
-                                                  -> (finalize failure) pl_ingest_finalize_recovery
+                                                  -> (finalize failure) pl_ingest_finalize_success_recovery
 ```
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, loader, and finalize recovery pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
@@ -242,7 +242,7 @@ pl_ingest_database_router                 -> inv_ingest_database_router
 pl_ingest_sql_server_incremental_adapter   -> inv_ingest_sql_server_incremental_adapter
 pl_ingest_sql_server_incremental_loader    -> inv_ingest_sql_server_incremental_loader
 pl_ingest_sftp_incremental_adapter         -> inv_ingest_sftp_incremental_adapter
-pl_ingest_finalize_recovery               -> inv_ingest_finalize_recovery
+pl_ingest_finalize_success_recovery               -> inv_ingest_finalize_success_recovery
 ```
 
 When a parent invokes a child only once, use the child-oriented name directly:
