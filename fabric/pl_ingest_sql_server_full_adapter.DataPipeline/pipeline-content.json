@@ -1145,7 +1145,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@substring(string(activity('sw_copy_execution_strategy').error.message),0,4000)",
+                "value": "@take(string(activity('sw_copy_execution_strategy').error.message),4000)",
                 "type": "Expression"
               },
               "type": "String"
@@ -1331,7 +1331,7 @@
             },
             "error_message": {
               "value": {
-                "value": "@substring(concat(\n    'Original Bronze write failure: ',\n    substring(string(activity('sw_copy_execution_strategy').error.message),0,1900),\n    ' | Bronze cleanup failure: ',\n    substring(string(activity('nb_cleanup_bronze_write_failed').error.message),0,1900)\n),0,4000)",
+                "value": "@concat(\n    'Original Bronze write failure: ',\n    take(string(activity('sw_copy_execution_strategy').error.message),1500),\n    ' | Bronze cleanup failure: ',\n    take(string(activity('nb_cleanup_bronze_write_failed').error.message),1500)\n)",
                 "type": "Expression"
               },
               "type": "String"
