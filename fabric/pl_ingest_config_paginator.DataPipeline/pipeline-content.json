@@ -81,7 +81,7 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
-            "value": "@or(\n    empty(trim(pipeline().parameters.p_source_system)),\n    greater(int(activity('lkp_config_pagination_info').output.firstRow.active_config_count), 0)\n)",
+            "value": "@greater(\n    int(activity('lkp_config_pagination_info').output.firstRow.active_config_count),\n    0\n)",
             "type": "Expression"
           },
           "ifTrueActivities": [],
@@ -90,17 +90,17 @@
               "type": "Fail",
               "typeProperties": {
                 "message": {
-                  "value": "@concat(\n    'No active ingestion configurations found for source_system=',\n    trim(pipeline().parameters.p_source_system),\n    '. Verify control.ingestion_config or leave p_source_system empty to run all active configurations.'\n)",
+                  "value": "@concat(\n    'No active ingestion configurations found',\n    if(\n        empty(trim(pipeline().parameters.p_source_system)),\n        ' for the all-source run scope',\n        concat(\n            ' for source_system=',\n            trim(pipeline().parameters.p_source_system)\n        )\n    ),\n    '. Check control.ingestion_config and is_active settings.'\n)",
                   "type": "Expression"
                 },
-                "errorCode": "NO_ACTIVE_SOURCE_CONFIGS"
+                "errorCode": "NO_ACTIVE_CONFIGS"
               },
-              "name": "fail_no_active_source_configs",
+              "name": "fail_no_active_configs",
               "dependsOn": []
             }
           ]
         },
-        "name": "if_valid_source_config_scope",
+        "name": "if_valid_config_scope",
         "dependsOn": [
           {
             "activity": "lkp_config_pagination_info",
@@ -205,7 +205,7 @@
         "name": "fe_config_pages",
         "dependsOn": [
           {
-            "activity": "if_valid_source_config_scope",
+            "activity": "if_valid_config_scope",
             "dependencyConditions": [
               "Succeeded"
             ]

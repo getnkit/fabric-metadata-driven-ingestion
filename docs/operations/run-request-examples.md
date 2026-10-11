@@ -43,8 +43,11 @@ than executed simultaneously. A blank/whitespace-only source system is equivalen
 to no filter (all active). The filter is trimmed and treated as an exact
 metadata value according to the Control SQL Database collation.
 
-If a nonblank `p_source_system` has **no active configs**, the paginator fails
-with `NO_ACTIVE_SOURCE_CONFIGS` instead of silently returning SUCCESS.
+If the resolved scope has **zero active configs**, the paginator fails with
+`NO_ACTIVE_CONFIGS` for both unfiltered ALL ACTIVE and a specified source system.
+This avoids a silent scheduled no-op when all configurations become inactive.
+The failure is visible in pipeline monitoring but creates no object-level
+audit record because no object was dispatched.
 
 ### Scope and explicit-request validation
 

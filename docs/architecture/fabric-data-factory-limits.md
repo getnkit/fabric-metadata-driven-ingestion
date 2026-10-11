@@ -63,9 +63,9 @@ pl_ingest_config_dispatcher
 ```
 
 The paginator applies the same optional `p_source_system` filter to both
-pagination count and page Lookup. For a specified source with no active configs,
-it fails `NO_ACTIVE_SOURCE_CONFIGS`; unfiltered ALL ACTIVE with zero configs
-remains a successful no-op. The master rejects mixed explicit requests and
+pagination count and page Lookup. If the selected scope has zero active
+configs (whether a source is specified or not), it fails `NO_ACTIVE_CONFIGS`
+before `fe_config_pages`, with no object-level ingestion audit record. The master rejects mixed explicit requests and
 nonblank source scope with `AMBIGUOUS_RUN_SCOPE` before fan-out.
 
 The paginator emits the minimal REGULAR request shape (`config_id`, `run_type`) for each active configuration. Optional LOW/HIGH fields are supplied only when a caller's execution semantics require them; the Dispatcher normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher mode-agnostic and removes unsupported nested control containers.

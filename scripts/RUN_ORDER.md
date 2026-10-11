@@ -139,8 +139,8 @@ Run only `pl_ingest_orchestrator` as the standard entry point:
 as REGULAR; `p_run_requests = []` with e.g. `p_source_system = "ECOMMERCE"`
 runs only active configs for that source system. A non-empty request array
 runs explicit `config_id` and `run_type` requests **only when** `p_source_system`
-is blank; mixing both fails `AMBIGUOUS_RUN_SCOPE` before dispatch. A specified
-source system with no active configs fails `NO_ACTIVE_SOURCE_CONFIGS`. Backfill is
+is blank; mixing both fails `AMBIGUOUS_RUN_SCOPE` before dispatch. An empty active-config scope (whether source-scoped or unfiltered) fails
+`NO_ACTIVE_CONFIGS` before dispatch and does not write object-level audit. Backfill is
 an explicit request with LOW/HIGH for INCREMENTAL. Supported run types
 are REGULAR and BACKFILL; `load_strategy` remains FULL/INCREMENTAL.
 
