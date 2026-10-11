@@ -33,7 +33,7 @@
           "source": {
             "type": "FabricSqlDatabaseSource",
             "sqlReaderQuery": {
-              "value": "@concat(\n    'SELECT ',\n    'CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1;'\n)",
+              "value": "@concat(\n    'SELECT CAST((COUNT_BIG(1) + ',\n        string(sub(pipeline().parameters.p_config_page_size, 1)),\n        ') / ',\n        string(pipeline().parameters.p_config_page_size),\n        ' AS int) AS page_count, ',\n    'CAST(COUNT_BIG(1) AS int) AS active_config_count ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1',\n    if(\n        empty(trim(pipeline().parameters.p_source_system)),\n        '',\n        concat(\n            ' AND source_system = N''',\n            replace(trim(pipeline().parameters.p_source_system), '''', ''''''),\n            ''''\n        )\n    ),\n    ';'\n)",
               "type": "Expression"
             },
             "partitionOption": "None",
@@ -78,6 +78,39 @@
         ]
       },
       {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@or(\n    empty(trim(pipeline().parameters.p_source_system)),\n    greater(int(activity('lkp_config_pagination_info').output.firstRow.active_config_count), 0)\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'No active ingestion configurations found for source_system=',\n    trim(pipeline().parameters.p_source_system),\n    '. Verify control.ingestion_config or leave p_source_system empty to run all active configurations.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "NO_ACTIVE_SOURCE_CONFIGS"
+              },
+              "name": "fail_no_active_source_configs",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_source_system_has_active_configs",
+        "dependsOn": [
+          {
+            "activity": "lkp_config_pagination_info",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
         "type": "ForEach",
         "typeProperties": {
           "isSequential": true,
@@ -92,7 +125,7 @@
                 "source": {
                   "type": "FabricSqlDatabaseSource",
                   "sqlReaderQuery": {
-                    "value": "@concat(\n    'SELECT ',\n        'ingestion_config_id AS config_id, ',\n        '''REGULAR'' AS run_type ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1 ',\n    'ORDER BY ingestion_config_id ',\n    'OFFSET ',\n        string(mul(item(), pipeline().parameters.p_config_page_size)),\n        ' ROWS ',\n    'FETCH NEXT ',\n        string(pipeline().parameters.p_config_page_size),\n        ' ROWS ONLY;'\n)",
+                    "value": "@concat(\n    'SELECT ',\n        'ingestion_config_id AS config_id, ',\n        '''REGULAR'' AS run_type ',\n    'FROM control.ingestion_config ',\n    'WHERE is_active = 1',\n    if(\n        empty(trim(pipeline().parameters.p_source_system)),\n        '',\n        concat(\n            ' AND source_system = N''',\n            replace(trim(pipeline().parameters.p_source_system), '''', ''''''),\n            ''''\n        )\n    ),\n    ' ORDER BY ingestion_config_id ',\n    'OFFSET ',\n        string(mul(item(), pipeline().parameters.p_config_page_size)),\n        ' ROWS ',\n    'FETCH NEXT ',\n        string(pipeline().parameters.p_config_page_size),\n        ' ROWS ONLY;'\n)",
                     "type": "Expression"
                   },
                   "partitionOption": "None",
@@ -172,7 +205,7 @@
         "name": "fe_config_pages",
         "dependsOn": [
           {
-            "activity": "lkp_config_pagination_info",
+            "activity": "if_source_system_has_active_configs",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -187,6 +220,10 @@
       "p_config_page_size": {
         "type": "int",
         "defaultValue": 1000
+      },
+      "p_source_system": {
+        "type": "string",
+        "defaultValue": ""
       }
     },
     "libraryVariables": {

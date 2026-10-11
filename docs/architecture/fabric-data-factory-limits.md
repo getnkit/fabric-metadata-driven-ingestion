@@ -27,7 +27,7 @@ Official references:
 | Expression length | 8,192 characters | Keep dynamic expressions focused and review long generated expressions before release. |
 | Activity-run payload | 896 KB | Pipelines pass metadata, IDs, paths, and connection references rather than row-level datasets between activities. |
 | Concurrent Lookup / GetMetadata / Delete per workspace | 100 | Paginator page processing is sequential across pages and Dispatcher config parallelism is bounded. |
-| Maximum queued runs per pipeline | 100 | `pl_ingest_orchestrator` keeps `concurrency = 1`; trigger cadence should be managed operationally. |
+| Maximum queued runs per pipeline | 100 | `pl_ingest_orchestrator` uses `concurrency = 2` to allow two independent source-system master runs; schedules must avoid overlapping the same config across runs. This is a global master cap, not a per-source lock. |
 | Activity timeout | 24 hours in the current pipeline resource-limit table | Current project activity policies remain below the platform ceiling. |
 
 ## Lookup pagination design
@@ -62,6 +62,12 @@ pl_ingest_config_dispatcher
        -> inv_ingest_object_controller
 ```
 
+The paginator applies the same optional `p_source_system` filter to both
+pagination count and page Lookup. For a specified source with no active configs,
+it fails `NO_ACTIVE_SOURCE_CONFIGS`; unfiltered ALL ACTIVE with zero configs
+remains a successful no-op. The master rejects mixed explicit requests and
+nonblank source scope with `AMBIGUOUS_RUN_SCOPE` before fan-out.
+
 The paginator emits the minimal REGULAR request shape (`config_id`, `run_type`) for each active configuration. Optional LOW/HIGH fields are supplied only when a caller's execution semantics require them; the Dispatcher normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher mode-agnostic and removes unsupported nested control containers.
 
 Default:
@@ -86,7 +92,11 @@ For acceptance testing, the page size can temporarily be set to a small value su
 
 The framework avoids shared pipeline-variable mutation inside parallel ForEach loops. Variables are pipeline-scoped rather than iteration-scoped, so stateful per-item work belongs in the invoked child pipeline or should run sequentially.
 
-The paginator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied only inside the bounded request Dispatcher.
+The paginator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied inside the bounded request Dispatcher (`batchCount = 3` per run).
+The two allowed simultaneous master runs can therefore dispatch up to six
+object controllers overall in the current DEV settings. Do not interpret this
+as a dynamic per-source concurrency limit or a guarantee of six simultaneous
+executions under platform capacity constraints.
 
 ### Get Metadata
 

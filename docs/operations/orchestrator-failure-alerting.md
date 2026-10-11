@@ -15,6 +15,13 @@ pl_ingest_orchestrator
 
 Do not add Outlook/Teams notification activities to each failure path.
 
+Source-scoped schedules invoke the **same** `pl_ingest_orchestrator` item
+with different `p_source_system` values. Its monitoring/Activator rule still
+monitors that pipeline item, but its individual runs and Batch IDs are distinct.
+A FAILED master run means that at least one config in **that run's scope**
+failed, not that all configured source systems failed. All Active without a
+scope remains a global batch and may fail if any included source fails.
+
 ## Fabric setup
 
 Because scheduling is not part of the current project scope, use a Fabric

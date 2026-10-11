@@ -135,10 +135,21 @@ an ad hoc seed. There are no default API incremental state rows.
 Create a Fabric **SQL Server** connection (`cn_sql_server_ecommerce`) with Basic authentication, the approved EC2 SQL Server host/port 1433, and database `sql_ecommerce_db`. Use the read-only login from the security script; test connectivity and TLS/network restrictions. Populate `@EcommerceSourceConnectionId` in seed `03` using **this** connector's ID. The source database is bound in the Fabric Connection; metadata JSON contains its `connectionId` only. Source SQL Server is separate from the Fabric Control SQL Database.
 
 Run only `pl_ingest_orchestrator` as the standard entry point:
-`p_run_requests = []` runs all active configs as REGULAR; a non-empty
-array runs explicit `config_id` and `run_type` requests. Backfill is
+`p_run_requests = []` with blank `p_source_system` runs all active configs
+as REGULAR; `p_run_requests = []` with e.g. `p_source_system = "ECOMMERCE"`
+runs only active configs for that source system. A non-empty request array
+runs explicit `config_id` and `run_type` requests **only when** `p_source_system`
+is blank; mixing both fails `AMBIGUOUS_RUN_SCOPE` before dispatch. A specified
+source system with no active configs fails `NO_ACTIVE_SOURCE_CONFIGS`. Backfill is
 an explicit request with LOW/HIGH for INCREMENTAL. Supported run types
 are REGULAR and BACKFILL; `load_strategy` remains FULL/INCREMENTAL.
+
+For independent source-system schedules, run the same master at the same time
+with separate `p_source_system` values (e.g. `ECOMMERCE` and
+`LOGISTICS_VENDOR`). The master has `concurrency = 2`, while Dispatcher
+`batchCount = 3` is unchanged **per run**. Avoid overlapping schedules for the
+same config or mixing global All Active with a scoped run concurrently; there
+is no per-source execution lock in Phase A. See [run requests](../docs/operations/run-request-examples.md).
 
 - DATABASE: SQL Server 2022 Developer on EC2 reads directly into Bronze Delta; source-derived
   HIGH comes from the configured watermark column; REGULAR with

@@ -54,6 +54,39 @@
         "type": "IfCondition",
         "typeProperties": {
           "expression": {
+            "value": "@or(\n    empty(trim(pipeline().parameters.p_source_system)),\n    equals(length(pipeline().parameters.p_run_requests), 0)\n)",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [],
+          "ifFalseActivities": [
+            {
+              "type": "Fail",
+              "typeProperties": {
+                "message": {
+                  "value": "@concat(\n    'Specify either p_source_system or explicit p_run_requests, not both. p_source_system=',\n    trim(pipeline().parameters.p_source_system),\n    '.'\n)",
+                  "type": "Expression"
+                },
+                "errorCode": "AMBIGUOUS_RUN_SCOPE"
+              },
+              "name": "fail_ambiguous_run_scope",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "if_valid_run_scope",
+        "dependsOn": [
+          {
+            "activity": "if_required_connections_provided",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
             "value": "@greater(length(pipeline().parameters.p_run_requests), 0)",
             "type": "Expression"
           },
@@ -147,6 +180,10 @@
                   "p_config_page_size": {
                     "value": "@pipeline().parameters.p_config_page_size",
                     "type": "Expression"
+                  },
+                  "p_source_system": {
+                    "value": "@pipeline().parameters.p_source_system",
+                    "type": "Expression"
                   }
                 },
                 "waitOnCompletion": true,
@@ -172,7 +209,7 @@
         "name": "if_explicit_run_requests",
         "dependsOn": [
           {
-            "activity": "if_required_connections_provided",
+            "activity": "if_valid_run_scope",
             "dependencyConditions": [
               "Succeeded"
             ]
@@ -188,6 +225,10 @@
       "p_config_page_size": {
         "type": "int",
         "defaultValue": 1000
+      },
+      "p_source_system": {
+        "type": "string",
+        "defaultValue": ""
       }
     },
     "libraryVariables": {
@@ -222,6 +263,6 @@
         "type": "String"
       }
     },
-    "concurrency": 1
+    "concurrency": 2
   }
 }

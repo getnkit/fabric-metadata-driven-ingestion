@@ -35,5 +35,5 @@ not a chain of historical upgrade patches.
 
 - [Bronze compensating cleanup](docs/operations/bronze-compensating-cleanup.md) — defines the Bronze invariant: every successful REGULAR/BACKFILL execution appends a new immutable batch; deletion is limited to compensating cleanup of the current failed batch.
 - [Retry, rerun, and backfill semantics](docs/operations/retry-rerun-backfill.md) — defines `run_type` (REGULAR/BACKFILL) independently from configured `load_strategy` (FULL/INCREMENTAL), including FULL and INCREMENTAL backfill behavior.
-- [Top-level run request examples](docs/operations/run-request-examples.md) — run all active configs or submit an explicit mixed REGULAR/BACKFILL request array.
+- [Top-level run request examples](docs/operations/run-request-examples.md) — run all active configs, optionally scope ALL ACTIVE by `source_system`, or submit an explicit mixed REGULAR/BACKFILL request array. Separate source-system runs use distinct Batch IDs and share one pipeline definition.
 - [Orchestrator failure alerting](docs/operations/orchestrator-failure-alerting.md) — one pipeline-level failure notification boundary without notification activities in every child pipeline.

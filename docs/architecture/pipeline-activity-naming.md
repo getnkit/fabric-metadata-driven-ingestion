@@ -196,7 +196,7 @@ The role suffix communicates the pipeline's responsibility in the ingestion hier
 | Role | Responsibility |
 |---|---|
 | `orchestrator` | Top-level ingestion framework entry point; establishes run scope and selects Explicit vs All Active execution. |
-| `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. Zero active configs is a successful no-op. |
+| `paginator` | Owns ALL ACTIVE metadata counting, page generation, per-page lookup, and sequential page coordination. Zero active configs is a successful no-op for unfiltered ALL ACTIVE; a specified source with no active configs fails validation. |
 | `dispatcher` | Fans out one bounded normalized run-request collection to the per-object controller. |
 | `controller` | Owns the lifecycle of one resolved ingestion object/configuration, including validation and route selection. |
 | `router` | Selects the connector + load-strategy implementation within a generic ingestion pattern such as DATABASE or FILE. |
@@ -228,6 +228,8 @@ pl_ingest_orchestrator
                                              -> pl_ingest_sftp_incremental_adapter
                                                   -> (finalize failure) pl_ingest_finalize_success_recovery
 ```
+
+`pl_ingest_orchestrator` accepts an optional `p_source_system` for the ALL ACTIVE path, preserving the original empty-scope behavior. It rejects a nonblank scope combined with explicit `p_run_requests` via `if_valid_run_scope` / `fail_ambiguous_run_scope`. `pl_ingest_config_paginator` validates a nonempty source scope after counting active configs via `if_source_system_has_active_configs` / `fail_no_active_source_configs`. Both use existing `if_` / `fail_` naming prefixes.
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, loader, and finalize recovery pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
 
