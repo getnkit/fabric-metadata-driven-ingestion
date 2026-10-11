@@ -68,11 +68,13 @@ scope. Existing duplicate-request validation remains unchanged for explicit mode
 
 The master currently uses **`concurrency = 1`**, so source-scoped master
 runs have separate Batch IDs and monitoring outcomes but execute one master
-run at a time. The Dispatcher retains static `fe_run_requests.batchCount = 3`
-and can process up to three object requests in parallel *within* a master run.
-A controlled benchmark of `batchCount = 3` versus `8` is planned, not yet
-implemented or validated. Dynamic per-source concurrency and config-level
-execution locks remain out of scope.
+run at a time. The Dispatcher uses static `fe_run_requests.batchCount = 8`
+and can process up to eight object requests in parallel *within* a master run.
+A DEV Run All comparison (2026-10-11) measured 9m29s at `batchCount = 3`
+versus 4m44s at `8`, with eight audit records (2 SUCCESS, 6 SKIPPED,
+32 source/target rows) in each run. This supports a DEV baseline update,
+not a production throughput or capacity recommendation. Dynamic per-source
+concurrency and config-level execution locks remain out of scope.
 
 Do not increase master concurrency without assessing overlapping config
 execution: a global master cap is not a per-source lock. Overlaps can append

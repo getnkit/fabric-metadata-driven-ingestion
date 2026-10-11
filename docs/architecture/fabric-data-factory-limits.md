@@ -22,7 +22,7 @@ Official references:
 | Activities per pipeline | 120 including inner container activities | Keep connector/routing responsibilities separated into bounded child pipelines and review pipeline size when extending the framework. |
 | Pipeline parameters | 50 | Current pipelines remain well below the limit; keep parameter contracts bounded when extending adapters. |
 | ForEach items | 100,000 | The bounded Dispatcher receives at most one metadata page at a time; page size defaults to 1,000 and is capped at 5,000. |
-| ForEach parallelism | default 20, maximum 50 | `fe_run_requests` intentionally uses `batchCount = 3` to bound downstream concurrency. |
+| ForEach parallelism | default 20, maximum 50 | `fe_run_requests` intentionally uses `batchCount = 8` to bound downstream concurrency. |
 | Nested control activities | If/Switch can't contain another If/Switch; Fabric validation in this project also rejects ForEach under If | Use Invoke Pipeline as the boundary between decision containers and additional control-flow containers. The ALL ACTIVE path therefore uses a dedicated paginator child pipeline. |
 | Expression length | 8,192 characters | Keep dynamic expressions focused and review long generated expressions before release. |
 | Activity-run payload | 896 KB | Pipelines pass metadata, IDs, paths, and connection references rather than row-level datasets between activities. |
@@ -58,7 +58,7 @@ pl_ingest_orchestrator
 
 pl_ingest_config_dispatcher
   -> fe_run_requests
-       batchCount = 3
+       batchCount = 8
        -> inv_ingest_object_controller
 ```
 
@@ -92,12 +92,16 @@ For acceptance testing, the page size can temporarily be set to a small value su
 
 The framework avoids shared pipeline-variable mutation inside parallel ForEach loops. Variables are pipeline-scoped rather than iteration-scoped, so stateful per-item work belongs in the invoked child pipeline or should run sequentially.
 
-The paginator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied inside the bounded request Dispatcher (`batchCount = 3` per run).
+The paginator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied inside the bounded request Dispatcher (`batchCount = 8` per run).
 With `concurrency = 1`, one master run is active at a time and its Dispatcher
-can schedule up to three object controllers concurrently. Comparing a static
-Dispatcher `batchCount = 3` versus `8` is a planned performance benchmark,
-not a production setting change; measure wall-clock duration, capacity use,
-source-system load, and errors against equivalent non-SKIPPED workloads.
+can schedule up to eight object controllers concurrently within a page.
+A DEV Run All comparison on 2026-10-11 observed master durations of 9m29s
+at `batchCount = 3` versus 4m44s at `batchCount = 8` (50.1% less time).
+Each run produced eight object audit records: 2 SUCCESS, 6 SKIPPED, with
+32 source rows and 32 target rows. This is a light-workload orchestration
+observation, **not** a heavy-throughput or capacity-cost benchmark.
+Production sizing still requires checking Fabric capacity usage, source load,
+throttling/errors, and equivalent non-SKIPPED workloads.
 
 ### Get Metadata
 

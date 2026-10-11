@@ -5,7 +5,7 @@
         "type": "ForEach",
         "typeProperties": {
           "isSequential": false,
-          "batchCount": 3,
+          "batchCount": 8,
           "items": {
             "value": "@pipeline().parameters.p_run_requests",
             "type": "Expression"
