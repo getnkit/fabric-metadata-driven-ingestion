@@ -1,0 +1,55 @@
+table LatestSource
+	column source_system
+		dataType: string
+		sourceColumn: source_system
+	column batch_id
+		dataType: string
+		sourceColumn: batch_id
+	column source_status
+		dataType: string
+		sourceColumn: source_status
+	column object_count
+		dataType: int64
+		sourceColumn: object_count
+	column success_count
+		dataType: int64
+		sourceColumn: success_count
+	column failed_count
+		dataType: int64
+		sourceColumn: failed_count
+	column skipped_count
+		dataType: int64
+		sourceColumn: skipped_count
+	column warn_count
+		dataType: int64
+		sourceColumn: warn_count
+	column cancelled_count
+		dataType: int64
+		sourceColumn: cancelled_count
+	column source_rows
+		dataType: int64
+		sourceColumn: source_rows
+	column target_rows
+		dataType: int64
+		sourceColumn: target_rows
+	column batch_start_time
+		dataType: dateTime
+		sourceColumn: batch_start_time
+	column batch_end_time
+		dataType: dateTime
+		sourceColumn: batch_end_time
+	measure 'Source Systems' = COUNTROWS(LatestSource)
+	measure 'Failed Sources' = CALCULATE(COUNTROWS(LatestSource), LatestSource[source_status] = "FAILED")
+	measure 'Objects (Latest)' = SUM(LatestSource[object_count])
+	measure 'Latest Activity (UTC)' = MAX(LatestSource[batch_end_time])
+	measure 'Successful Objects' = SUM(LatestSource[success_count])
+	measure 'Failed Objects' = SUM(LatestSource[failed_count])
+	measure 'Skipped Objects' = SUM(LatestSource[skipped_count])
+	partition 'LatestSource' = m
+		mode: directQuery
+		source =
+			let
+				Source = Sql.Database(ControlSqlServer, ControlSqlDatabase),
+				Data = Source{[Schema="audit", Item="v_monitor_latest_source"]}[Data]
+			in
+				Data

@@ -1,0 +1,3 @@
+relationship ObjectHistory_to_LatestSource
+	fromColumn: ObjectHistory.source_system
+	toColumn: LatestSource.source_system

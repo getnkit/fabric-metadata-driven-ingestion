@@ -1,0 +1,3 @@
+/// Replace SQL server for the operational Fabric SQL Database; no credentials are stored here.
+expression ControlSqlServer = "REPLACE_WITH_FABRIC_SQL_SERVER.database.windows.net" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+expression ControlSqlDatabase = "sqldb_ingestion_control" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]

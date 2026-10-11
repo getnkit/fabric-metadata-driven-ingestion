@@ -1,0 +1,57 @@
+table ObjectHistory
+	column ingestion_log_id
+		dataType: int64
+		sourceColumn: ingestion_log_id
+	column source_system
+		dataType: string
+		sourceColumn: source_system
+	column source_entity
+		dataType: string
+		sourceColumn: source_entity
+	column ingestion_config_id
+		dataType: int64
+		sourceColumn: ingestion_config_id
+	column batch_id
+		dataType: string
+		sourceColumn: batch_id
+	column pipeline_run_id
+		dataType: string
+		sourceColumn: pipeline_run_id
+	column run_type
+		dataType: string
+		sourceColumn: run_type
+	column load_strategy
+		dataType: string
+		sourceColumn: load_strategy
+	column status
+		dataType: string
+		sourceColumn: status
+	column source_row_count
+		dataType: int64
+		sourceColumn: source_row_count
+	column target_row_count
+		dataType: int64
+		sourceColumn: target_row_count
+	column duration_seconds
+		dataType: int64
+		sourceColumn: duration_seconds
+	column start_time
+		dataType: dateTime
+		sourceColumn: start_time
+	column end_time
+		dataType: dateTime
+		sourceColumn: end_time
+	column error_code
+		dataType: string
+		sourceColumn: error_code
+	column error_message
+		dataType: string
+		sourceColumn: error_message
+	partition 'ObjectHistory' = m
+		mode: directQuery
+		source =
+			let
+				Source = Sql.Database(ControlSqlServer, ControlSqlDatabase),
+				Data = Source{[Schema="audit", Item="v_monitor_object_history"]}[Data]
+			in
+				Data

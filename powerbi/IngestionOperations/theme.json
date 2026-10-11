@@ -1,0 +1,13 @@
+{
+  "name": "Ingestion Operations",
+  "dataColors": [
+    "#2563EB",
+    "#16A34A",
+    "#DC2626",
+    "#F59E0B",
+    "#64748B"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#172033",
+  "tableAccent": "#2563EB"
+}
