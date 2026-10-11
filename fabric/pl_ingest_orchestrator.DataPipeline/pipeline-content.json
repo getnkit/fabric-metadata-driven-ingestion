@@ -263,6 +263,6 @@
         "type": "String"
       }
     },
-    "concurrency": 2
+    "concurrency": 1
   }
 }

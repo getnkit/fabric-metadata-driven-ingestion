@@ -144,12 +144,14 @@ source system with no active configs fails `NO_ACTIVE_SOURCE_CONFIGS`. Backfill 
 an explicit request with LOW/HIGH for INCREMENTAL. Supported run types
 are REGULAR and BACKFILL; `load_strategy` remains FULL/INCREMENTAL.
 
-For independent source-system schedules, run the same master at the same time
-with separate `p_source_system` values (e.g. `ECOMMERCE` and
-`LOGISTICS_VENDOR`). The master has `concurrency = 2`, while Dispatcher
-`batchCount = 3` is unchanged **per run**. Avoid overlapping schedules for the
-same config or mixing global All Active with a scoped run concurrently; there
-is no per-source execution lock in Phase A. See [run requests](../docs/operations/run-request-examples.md).
+For independent source-system schedules, invoke the same master with separate
+`p_source_system` values (e.g. `ECOMMERCE` and `LOGISTICS_VENDOR`).
+The master has `concurrency = 1`: independent source-system runs keep distinct
+Batch IDs but execute serially. Dispatcher `batchCount = 3` remains unchanged
+and allows bounded parallelism within each master run. A benchmark against
+`batchCount = 8` is planned after Phase A acceptance; do not change the
+Dispatcher before that controlled comparison. No config-level execution lock
+is implemented. See [run requests](../docs/operations/run-request-examples.md).
 
 - DATABASE: SQL Server 2022 Developer on EC2 reads directly into Bronze Delta; source-derived
   HIGH comes from the configured watermark column; REGULAR with

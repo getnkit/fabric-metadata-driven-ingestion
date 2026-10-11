@@ -36,9 +36,10 @@ p_source_system = "ECOMMERCE"
 
 This selects only active ECOMMERCE configs (seeded IDs 1–6). Another independent
 run with `p_source_system = "LOGISTICS_VENDOR"` selects active IDs 7–8.
-Both runs receive different master Run IDs and generated Batch IDs. To execute
-both scopes at midnight, use two schedules that invoke this same pipeline
-with different parameters. A blank/whitespace-only source system is equivalent
+Both runs receive different master Run IDs and generated Batch IDs. Two
+schedules may invoke this same pipeline with different parameters; at the
+current `concurrency = 1`, these master executions are serialized rather
+than executed simultaneously. A blank/whitespace-only source system is equivalent
 to no filter (all active). The filter is trimmed and treated as an exact
 metadata value according to the Control SQL Database collation.
 
@@ -62,16 +63,18 @@ scope. Existing duplicate-request validation remains unchanged for explicit mode
 
 ### Execution and concurrency boundaries
 
-The master definition now permits up to **2 concurrent master runs** in DEV,
-so separate ECOMMERCE and LOGISTICS_VENDOR scopes may overlap. The shared
-Dispatcher remains `fe_run_requests` with static `batchCount = 3` **per run**;
-Phase B dynamic per-source concurrency is intentionally out of scope.
-Do not schedule overlapping runs for the **same source system** or trigger
-All Active concurrently with a source-specific run: global master concurrency
-is not a per-source lock. Overlapping configs can duplicate FULL Bronze data
-or cause optimistic Watermark conflicts for INCREMENTAL. If you need to run
-more than two independent source scopes simultaneously, review master
-concurrency, Fabric capacity, and non-overlapping schedule design first.
+The master currently uses **`concurrency = 1`**, so source-scoped master
+runs have separate Batch IDs and monitoring outcomes but execute one master
+run at a time. The Dispatcher retains static `fe_run_requests.batchCount = 3`
+and can process up to three object requests in parallel *within* a master run.
+A controlled benchmark of `batchCount = 3` versus `8` is planned, not yet
+implemented or validated. Dynamic per-source concurrency and config-level
+execution locks remain out of scope.
+
+Do not increase master concurrency without assessing overlapping config
+execution: a global master cap is not a per-source lock. Overlaps can append
+duplicate FULL Bronze batches or trigger optimistic Watermark conflicts.
+Explicit internal-pipeline invocation is not a supported execution entry point.
 
 ## Run an explicit subset
 
