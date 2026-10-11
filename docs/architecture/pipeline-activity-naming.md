@@ -229,7 +229,7 @@ pl_ingest_orchestrator
                                                   -> (finalize failure) pl_ingest_finalize_success_recovery
 ```
 
-`pl_ingest_orchestrator` accepts an optional `p_source_system` for the ALL ACTIVE path, preserving the original empty-scope behavior. It rejects a nonblank scope combined with explicit `p_run_requests` via `if_valid_run_scope` / `fail_ambiguous_run_scope`. `pl_ingest_config_paginator` validates a nonempty source scope after counting active configs via `if_source_system_has_active_configs` / `fail_no_active_source_configs`. Both use existing `if_` / `fail_` naming prefixes.
+`pl_ingest_orchestrator` accepts an optional `p_source_system` for the ALL ACTIVE path, preserving the original empty-scope behavior. It rejects a nonblank scope combined with explicit `p_run_requests` via `if_valid_run_scope` / `fail_ambiguous_run_scope`. `pl_ingest_config_paginator` validates a nonempty source scope after counting active configs via `if_valid_source_config_scope` / `fail_no_active_source_configs`. Both use existing `if_` / `fail_` naming prefixes.
 
 `pl_ingest_orchestrator` is the supported external entry point for the ingestion framework. Paginator, dispatcher, controller, router, adapter, loader, and finalize recovery pipelines are internal implementation pipelines and may rely on framework-level request/page validation performed upstream. Each internal pipeline still validates the metadata, state, connector capability, or data-mutation boundary that it owns.
 
