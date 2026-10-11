@@ -37,3 +37,4 @@ not a chain of historical upgrade patches.
 - [Retry, rerun, and backfill semantics](docs/operations/retry-rerun-backfill.md) — defines `run_type` (REGULAR/BACKFILL) independently from configured `load_strategy` (FULL/INCREMENTAL), including FULL and INCREMENTAL backfill behavior.
 - [Top-level run request examples](docs/operations/run-request-examples.md) — run all active configs, optionally scope ALL ACTIVE by `source_system`, or submit an explicit mixed REGULAR/BACKFILL request array. Separate source-system runs use distinct Batch IDs and share one pipeline definition.
 - [Orchestrator failure alerting](docs/operations/orchestrator-failure-alerting.md) — one pipeline-level failure notification boundary without notification activities in every child pipeline.
+- [Operational monitoring MVP](docs/operations/monitoring-report.md) — per-source terminal audit summaries, object history and Power BI report template.
