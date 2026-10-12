@@ -90,8 +90,12 @@ All stored times are UTC. No automatic page refresh is required for MVP.
   allowlist. The slicer needs DEV runtime confirmation that a synthesized
   relationship blank is hidden and it still cross-filters Object History.
   In Power BI, no selected slicer value means all sources; (Blank) is not All.
-- KPI measure `Failed Sources` renders count 0 as the display string `0`,
-  while `Objects` sums object counts from latest source batches. `Last Activity`
+- KPI measure `Failed Sources` now returns a true numeric integer via
+  `COALESCE(SUMX(LatestSource, IF(source_status = "FAILED", 1, 0)), 0)` with
+  model format `0`. This avoids the prior `FORMAT()` conversion to text and
+  counts failed **sources**, not failed objects. Verify 0 when neither source
+  has latest-batch status FAILED, and 1 when exactly one latest source is FAILED.
+  `Objects` still sums object counts from latest source batches. `Last Activity`
   formats the maximum audited end time as `dd MMM yyyy HH:mm` (source timestamps
   already UTC); the original DateTime measure remains for analytical use.
 - Longer last-activity card and a fixed callout font size avoid truncation.

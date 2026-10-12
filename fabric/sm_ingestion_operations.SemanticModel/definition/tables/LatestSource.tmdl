@@ -35,7 +35,8 @@ table LatestSource
 		formatString: "yyyy-mm-dd hh:nn"
 		sourceColumn: batch_end_time
 	measure 'Source Systems' = COALESCE(COUNTROWS(LatestSource), 0)
-	measure 'Failed Sources' = FORMAT(COALESCE(CALCULATE(COUNTROWS(LatestSource), LatestSource[source_status] = "FAILED"), 0), "0")
+	measure 'Failed Sources' = COALESCE(SUMX(LatestSource, IF(LatestSource[source_status] = "FAILED", 1, 0)), 0)
+		formatString: 0
 	measure 'Objects' = COALESCE(SUM(LatestSource[object_count]), 0)
 	measure 'Latest Activity (UTC)' = MAX(LatestSource[batch_end_time])
 		formatString: "yyyy-mm-dd hh:nn"
