@@ -132,12 +132,61 @@ on the boundary immediately before the SQL predicate: it would discard
 fractional precision beyond milliseconds. This conversion is for source-side
 filtering, not for storage of the checkpoint in the control SQL database.
 
-Requested BACKFILL bounds must be SQL Server-parseable timestamps. ISO 8601 with
-no timezone offset is recommended for the existing UTC, timezone-naive boundary
-convention. Before onboarding a `datetime2(7)` source, verify that Fabric
-Lookup, pipeline parameters and finalization preserve all seven digits
-end-to-end. The SFTP connector's Last Modified filter semantics and operational
-audit timestamp precision are separate and unchanged.
+Requested BACKFILL bounds must be SQL Server-parseable timestamps. ISO 8601
+without an offset is appropriate for a timezone-naive SQL Server value, but
+do not assume Fabric will preserve the **text representation** byte-for-byte
+when transporting it. Source time-zone semantics must be specified separately.
+The SFTP connector's Last Modified filter semantics and operational audit
+timestamp precision are separate and unchanged.
+
+### DEV runtime smoke test — 2026-10-12
+
+**Result: PASS for SQL Server REGULAR / AUTO watermark correctness, with
+representation and Bronze precision limitations.** Tested with SQL Server
+2022 on EC2, an isolated source `DATETIME2(7)` table
+`poc.watermark_precision_test` and ingestion config ID **11**
+(`PRECISION_POC`, Lakehouse target `crm.watermark_precision_test`).
+
+- Source boundary rows: ID 1 at `.1234567` (exclusive LOW), ID 2 at
+  `.1234568`, ID 3 at `.1234569`, ID 4 at `.1240001` (inclusive HIGH).
+  Source reader returned the intended IDs **2, 3, 4**, with **3/3**
+  read/copied rows.
+- The initial checkpoint was stored as
+  `2026-10-08T10:00:00.1234567` (without `Z`). The initial Copy wrote 3
+  rows, but the finalizer received LOW/HIGH with a trailing `Z` and
+  correctly raised `WATERMARK_CONFLICT` because the string checkpoint
+  did not equal the serialized LOW. Audit recorded `FAILED /
+  WATERMARK_CONFLICT`; operational watermark did not advance.
+- The failed execution's Bronze rows were absent after recovery
+  (remaining count **0**). For this **isolated test config only**, the
+  checkpoint was updated with the trailing `Z` using a guarded UPDATE
+  (one row affected) before a new top-level REGULAR run.
+- The rerun finished `SUCCESS`, with processing LOW
+  `2026-10-08T10:00:00.1234567Z`, HIGH
+  `2026-10-08T10:00:00.1240001Z`, Audit **3/3**, and committed
+  `last_watermark_value = 2026-10-08T10:00:00.1240001Z`. All **seven**
+  fractional digits survived through the recorded bounds and checkpoint.
+- The Bronze Lakehouse timestamp stored only **six** fractional digits:
+  IDs 2 and 3 each appeared as `.123456`; ID 4 as `.124000`.
+  All three distinct rows survived, but **full DATETIME2(7) timestamp
+  fidelity in Bronze is NOT supported by this observed representation**.
+  Preserve a separate high-precision textual/numeric column only if
+  downstream requirements actually need all seven digits.
+
+**Acceptance boundary:** This establishes runtime watermark-window
+correctness and successful finalization for the observed **REGULAR/AUTO**
+path when initial checkpoint string representation matches Fabric's
+serialized boundary. It does **not** establish runtime success for
+TUNED, BACKFILL, No-New-Data, Oracle, Snowflake or other adapters;
+and it does not claim 7-digit Bronze timestamps or arbitrary timezone
+normalization. The `Z` observation describes Fabric's serialized value
+in this environment; it must not be assumed to prove the original SQL
+Server `DATETIME2` column has UTC/timezone semantics.
+
+**Operational caution:** Optimistic concurrency deliberately compares the
+checkpoint and LOW as strings. Preserve exact representation, not just
+datetime value equality; do not bulk-rewrite production checkpoints or
+disable the guarded compare to bypass a `WATERMARK_CONFLICT`.
 
 ## FILE incremental choice
 
