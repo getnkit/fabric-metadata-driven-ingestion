@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW audit.v_monitor_source_batch
+CREATE VIEW audit.v_monitor_source_batch
 AS
 SELECT
     COALESCE(NULLIF(LTRIM(RTRIM(a.source_system)), N''), N'UNKNOWN') AS source_system,

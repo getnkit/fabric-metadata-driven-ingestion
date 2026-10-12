@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW audit.v_monitor_latest_source
+CREATE VIEW audit.v_monitor_latest_source
 AS
 WITH ranked_batches AS
 (

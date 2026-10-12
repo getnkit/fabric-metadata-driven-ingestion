@@ -1,4 +1,4 @@
-CREATE OR ALTER VIEW audit.v_monitor_object_history
+CREATE VIEW audit.v_monitor_object_history
 AS
 SELECT
     a.ingestion_log_id,
