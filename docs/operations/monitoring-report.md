@@ -48,7 +48,7 @@ has eventual-latency semantics; use it instead if the reporting workload
 begins to affect the operational database.
 
 Deployable Report and Semantic Model definitions are at
-`fabric/IngestionOperations.Report/` and `fabric/IngestionOperations.SemanticModel/`.
+`fabric/rpt_ingestion_operations.Report/` and `fabric/sm_ingestion_operations.SemanticModel/`.
 The PBIP launcher and setup instructions stay in `powerbi/IngestionOperations/`.
 The generated report must be runtime-validated after Git Sync.
 

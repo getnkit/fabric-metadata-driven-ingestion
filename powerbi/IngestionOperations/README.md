@@ -16,20 +16,24 @@ relationship. Times are UTC.
    Fabric SQL Database `sqldb_ingestion_control`. The latest version removes
    `warn_count` and `cancelled_count` output columns. Check its SELECT output.
 2. The operational Fabric SQL Database server is already set in
-   `../../fabric/IngestionOperations.SemanticModel/definition/expressions.tmdl`:
+   `../../fabric/sm_ingestion_operations.SemanticModel/definition/expressions.tmdl`:
    `6j37c7ougv4uthql2zudf5m3ra-6fcoxgexxg6ejngvdk4amt47k4.database.fabric.microsoft.com`.
    Confirm the database name `sqldb_ingestion_control` and your workspace
    access. No password or access token belongs in Git.
-3. **Windows/Desktop route:** open `IngestionOperations.pbip` in Power BI
+3. **Windows/Desktop route:** open `rpt_ingestion_operations.pbip` in Power BI
    Desktop, sign in using Microsoft Entra/Organizational Account for the
    Fabric SQL Database, verify both DirectQuery views, then publish.
 4. **Browser-only route (macOS):** open Fabric workspace > Source control
-   and review **Update from Git**. Expect two new items,
-   `IngestionOperations.SemanticModel` and `IngestionOperations.Report`, plus
+   and review **Update from Git**. Expect the report and semantic model to be updated/created with
+   the new consistent names `rpt_ingestion_operations` and
+   `sm_ingestion_operations`, plus
    the intended SQL Database view-definition changes. Verify no unrelated
    pipeline or workspace changes are included before applying.
-   If validation fails, capture the exact error before retrying.
-   After successful sync, configure credentials and inspect visuals.
+   This renames the Power BI items while keeping their existing `logicalId`
+   values. Review possible rename/conflict prompts carefully; do not delete
+   an existing semantic model to force a sync. If validation fails, capture
+   the exact error before retrying. After sync, configure credentials
+   and inspect visuals.
 5. In Power BI Service select **Refresh visuals** after a pipeline run to
    read newly committed results. Automatic Page Refresh is optional and
    capacity-dependent.

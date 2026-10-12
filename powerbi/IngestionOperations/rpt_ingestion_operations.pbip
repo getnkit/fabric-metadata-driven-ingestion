@@ -4,7 +4,7 @@
   "artifacts": [
     {
       "report": {
-        "path": "../../fabric/IngestionOperations.Report"
+        "path": "../../fabric/rpt_ingestion_operations.Report"
       }
     }
   ],
