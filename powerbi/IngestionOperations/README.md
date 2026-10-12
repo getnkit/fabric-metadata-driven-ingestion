@@ -13,10 +13,11 @@ relationship. Times are UTC.
 
 1. Run `scripts/monitoring/01_create_monitoring_views.sql` in the operational
    Fabric SQL Database `sqldb_ingestion_control` and check its SELECT output.
-2. In `IngestionOperations.SemanticModel/definition/expressions.tmdl`,
-   replace `REPLACE_WITH_FABRIC_SQL_SERVER.database.windows.net` with
-   the operational database's SQL server name. Keep the database name or edit
-   it if needed. No password or access token belongs in Git.
+2. The operational Fabric SQL Database server is already set in
+   `IngestionOperations.SemanticModel/definition/expressions.tmdl`:
+   `6j37c7ougv4uthql2zudf5m3ra-6fcoxgexxg6ejngvdk4amt47k4.database.fabric.microsoft.com`.
+   Confirm the database name `sqldb_ingestion_control` and your workspace
+   access. No password or access token belongs in Git.
 3. **Windows/Desktop route:** open `IngestionOperations.pbip` in Power BI
    Desktop, sign in using Microsoft Entra/Organizational Account for the
    Fabric SQL Database, verify both DirectQuery views, then publish.
