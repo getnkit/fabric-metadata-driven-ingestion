@@ -176,5 +176,6 @@ The prior screenshot acceptance belongs to the initial prototype. A screenshot
 of the new practice report in Fabric shows the expected All Sources data,
 metrics, and layout. **After applying the canonical replacements via Fabric
 Git Update, re-open the official Report and confirm rendering, credentials,
-filter interaction, and History sorting before decommissioning any workspace
-practice items.** Static file checks cannot certify that sync step.
+filter interaction, and History sorting. The same Git update also removes
+the temporary practice Report and Semantic Model from the workspace; review
+those deletions in the Source control preview before applying.** Static file checks cannot certify that sync step.
