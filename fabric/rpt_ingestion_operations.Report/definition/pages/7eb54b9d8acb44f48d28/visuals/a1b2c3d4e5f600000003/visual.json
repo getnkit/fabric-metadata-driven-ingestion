@@ -35,57 +35,5 @@
       }
     },
     "drillFilterOtherVisuals": true
-  },
-  "filterConfig": {
-    "filters": [
-      {
-        "name": "b5e0c3f4a19d48f7b2c6",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "LatestSource"
-              }
-            },
-            "Property": "source_system"
-          }
-        },
-        "type": "Advanced",
-        "filter": {
-          "Version": 2,
-          "From": [
-            {
-              "Name": "s",
-              "Entity": "LatestSource",
-              "Type": 0
-            }
-          ],
-          "Where": [
-            {
-              "Condition": {
-                "Not": {
-                  "Expression": {
-                    "IsBlank": {
-                      "Expression": {
-                        "Column": {
-                          "Expression": {
-                            "SourceRef": {
-                              "Source": "s"
-                            }
-                          },
-                          "Property": "source_system"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        },
-        "isHiddenInViewMode": true,
-        "howCreated": "User"
-      }
-    ]
   }
 }
