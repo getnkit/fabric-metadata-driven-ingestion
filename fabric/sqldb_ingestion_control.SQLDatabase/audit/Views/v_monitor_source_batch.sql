@@ -7,8 +7,13 @@ SELECT
     SUM(CASE WHEN a.status = 'SUCCESS' THEN 1 ELSE 0 END) AS success_count,
     SUM(CASE WHEN a.status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count,
     SUM(CASE WHEN a.status = 'SKIPPED' THEN 1 ELSE 0 END) AS skipped_count,
-    SUM(CASE WHEN a.status = 'WARN' THEN 1 ELSE 0 END) AS warn_count,
-    SUM(CASE WHEN a.status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled_count,
+    CASE
+        WHEN MAX(CASE WHEN a.status = 'FAILED' THEN 1 ELSE 0 END) = 1 THEN 'FAILED'
+        WHEN MAX(CASE WHEN a.status = 'CANCELLED' THEN 1 ELSE 0 END) = 1 THEN 'CANCELLED'
+        WHEN MAX(CASE WHEN a.status = 'WARN' THEN 1 ELSE 0 END) = 1 THEN 'WARN'
+        WHEN MAX(CASE WHEN a.status = 'SUCCESS' THEN 1 ELSE 0 END) = 1 THEN 'SUCCESS'
+        ELSE 'SKIPPED'
+    END AS source_status,
     SUM(COALESCE(a.source_row_count, 0)) AS source_rows,
     SUM(COALESCE(a.target_row_count, 0)) AS target_rows,
     MIN(a.start_time) AS batch_start_time,

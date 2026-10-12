@@ -20,12 +20,6 @@ table LatestSource
 	column skipped_count
 		dataType: int64
 		sourceColumn: skipped_count
-	column warn_count
-		dataType: int64
-		sourceColumn: warn_count
-	column cancelled_count
-		dataType: int64
-		sourceColumn: cancelled_count
 	column source_rows
 		dataType: int64
 		sourceColumn: source_rows

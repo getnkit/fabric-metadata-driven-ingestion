@@ -4,7 +4,7 @@
   "artifacts": [
     {
       "report": {
-        "path": "IngestionOperations.Report"
+        "path": "../../fabric/IngestionOperations.Report"
       }
     }
   ],

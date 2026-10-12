@@ -11,7 +11,7 @@ definitions are tracked in the Fabric SQL Database Project under `audit/Views/`.
 
 | View | Purpose |
 | --- | --- |
-| `audit.v_monitor_source_batch` | One row per `batch_id + source_system` with status counts and timings |
+| `audit.v_monitor_source_batch` | One row per `batch_id + source_system` with core status counts, summarized status and timings |
 | `audit.v_monitor_latest_source` | Latest observed audited batch **per source system**; one row per source |
 | `audit.v_monitor_object_history` | Finalized object execution history, including error details and Run ID |
 
@@ -21,7 +21,10 @@ modified. Script can be rerun using `CREATE OR ALTER VIEW`.
 ### Status meaning
 
 `source_status` is a **derived object-outcome summary**, not a Fabric
-Master Pipeline run state: FAILED > CANCELLED > WARN > SUCCESS > SKIPPED.
+Master Pipeline run state. MVP count metrics are SUCCESS / FAILED / SKIPPED.
+If a terminal audit contains WARN or CANCELLED, those statuses are still
+recognized when calculating source status, but do not get separate count
+columns. Status precedence: FAILED > CANCELLED > WARN > SUCCESS > SKIPPED.
 A run with SUCCESS + SKIPPED is SUCCESS; an all-SKIPPED batch is SKIPPED.
 
 A source's "latest" means the batch with the most recent **audited object
@@ -44,8 +47,10 @@ audit. The SQL analytics endpoint is a replicated reporting alternative, but
 has eventual-latency semantics; use it instead if the reporting workload
 begins to affect the operational database.
 
-The PBIP/PBIR starter report is under `powerbi/IngestionOperations/`.
-See that folder's README for binding and publishing instructions.
+Deployable Report and Semantic Model definitions are at
+`fabric/IngestionOperations.Report/` and `fabric/IngestionOperations.SemanticModel/`.
+The PBIP launcher and setup instructions stay in `powerbi/IngestionOperations/`.
+The generated report must be runtime-validated after Git Sync.
 
 ## 3. Acceptance checks
 
