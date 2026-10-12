@@ -27,14 +27,14 @@ v_run_type -> set_run_type
 v_processing_lower_bound -> set_processing_lower_bound
 ```
 
-When the same logical operation appears in alternative branches, append the branch/execution context consistently rather than naming only one branch specially:
+When the same logical operation appears in alternative branches, append the branch/execution context consistently rather than naming only one branch specially. SQL Server uses only query-mode Copy, so names distinguish AUTO vs TUNED without a redundant query/table suffix:
 
 ```text
 set_processing_upper_bound_regular
 set_processing_upper_bound_backfill
 
-copy_source_to_bronze_query_auto
-copy_source_to_bronze_query_tuned
+copy_source_to_bronze_auto
+copy_source_to_bronze_tuned
 ```
 
 The SQL Server FULL adapter intentionally uses query-mode Copy only, to create

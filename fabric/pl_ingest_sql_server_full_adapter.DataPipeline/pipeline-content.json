@@ -331,7 +331,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "copy_source_to_bronze_query_auto",
+                  "name": "copy_source_to_bronze_auto",
                   "dependsOn": []
                 },
                 {
@@ -339,7 +339,7 @@
                   "typeProperties": {
                     "variableName": "v_source_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_query_auto').output.rowsRead)",
+                      "value": "@string(activity('copy_source_to_bronze_auto').output.rowsRead)",
                       "type": "Expression"
                     }
                   },
@@ -347,10 +347,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_source_row_count_query_auto",
+                  "name": "set_source_row_count_auto",
                   "dependsOn": [
                     {
-                      "activity": "copy_source_to_bronze_query_auto",
+                      "activity": "copy_source_to_bronze_auto",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -362,7 +362,7 @@
                   "typeProperties": {
                     "variableName": "v_target_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_query_auto').output.rowsCopied)",
+                      "value": "@string(activity('copy_source_to_bronze_auto').output.rowsCopied)",
                       "type": "Expression"
                     }
                   },
@@ -370,10 +370,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_target_row_count_query_auto",
+                  "name": "set_target_row_count_auto",
                   "dependsOn": [
                     {
-                      "activity": "set_source_row_count_query_auto",
+                      "activity": "set_source_row_count_auto",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -473,7 +473,7 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "copy_source_to_bronze_query_tuned",
+                  "name": "copy_source_to_bronze_tuned",
                   "dependsOn": []
                 },
                 {
@@ -481,7 +481,7 @@
                   "typeProperties": {
                     "variableName": "v_source_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_query_tuned').output.rowsRead)",
+                      "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsRead)",
                       "type": "Expression"
                     }
                   },
@@ -489,10 +489,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_source_row_count_query_tuned",
+                  "name": "set_source_row_count_tuned",
                   "dependsOn": [
                     {
-                      "activity": "copy_source_to_bronze_query_tuned",
+                      "activity": "copy_source_to_bronze_tuned",
                       "dependencyConditions": [
                         "Succeeded"
                       ]
@@ -504,7 +504,7 @@
                   "typeProperties": {
                     "variableName": "v_target_row_count",
                     "value": {
-                      "value": "@string(activity('copy_source_to_bronze_query_tuned').output.rowsCopied)",
+                      "value": "@string(activity('copy_source_to_bronze_tuned').output.rowsCopied)",
                       "type": "Expression"
                     }
                   },
@@ -512,10 +512,10 @@
                     "secureInput": false,
                     "secureOutput": false
                   },
-                  "name": "set_target_row_count_query_tuned",
+                  "name": "set_target_row_count_tuned",
                   "dependsOn": [
                     {
-                      "activity": "set_source_row_count_query_tuned",
+                      "activity": "set_source_row_count_tuned",
                       "dependencyConditions": [
                         "Succeeded"
                       ]

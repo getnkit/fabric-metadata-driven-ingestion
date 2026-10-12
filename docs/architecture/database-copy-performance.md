@@ -105,11 +105,11 @@ Execution then selects one of two **query** Copy branches:
 
 ```text
 p_copy_parallel_copies = 0
-  -> copy_source_to_bronze_query_auto
+  -> copy_source_to_bronze_auto
      (parallelCopies omitted)
 
 p_copy_parallel_copies > 0
-  -> copy_source_to_bronze_query_tuned
+  -> copy_source_to_bronze_tuned
      (parallelCopies = configured override)
 ```
 
