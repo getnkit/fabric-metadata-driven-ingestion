@@ -171,7 +171,7 @@ Do not replace a simple connector-native Copy activity with a Notebook just to m
 
 Automatic Bronze cleanup is used only when the framework knows the control-state commit has not succeeded.
 
-If `sp_finalize_success` fails, `pl_ingest_finalize_success_recovery` first checks the committed audit for the exact object run. Automatic compensating cleanup is allowed **only** when the audit confirms `FAILED / WATERMARK_CONFLICT`; successful or unconfirmed finalization outcomes must not delete Bronze (or Landing). See [Bronze compensating cleanup](../operations/bronze-compensating-cleanup.md) for recovery behavior.
+If `sp_finalize_success` fails, `pl_ingest_incremental_finalize_recovery` first checks the committed audit for the exact object run. Automatic compensating cleanup is allowed **only** when the audit confirms `FAILED / WATERMARK_CONFLICT`; successful or unconfirmed finalization outcomes must not delete Bronze (or Landing). See [Bronze compensating cleanup](../operations/bronze-compensating-cleanup.md) for recovery behavior.
 
 ## Pipeline names
 
@@ -222,14 +222,14 @@ pl_ingest_orchestrator
                                         -> SQL_SERVER|INCREMENTAL
                                              -> pl_ingest_sql_server_incremental_adapter
                                                   -> pl_ingest_sql_server_incremental_loader
-                                                       -> (finalize failure) pl_ingest_finalize_success_recovery
+                                                       -> (finalize failure) pl_ingest_incremental_finalize_recovery
                               -> FILE
                                    -> pl_ingest_file_router
                                         -> SFTP|FULL
                                              -> pl_ingest_sftp_full_adapter
                                         -> SFTP|INCREMENTAL
                                              -> pl_ingest_sftp_incremental_adapter
-                                                  -> (finalize failure) pl_ingest_finalize_success_recovery
+                                                  -> (finalize failure) pl_ingest_incremental_finalize_recovery
 ```
 
 `pl_ingest_orchestrator` accepts an optional `p_source_system` for the ALL ACTIVE path, preserving the original empty-scope behavior. It rejects a nonblank scope combined with explicit `p_run_requests` via `if_valid_run_scope` / `fail_ambiguous_run_scope`. `pl_ingest_config_paginator` requires at least one active config in the resolved scope (including unfiltered ALL ACTIVE) via `if_valid_config_scope` / `fail_no_active_configs` (`NO_ACTIVE_CONFIGS`). Since no object has started, this framework-level failure does not write an object-level audit record. Both use existing `if_` / `fail_` naming prefixes.
@@ -247,7 +247,7 @@ pl_ingest_database_router                 -> inv_ingest_database_router
 pl_ingest_sql_server_incremental_adapter   -> inv_ingest_sql_server_incremental_adapter
 pl_ingest_sql_server_incremental_loader    -> inv_ingest_sql_server_incremental_loader
 pl_ingest_sftp_incremental_adapter         -> inv_ingest_sftp_incremental_adapter
-pl_ingest_finalize_success_recovery               -> inv_ingest_finalize_success_recovery
+pl_ingest_incremental_finalize_recovery               -> inv_ingest_incremental_finalize_recovery
 ```
 
 When a parent invokes a child only once, use the child-oriented name directly:
