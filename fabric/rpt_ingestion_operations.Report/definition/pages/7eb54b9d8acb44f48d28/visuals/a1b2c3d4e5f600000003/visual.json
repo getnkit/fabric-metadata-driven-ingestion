@@ -3,10 +3,10 @@
   "name": "a1b2c3d4e5f600000003",
   "position": {
     "x": 997,
-    "y": 17,
+    "y": 11,
     "z": 1030,
     "width": 255,
-    "height": 93,
+    "height": 112,
     "tabOrder": 3
   },
   "visual": {
@@ -35,5 +35,57 @@
       }
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "b5e0c3f4a19d48f7b2c6",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "LatestSource"
+              }
+            },
+            "Property": "source_system"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "s",
+              "Entity": "LatestSource",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "IsBlank": {
+                      "Expression": {
+                        "Column": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "s"
+                            }
+                          },
+                          "Property": "source_system"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "isHiddenInViewMode": true,
+        "howCreated": "User"
+      }
+    ]
   }
 }

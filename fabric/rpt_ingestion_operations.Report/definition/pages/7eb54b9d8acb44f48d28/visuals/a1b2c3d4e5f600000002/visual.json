@@ -20,9 +20,9 @@
               {
                 "textRuns": [
                   {
-                    "value": "Latest audited batch per source  |  UTC  |  Terminal object outcomes only",
+                    "value": "Latest audited batch per source  |  UTC  |  SUCCESS can include SKIPPED  |  Terminal object outcomes only",
                     "textStyle": {
-                      "fontSize": "11pt"
+                      "fontSize": "10pt"
                     }
                   }
                 ]

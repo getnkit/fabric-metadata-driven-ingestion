@@ -65,3 +65,16 @@ The generated report must be runtime-validated after Git Sync.
    no-audit failures.
 
 All stored times are UTC. No automatic page refresh is required for MVP.
+
+## 4. Visual refinement (2026-10-12)
+
+- Zero-fill DAX count KPIs (especially Failed Sources). Retain semantic counts.
+- Show UTC date plus hour/minute for model timestamps; source SQL values stay intact.
+- Use SUCCESS green / FAILED red / SKIPPED gray for fixed chart measures.
+- Slicer has a visual-only not-blank guard; investigate recurring blank members
+  separately without modifying source keys or operational views blindly.
+- Fit the source table and chart vertically; enlarge history, set column widths,
+  sort end time newest first, and preserve complete Pipeline Run IDs.
+- After Fabric Git sync, validate slicer filtering, zero KPI, chart colors, UTC
+  time formatting, correct status mapping and history sorting. Static checks
+  do not establish runtime behavior.

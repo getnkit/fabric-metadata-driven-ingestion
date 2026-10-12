@@ -28,17 +28,20 @@ table LatestSource
 		sourceColumn: target_rows
 	column batch_start_time
 		dataType: dateTime
+		formatString: "yyyy-mm-dd hh:nn"
 		sourceColumn: batch_start_time
 	column batch_end_time
 		dataType: dateTime
+		formatString: "yyyy-mm-dd hh:nn"
 		sourceColumn: batch_end_time
-	measure 'Source Systems' = COUNTROWS(LatestSource)
-	measure 'Failed Sources' = CALCULATE(COUNTROWS(LatestSource), LatestSource[source_status] = "FAILED")
-	measure 'Objects (Latest)' = SUM(LatestSource[object_count])
+	measure 'Source Systems' = COALESCE(COUNTROWS(LatestSource), 0)
+	measure 'Failed Sources' = COALESCE(CALCULATE(COUNTROWS(LatestSource), LatestSource[source_status] = "FAILED"), 0)
+	measure 'Objects (Latest)' = COALESCE(SUM(LatestSource[object_count]), 0)
 	measure 'Latest Activity (UTC)' = MAX(LatestSource[batch_end_time])
-	measure 'Successful Objects' = SUM(LatestSource[success_count])
-	measure 'Failed Objects' = SUM(LatestSource[failed_count])
-	measure 'Skipped Objects' = SUM(LatestSource[skipped_count])
+		formatString: "yyyy-mm-dd hh:nn"
+	measure 'Successful Objects' = COALESCE(SUM(LatestSource[success_count]), 0)
+	measure 'Failed Objects' = COALESCE(SUM(LatestSource[failed_count]), 0)
+	measure 'Skipped Objects' = COALESCE(SUM(LatestSource[skipped_count]), 0)
 	partition 'LatestSource' = m
 		mode: directQuery
 		source =

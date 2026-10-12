@@ -37,9 +37,11 @@ table ObjectHistory
 		sourceColumn: duration_seconds
 	column start_time
 		dataType: dateTime
+		formatString: "yyyy-mm-dd hh:nn"
 		sourceColumn: start_time
 	column end_time
 		dataType: dateTime
+		formatString: "yyyy-mm-dd hh:nn"
 		sourceColumn: end_time
 	column error_code
 		dataType: string
