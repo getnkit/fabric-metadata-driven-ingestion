@@ -16,8 +16,10 @@ sql_benchmark_db
 
 Both tables have the same logical columns and deterministic values. The
 partitioned table is physically partitioned by `event_date` into monthly 2026
-partitions. Each row contains a fixed `CHAR(512)` payload so the benchmark moves
-multiple gigabytes per full-table run rather than benchmarking only row-count
+partitions. Both tables also expose the same `event_date` column so Query-mode
+`DYNAMIC_RANGE` can compare the same date-range extraction against two physical
+source layouts. Each row contains a fixed `CHAR(512)` payload so the benchmark
+moves multiple gigabytes per full-table run rather than benchmarking only row-count
 overhead.
 
 ## One-time setup
@@ -139,17 +141,27 @@ Run at least:
 | Scenario | Source physical layout | Copy partition strategy |
 | --- | --- | --- |
 | UNPARTITIONED_NONE | unpartitioned | NONE |
-| UNPARTITIONED_DYNAMIC | unpartitioned | DYNAMIC_RANGE on benchmark_id |
+| UNPARTITIONED_DYNAMIC | unpartitioned | DYNAMIC_RANGE on event_date |
 | PARTITIONED_NONE | monthly physical partitions | NONE |
-| PARTITIONED_DYNAMIC | monthly physical partitions | DYNAMIC_RANGE on benchmark_id |
+| PARTITIONED_DYNAMIC | monthly physical partitions | DYNAMIC_RANGE on event_date |
 
 Record the Copy Activity output/monitoring metrics for each run, especially
 duration, rows, data volume, throughput, and used parallel copies. Also observe
 SQL Server 2022 Developer on EC2 resource pressure during the run.
 
-Do not define success as "parallel must be X% faster." A useful benchmark explains
-where the bottleneck moves. If source compute or I/O saturates, increased
-parallelism may provide little benefit; that is a valid result.
+**Why `event_date` rather than `benchmark_id`?** The source physical partition
+function uses `event_date`, so using the **same date-based range key** in both
+DYNAMIC scenarios tests whether SQL Server's optimizer can benefit from aligned
+partition-range predicates. Each source has the same 365-day distribution.
+`NONE` scenarios still read the entire table and do not ask Fabric to scan
+physical partitions independently. The dynamic degree of parallelism is
+service-managed unless `@ParallelCopies` is set.
+
+Do not define success as "parallel must be X% faster." The source tables have
+different clustered-index/storage layouts; any observed difference reflects the
+whole physical design, not isolated partition-elimination effects. The actual
+query plan may or may not eliminate partitions, and performance must be measured.
+Record per-run row counts and the observed source/sink load before drawing a conclusion.
 
 ## Storage safety
 
@@ -159,8 +171,11 @@ The benchmark uses a **separate database on the existing EC2 SQL Server 2022 Dev
 
 SQL Server **Developer Edition is for development/testing, not production use**. Capture EC2 instance type, EBS size/IOPS, SQL Server edition, CPU and memory load, network egress, row counts and effective parallelism for each run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
 
-The physically partitioned source table is retained to study how SQL Server
-physical layout affects `NONE` versus `DYNAMIC_RANGE` **query-mode** Copy.
-`PHYSICAL_PARTITIONS` is not an available framework copy strategy.
+The physically partitioned source table is retained **unchanged**: retiring
+Fabric's Table-mode `PHYSICAL_PARTITIONS` option does not remove or modify SQL
+Server partitions. No source DDL change, repartitioning, or 10M-row regeneration
+is required for this Query-only benchmark. Both DYNAMIC scenarios now use
+`event_date` as their connector range key. `PHYSICAL_PARTITIONS` is not an
+available framework copy strategy.
 Do not assume Dynamic Range always equals native physical-partition scan
 performance or that more parallelism is faster on a burstable EC2 instance.

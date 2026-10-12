@@ -83,7 +83,7 @@ BEGIN
         SET @SourceObject = 'copy_source_unpartitioned';
         SET @TargetTable = 'copy_benchmark_unpartitioned_dynamic';
         SET @CopyOptions =
-            N'{"partition_option":"DYNAMIC_RANGE","partition_column":"benchmark_id"}';
+            N'{"partition_option":"DYNAMIC_RANGE","partition_column":"event_date"}';
     END;
 
     IF @Scenario = 'PARTITIONED_NONE'
@@ -98,7 +98,7 @@ BEGIN
         SET @SourceObject = 'copy_source_partitioned';
         SET @TargetTable = 'copy_benchmark_partitioned_dynamic';
         SET @CopyOptions =
-            N'{"partition_option":"DYNAMIC_RANGE","partition_column":"benchmark_id"}';
+            N'{"partition_option":"DYNAMIC_RANGE","partition_column":"event_date"}';
     END;
 
     IF @ParallelCopies IS NOT NULL

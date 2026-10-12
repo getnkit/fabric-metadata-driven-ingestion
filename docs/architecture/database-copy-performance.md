@@ -234,16 +234,21 @@ benchmark.copy_source_unpartitioned
 benchmark.copy_source_partitioned
 ```
 
-The partitioned source uses monthly `event_date` partitions in 2026.
-That source layout remains useful even though Fabric always uses
-**query-mode** Copy. Four benchmark scenarios vary source layout versus
-connector execution strategy:
+The partitioned source uses monthly `event_date` partitions in 2026,
+which are a **source SQL Server** characteristic (not a Fabric Copy option).
+Neither the DDL nor the 10M-row data generator needs modification after
+retiring Table mode. Both tables have `event_date`; for a focused 2x2
+comparison, the two `DYNAMIC_RANGE` scenarios both partition connector reads
+by this date column, aligned with the partitioned table's physical key.
+This can allow SQL Server partition elimination but does not guarantee a speedup;
+the physical tables also differ in clustered-index layout. Four benchmark
+scenarios vary source layout versus connector execution strategy:
 
 ```text
-UNPARTITIONED_NONE
-UNPARTITIONED_DYNAMIC
-PARTITIONED_NONE
-PARTITIONED_DYNAMIC
+UNPARTITIONED_NONE        (query, NONE)
+UNPARTITIONED_DYNAMIC     (query, DYNAMIC_RANGE on event_date)
+PARTITIONED_NONE          (query, NONE)
+PARTITIONED_DYNAMIC       (query, DYNAMIC_RANGE on event_date)
 ```
 
 No benchmark data needs to be regenerated solely for this change.

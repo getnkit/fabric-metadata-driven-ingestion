@@ -159,7 +159,7 @@ BEGIN
     (
         'BENCHMARK', 'SQL_SERVER_BENCHMARK', 'benchmark',
         'copy_source_partitioned', NULL, 'DATABASE', NULL, NULL,
-        N'{"partition_option":"DYNAMIC_RANGE","partition_column":"benchmark_id"}', NULL,
+        N'{"partition_option":"DYNAMIC_RANGE","partition_column":"event_date"}', NULL,
         'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_partitioned_dynamic',
         'FULL', NULL, 0
     );

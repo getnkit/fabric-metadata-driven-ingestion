@@ -228,6 +228,9 @@ standalone benchmark registration SQL:
   scenario or select `DISABLE` afterward. Supported scenarios are
   `UNPARTITIONED_NONE`, `UNPARTITIONED_DYNAMIC`,
   `PARTITIONED_NONE`, and `PARTITIONED_DYNAMIC` (all query-mode).
+  Both `*_DYNAMIC` scenarios use source `event_date` as the range key
+  to align with the partitioned fixture's monthly physical layout; no
+  source DDL or 10M-row data regeneration is required.
   Re-running this selector also normalizes any legacy
   `PHYSICAL_PARTITIONS` option **only for BENCHMARK configs**; existing
   non-benchmark metadata requires its own reviewed policy update.
