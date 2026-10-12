@@ -1,0 +1,8 @@
+{
+  "name": "Custom",
+  "textClasses": {
+    "label": {
+      "fontSize": 10.5
+    }
+  }
+}

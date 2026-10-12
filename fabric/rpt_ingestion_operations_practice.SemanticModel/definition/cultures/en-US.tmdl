@@ -1,0 +1,368 @@
+cultureInfo en-US
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "latestsource.source_system": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "source_system"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Source System": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.source_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "source_status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Status": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.object_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "object_count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Objects": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.failed_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "failed_count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Failed": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.skipped_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "skipped_count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Skipped": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.batch_end_time": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "batch_end_time"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Last End (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.successful_objects": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "Successful Objects"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Success": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.failed_objects": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "Failed Objects"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Failed": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.skipped_objects": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "Skipped Objects"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Skipped": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.source_system": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "source_system"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Source System": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.source_entity": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "source_entity"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Object": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Status": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.end_time": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "end_time"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "End (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.error_code": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "error_code"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Error Code": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.pipeline_run_id": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "pipeline_run_id"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Pipeline Run ID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "latestsource.success_count": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "LatestSource",
+			          "ConceptualProperty": "success_count"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Success": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "objecthistory.run_type": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "ObjectHistory",
+			          "ConceptualProperty": "run_type"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Run Type": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    }
+			  }
+			}
+		contentType: json
+

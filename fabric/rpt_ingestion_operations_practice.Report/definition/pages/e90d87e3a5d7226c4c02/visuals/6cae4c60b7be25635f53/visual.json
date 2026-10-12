@@ -1,0 +1,345 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "6cae4c60b7be25635f53",
+  "position": {
+    "x": 64.4197445633414,
+    "y": 641.81152916810493,
+    "z": 9000,
+    "height": 398.44804970659305,
+    "width": 1787.0514325163963,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "source_system"
+                }
+              },
+              "queryRef": "ObjectHistory.source_system",
+              "nativeQueryRef": "Source System",
+              "displayName": "Source System"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "source_entity"
+                }
+              },
+              "queryRef": "ObjectHistory.source_entity",
+              "nativeQueryRef": "Object",
+              "displayName": "Object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "run_type"
+                }
+              },
+              "queryRef": "ObjectHistory.run_type",
+              "nativeQueryRef": "Run Type",
+              "displayName": "Run Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "status"
+                }
+              },
+              "queryRef": "ObjectHistory.status",
+              "nativeQueryRef": "Status",
+              "displayName": "Status"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "ObjectHistory"
+                        }
+                      },
+                      "Property": "source_row_count"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(ObjectHistory.source_row_count)",
+              "nativeQueryRef": "Source Rows",
+              "displayName": "Source Rows"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "ObjectHistory"
+                        }
+                      },
+                      "Property": "target_row_count"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(ObjectHistory.target_row_count)",
+              "nativeQueryRef": "Target Rows",
+              "displayName": "Target Rows"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "ObjectHistory"
+                        }
+                      },
+                      "Property": "duration_seconds"
+                    }
+                  },
+                  "Function": 0
+                }
+              },
+              "queryRef": "Sum(ObjectHistory.duration_seconds)",
+              "nativeQueryRef": "Duration (s)",
+              "displayName": "Duration (s)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "end_time"
+                }
+              },
+              "queryRef": "ObjectHistory.end_time",
+              "nativeQueryRef": "End (UTC)",
+              "displayName": "End (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "error_code"
+                }
+              },
+              "queryRef": "ObjectHistory.error_code",
+              "nativeQueryRef": "Error Code",
+              "displayName": "Error Code"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ObjectHistory"
+                    }
+                  },
+                  "Property": "pipeline_run_id"
+                }
+              },
+              "queryRef": "ObjectHistory.pipeline_run_id",
+              "nativeQueryRef": "Pipeline Run ID",
+              "displayName": "Pipeline Run ID"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "ObjectHistory"
+                  }
+                },
+                "Property": "end_time"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "grid": [
+        {
+          "properties": {}
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "205.1860149847442D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "ObjectHistory.source_system"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "289.19539021484115D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "ObjectHistory.source_entity"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "96.24508459403347D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "ObjectHistory.run_type"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "83.68995071230708D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "ObjectHistory.status"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "242.5355784465646D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "ObjectHistory.error_code"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Object Execution History'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "16D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylePreset": [
+        {
+          "properties": {
+            "name": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Default'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

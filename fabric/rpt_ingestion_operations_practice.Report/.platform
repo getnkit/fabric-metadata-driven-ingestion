@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "rpt_ingestion_operations_practice"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "aabfa9a7-a662-b331-4b91-3bdc5722700c"
+  }
+}
