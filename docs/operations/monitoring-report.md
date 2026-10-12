@@ -107,3 +107,33 @@ All stored times are UTC. No automatic page refresh is required for MVP.
   semantics changed. Check rendering, measure values, source slicer filtering,
   no title scrollbars, UTC time, and column width after Fabric Sync. **Static
   PBIR JSON checks do not prove Report import or runtime behavior.**
+
+## 6. DEV report acceptance record (2026-10-12)
+
+**Status: PASS — Power BI Operational Monitoring MVP, visual/runtime scope.**
+
+User-provided screenshots from the deployed Fabric report show:
+
+| Test | Source Systems | Objects (latest audited batches) | Failed Sources | Evidence |
+| --- | ---: | ---: | ---: | --- |
+| All sources | 2 | 8 | 0 | Both ECOMMERCE and LOGISTICS_VENDOR in slicer, summary and chart |
+| ECOMMERCE selected | 1 | 6 | 0 | ECOMMERCE-only KPI, table, chart and object history |
+| LOGISTICS_VENDOR selected | 1 | 2 | 0 | LOGISTICS_VENDOR-only KPI, table, chart and object history |
+
+For the latest audited source batches shown, ECOMMERCE has 1 SUCCESS
+and 5 SKIPPED objects; LOGISTICS_VENDOR has 1 SUCCESS and 1 SKIPPED.
+The chart category (Blank) no longer appears, and the card for Failed Sources
+renders the numeric **0**. UTC date/time, history ordering, and source-filter
+interactions render as intended in the screenshots.
+
+This is a **UI and filter behavior acceptance**, not an independent execution
+of the SQL queries or validation of alert delivery. Fresh-data propagation
+after a brand-new run, a newest-batch FAILED scenario, a missing-audit/master
+failure scenario, and non-DEV deployments are **not** certified by these
+screenshots. Master RUNNING and failures before object audit are deliberately
+outside this report's scope; use Fabric Monitor and Activator.
+
+No additional PBIR/TMDL/SQL pipeline edits are required to close the
+**Operational Monitoring Report MVP** on this evidence. The broader
+orchestrator-failure notification acceptance remains tracked separately in
+`docs/operations/orchestrator-failure-alerting.md`.

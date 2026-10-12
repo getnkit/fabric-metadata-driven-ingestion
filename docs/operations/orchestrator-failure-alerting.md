@@ -51,3 +51,18 @@ operator failure notification = received
 ```
 
 Successful and SKIPPED runs do not need notifications in the current scope.
+
+## DEV alert validation status (reported 2026-10-04)
+
+The user inspected the Activator Actions record and observed **two actual
+`pl_ingest_orchestrator` FAILED events** with associated rule/action activity.
+This supports **failure event detection and action invocation: PASS**.
+
+**Recipient inbox receipt: NOT VERIFIED.** The test tenant/mailbox limitations
+prevented independent confirmation that the intended recipient received the
+notification. Do not describe end-to-end email delivery as PASS solely
+because the Activator action ran. This is a separate operational follow-up
+if dependable email notification becomes an acceptance requirement.
+
+This open verification does not block closure of the Power BI Operational
+Monitoring Report MVP, which is a read-only visual layer based on object audit.

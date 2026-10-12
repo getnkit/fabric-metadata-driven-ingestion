@@ -18,8 +18,10 @@ relationship. Times are UTC.
 2. The operational Fabric SQL Database server is already set in
    `../../fabric/sm_ingestion_operations.SemanticModel/definition/expressions.tmdl`:
    `6j37c7ougv4uthql2zudf5m3ra-6fcoxgexxg6ejngvdk4amt47k4.database.fabric.microsoft.com`.
-   Confirm the database name `sqldb_ingestion_control` and your workspace
-   access. No password or access token belongs in Git.
+   Use the **exact** server and Initial Catalog from the Fabric SQL Database
+   connection string (the Initial Catalog can contain a GUID suffix), as
+   configured in `expressions.tmdl`. Confirm workspace access. No password
+   or access token belongs in Git.
 3. **Windows/Desktop route:** open `rpt_ingestion_operations.pbip` in Power BI
    Desktop, sign in using Microsoft Entra/Organizational Account for the
    Fabric SQL Database, verify both DirectQuery views, then publish.
@@ -51,7 +53,18 @@ relationship. Times are UTC.
 - Reconcile a new run with `audit.v_monitor_latest_source` and verify the
   updated Batch ID and timestamp after Refresh visuals.
 
-This is a source-controlled report **template**. JSON and field references
-were statically validated; Power BI Desktop/Fabric runtime rendering and
-SQL credentials have not been tested in this environment. No Eventhouse,
-custom visuals, extra pipeline or separate Dashboard item is required.
+## Latest DEV validation (2026-10-12)
+
+Power BI Report `rpt_ingestion_operations` and Semantic Model
+`sm_ingestion_operations` were successfully synchronized to the Fabric
+workspace and rendered against Fabric SQL Database through DirectQuery.
+User screenshots confirmed the KPI values and Source System filtering for
+All Sources, ECOMMERCE-only and LOGISTICS_VENDOR-only, including the
+numerical Failed Sources = 0 and removal of (Blank) chart/slicer categories.
+The full acceptance record and deliberate scope exclusions are documented
+in `../../docs/operations/monitoring-report.md`.
+
+This is a **DEV Operational Monitoring MVP**, not certification of all
+runtime edge cases, alert email delivery, or production deployment.
+No Eventhouse, custom visual, extra pipeline or separate Dashboard
+item is required.
