@@ -71,10 +71,35 @@ All stored times are UTC. No automatic page refresh is required for MVP.
 - Zero-fill DAX count KPIs (especially Failed Sources). Retain semantic counts.
 - Show UTC date plus hour/minute for model timestamps; source SQL values stay intact.
 - Use SUCCESS green / FAILED red / SKIPPED gray for fixed chart measures.
-- Slicer has a visual-only not-blank guard; investigate recurring blank members
-  separately without modifying source keys or operational views blindly.
+- Source slicer blank category remained after an invalid IsBlank PBIR attempt;
+  root cause may be model relationship's synthetic blank member.
 - Fit the source table and chart vertically; enlarge history, set column widths,
   sort end time newest first, and preserve complete Pipeline Run IDs.
 - After Fabric Git sync, validate slicer filtering, zero KPI, chart colors, UTC
   time formatting, correct status mapping and history sorting. Static checks
   do not establish runtime behavior.
+
+## 5. Compact operations view (2026-10-12)
+
+- Header now states only **latest recorded batch per source** and **UTC**;
+  descriptions of status precedence remain in this engineering note rather
+  than on the dashboard canvas.
+- Source System slicer uses a **measure-based visual filter** named
+  `Valid Source Option` (1 for a nonblank source label). This preserves
+  dynamic discovery of newly onboarded sources, unlike a hardcoded two-source
+  allowlist. The slicer needs DEV runtime confirmation that a synthesized
+  relationship blank is hidden and it still cross-filters Object History.
+  In Power BI, no selected slicer value means all sources; (Blank) is not All.
+- KPI measure `Failed Sources` renders count 0 as the display string `0`,
+  while `Objects` sums object counts from latest source batches. `Last Activity`
+  formats the maximum audited end time as `dd MMM yyyy HH:mm` (source timestamps
+  already UTC); the original DateTime measure remains for analytical use.
+- Longer last-activity card and a fixed callout font size avoid truncation.
+  Taller textboxes avoid internal scrollbars. History source names have wider
+  columns; explicit sort and full pipeline run IDs are retained.
+- Three chart series use explicit status colors by measure queryRef to avoid
+  depending on base-theme palette propagation during Fabric Git import.
+- No SQL View, audit/history data, connection, pipeline or state-management
+  semantics changed. Check rendering, measure values, source slicer filtering,
+  no title scrollbars, UTC time, and column width after Fabric Sync. **Static
+  PBIR JSON checks do not prove Report import or runtime behavior.**

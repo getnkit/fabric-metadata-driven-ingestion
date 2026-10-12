@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
   "name": "a1b2c3d4e5f600000007",
   "position": {
-    "x": 939,
-    "y": 133,
+    "x": 891,
+    "y": 155,
     "z": 1070,
-    "width": 285,
-    "height": 130,
+    "width": 361,
+    "height": 125,
     "tabOrder": 7
   },
   "visual": {
@@ -23,16 +23,34 @@
                       "Entity": "LatestSource"
                     }
                   },
-                  "Property": "Latest Activity (UTC)"
+                  "Property": "Last Activity"
                 }
               },
-              "queryRef": "LatestSource.Latest Activity (UTC)",
-              "nativeQueryRef": "Latest Activity (UTC)"
+              "queryRef": "LatestSource.Last Activity",
+              "nativeQueryRef": "Last Activity"
             }
           ]
         }
       }
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "value": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "22D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    }
   }
 }
