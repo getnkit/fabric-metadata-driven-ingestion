@@ -121,7 +121,10 @@ is present, it also inserts **two INACTIVE benchmark DATABASE** configs
 without overwriting existing benchmark scenario settings. It creates initial
 Watermark State only for missing DATABASE/FILE INCREMENTAL config IDs
 (five E-commerce DATABASE and one SFTP FILE). FULL configs have no
-watermark row.
+watermark row. SQL Server FULL/INCREMENTAL uses **query-mode** Copy only;
+`NONE` and `DYNAMIC_RANGE` are the supported `copy_options.partition_option`
+values. The relational Bronze `_ingestion_timestamp` is produced by a source
+`DATETIME2(3)` CAST and lands as a timestamp in Delta.
 
 **Seed safety:** `04_seed_ingestion_metadata.sql` can UPDATE existing
 sample configs; review before rerun. It **does not UPDATE existing
@@ -173,6 +176,12 @@ is implemented. See [run requests](../docs/operations/run-request-examples.md).
 - For File regression, test `inventory_snapshot.csv` and the sample
   `inventory_movement_*.csv` files; verify full and incremental runs,
   an empty incremental run, and explicit BACKFILL.
+- **Post-deployment SQL Server FULL smoke:** verify `NONE/AUTO` and
+  `DYNAMIC_RANGE/AUTO` copies into fresh Bronze targets; confirm row
+  counts, SUCCESS audit and `_ingestion_timestamp` is
+  `datetime2(6)` at the Lakehouse SQL endpoint. Check invalid
+  `PHYSICAL_PARTITIONS` config fails `INVALID_COPY_OPTIONS` before
+  Bronze mutation. Exercise `parallel_copies > 0` only when tuning is needed.
 - **Runtime acceptance required:** SQL Lookup/Stored Procedure,
   Invoke Pipeline, dynamic Notebook execution Connection, Copy,
   Landing, Bronze and all failure paths must pass in Fabric DEV.
@@ -216,7 +225,12 @@ standalone benchmark registration SQL:
   E-commerce/SFTP settings, watermark state and benchmark scenario selection
   remain unchanged.
 - Run `scripts/control/05_set_benchmark_scenario.sql` to activate a
-  scenario or select `DISABLE` afterward.
+  scenario or select `DISABLE` afterward. Supported scenarios are
+  `UNPARTITIONED_NONE`, `UNPARTITIONED_DYNAMIC`,
+  `PARTITIONED_NONE`, and `PARTITIONED_DYNAMIC` (all query-mode).
+  Re-running this selector also normalizes any legacy
+  `PHYSICAL_PARTITIONS` option **only for BENCHMARK configs**; existing
+  non-benchmark metadata requires its own reviewed policy update.
 
 Benchmark is **optional DEV-only**; standard installs need no additional IDs or configs.
 

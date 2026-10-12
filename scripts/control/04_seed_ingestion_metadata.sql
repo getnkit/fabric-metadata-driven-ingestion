@@ -13,6 +13,8 @@
     Benchmark configs are optional: inserted (INACTIVE) only when the dedicated
     SQL Server benchmark connection reference exists. Existing benchmark configs
     are NEVER updated by this seed, protecting active scenario settings.
+    Legacy benchmark PHYSICAL_PARTITIONS configs should be converted with
+    05_set_benchmark_scenario.sql; this seed does not migrate them.
 
     Fresh DEV demo seed ONLY (not generic PROD configuration).
     @BenchmarkOnly = 1 is an explicit safe mode for existing DEV: insert
@@ -157,8 +159,8 @@ BEGIN
     (
         'BENCHMARK', 'SQL_SERVER_BENCHMARK', 'benchmark',
         'copy_source_partitioned', NULL, 'DATABASE', NULL, NULL,
-        N'{"partition_option":"PHYSICAL_PARTITIONS"}', NULL,
-        'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_partitioned_physical',
+        N'{"partition_option":"DYNAMIC_RANGE","partition_column":"benchmark_id"}', NULL,
+        'LH_ECOMMERCE_BRONZE', 'benchmark', 'copy_benchmark_partitioned_dynamic',
         'FULL', NULL, 0
     );
 END;

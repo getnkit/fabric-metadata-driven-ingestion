@@ -35,9 +35,12 @@ set_processing_upper_bound_backfill
 
 copy_source_to_bronze_query_auto
 copy_source_to_bronze_query_tuned
-copy_source_to_bronze_table_auto
-copy_source_to_bronze_table_tuned
 ```
+
+The SQL Server FULL adapter intentionally uses query-mode Copy only, to create
+`_ingestion_timestamp` as a true Bronze timestamp via the source SQL
+`DATETIME2(3)` cast. Physical Table-mode Copy branches are not part of the
+supported execution standard.
 
 ForEach activity names should describe the collection being iterated:
 

@@ -8,7 +8,7 @@
       UNPARTITIONED_NONE
       UNPARTITIONED_DYNAMIC
       PARTITIONED_NONE
-      PARTITIONED_PHYSICAL
+      PARTITIONED_DYNAMIC
 
     ParallelCopies:
       NULL = service-managed AUTO (recommended baseline)
@@ -32,7 +32,7 @@ IF @Scenario NOT IN
     'UNPARTITIONED_NONE',
     'UNPARTITIONED_DYNAMIC',
     'PARTITIONED_NONE',
-    'PARTITIONED_PHYSICAL'
+    'PARTITIONED_DYNAMIC'
 )
 BEGIN
     THROW 51140, 'Unsupported benchmark scenario.', 1;
@@ -53,6 +53,17 @@ SET
     is_active = 0,
     updated_at = SYSUTCDATETIME()
 WHERE source_system = 'BENCHMARK';
+
+/* Retired Table-mode option: migrate only old BENCHMARK config metadata.
+   Generic production configs are deliberately not auto-migrated. */
+UPDATE control.ingestion_config
+SET copy_options = N'{"partition_option":"NONE"}',
+    target_table = 'copy_benchmark_partitioned_none',
+    updated_at = SYSUTCDATETIME()
+WHERE source_system = 'BENCHMARK'
+  AND source_schema = 'benchmark'
+  AND source_object = 'copy_source_partitioned'
+  AND JSON_VALUE(copy_options, '$.partition_option') = 'PHYSICAL_PARTITIONS';
 
 IF @Scenario <> 'DISABLE'
 BEGIN
@@ -82,11 +93,12 @@ BEGIN
         SET @CopyOptions = N'{"partition_option":"NONE"}';
     END;
 
-    IF @Scenario = 'PARTITIONED_PHYSICAL'
+    IF @Scenario = 'PARTITIONED_DYNAMIC'
     BEGIN
         SET @SourceObject = 'copy_source_partitioned';
-        SET @TargetTable = 'copy_benchmark_partitioned_physical';
-        SET @CopyOptions = N'{"partition_option":"PHYSICAL_PARTITIONS"}';
+        SET @TargetTable = 'copy_benchmark_partitioned_dynamic';
+        SET @CopyOptions =
+            N'{"partition_option":"DYNAMIC_RANGE","partition_column":"benchmark_id"}';
     END;
 
     IF @ParallelCopies IS NOT NULL

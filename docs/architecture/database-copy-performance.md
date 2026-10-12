@@ -65,19 +65,16 @@ Optional benchmark-backed override:
 }
 ```
 
-Current SQL Server 2022 Developer on EC2 support:
+Current SQL Server 2022 Developer on EC2 support (FULL and INCREMENTAL):
 
 ```text
-FULL:
-  partition_option = NONE | DYNAMIC_RANGE | PHYSICAL_PARTITIONS
-
-INCREMENTAL:
-  partition_option = NONE | DYNAMIC_RANGE
+partition_option = NONE | DYNAMIC_RANGE
 ```
 
-`PHYSICAL_PARTITIONS` is currently a FULL-load capability in this project. It
-uses a native table source so Fabric can discover the physical partition
-definition directly.
+All SQL Server ingestion uses **query-mode Copy**. `_ingestion_timestamp` is
+CAST to `DATETIME2(3)` in the source query, so newly created Bronze Delta
+tables receive a timestamp technical column rather than a String. Physical
+source table layout is independent of this connector execution strategy.
 
 `DYNAMIC_RANGE` requires an explicit `partition_column`. The current adapter
 does not silently auto-select a PK/index because an explicit column makes the
@@ -104,15 +101,15 @@ p_copy_parallel_copies
 
 and validate the supported combination before data movement.
 
-Execution then selects one of two copy modes:
+Execution then selects one of two **query** Copy branches:
 
 ```text
 p_copy_parallel_copies = 0
-  -> copy_source_to_bronze_auto
+  -> copy_source_to_bronze_query_auto
      (parallelCopies omitted)
 
 p_copy_parallel_copies > 0
-  -> copy_source_to_bronze_tuned
+  -> copy_source_to_bronze_query_tuned
      (parallelCopies = configured override)
 ```
 
@@ -191,107 +188,65 @@ representative dataset and measured run metrics.
 Other DATABASE seed objects remain `copy_options = NULL`, providing a baseline
 for the normal non-partitioned path.
 
-## Physical partitions
+## Query-only choice and performance benchmark
 
-SQL Server 2022 Developer on EC2 FULL ingestion now supports:
+The framework deliberately does **not** expose the SQL Server connector's
+`PhysicalPartitionsOfTable` / `PHYSICAL_PARTITIONS` Table-mode strategy.
+Although that feature may help for some SQL Server physical layouts, the
+Table-mode `additionalColumns` path auto-creates
+`_ingestion_timestamp` as String without explicit destination mapping.
+A DEV PoC confirmed that a manual `timestamp` mapping works on a newly
+created Bronze table (SQL endpoint: `datetime2(6)`), but manually maintained
+per-source mappings conflict with schema-agnostic metadata-driven ingestion.
+Generating dynamic mapping JSON was deliberately rejected as unnecessary
+maintenance and extra runtime coupling.
 
-```json
-{
-  "partition_option": "PHYSICAL_PARTITIONS"
-}
-```
+Instead, query-mode `SELECT *, CAST(... AS DATETIME2(3))` preserves the
+Bronze timestamp contract and still supports `DYNAMIC_RANGE` with
+`?DfDynamicRangePartitionCondition` for connector-native parallel Copy.
+It is **not** assumed to be equal in throughput to native physical partition
+scanning; performance depends on source table layout, indexes, partition-key
+distribution, and actual measured bottlenecks. Reintroduce a specialized
+physical Table-mode path only after a representative benchmark justifies the
+added maintenance and technical-column handling.
 
-The physical-partition branch deliberately does not use `sqlReaderQuery`.
-Instead it points the SQL Server 2022 Developer on EC2 dataset at the configured source schema/table and
-sets:
-
-```text
-partitionOption = PhysicalPartitionsOfTable
-```
-
-Fabric therefore discovers the source table's physical partition definition
-rather than receiving a custom-query range predicate.
-
-The framework still preserves its three relational Bronze technical columns by
-using Copy Activity `additionalColumns`:
-
-```text
-_batch_id
-_pipeline_run_id
-_ingestion_timestamp
-```
-
-AUTO and explicit `parallel_copies` modes are both supported. As with Dynamic
-Range, omitted `parallel_copies` means service-managed parallelism.
-
-Physical partitions are intentionally not enabled for the current INCREMENTAL
-adapter. The benchmark and the initial implementation use the connector's
-documented full-load physical-partition scenario; incremental semantics continue
-to use the existing LOW/HIGH custom query with NONE or DYNAMIC_RANGE.
-
-The prior Azure SQL/RDS Fabric Copy UI observations are not acceptance evidence for the generic SQL Server connector. Microsoft documents SQL Server Query + Dynamic Range and physical TABLE partitioning. This framework uses query mode for NONE/DYNAMIC_RANGE and table mode only for FULL PHYSICAL_PARTITIONS. Confirm generated JSON, required fields and runtime behavior after connecting to the EC2 SQL Server source. Incremental ingestion requires a custom watermark query, for example:
-
-```sql
-WHERE <watermark_field> > LOW
-  AND <watermark_field> <= HIGH
-```
-
-Dynamic range has the documented `?DfDynamicRangePartitionCondition`
-placeholder that can be embedded in that custom query. The current connector
-surface does not expose an equivalent custom-query pattern for physical table
-partitions. Therefore the framework contract is:
-
-```text
-FULL:
-  NONE | DYNAMIC_RANGE | PHYSICAL_PARTITIONS
-
-INCREMENTAL:
-  NONE | DYNAMIC_RANGE
-```
-
-This is a framework capability decision based on the documented/custom-query
-surface and observed Fabric UI behavior; it should not be interpreted as a
-general claim that SQL Server cannot combine incremental extraction with a physically partitioned table.
+The prior `PHYSICAL_PARTITIONS` option is now **unsupported** and fails
+`INVALID_COPY_OPTIONS` in the FULL adapter. Do not silently change an
+existing production config to `NONE`; review its intended policy. The
+DEV benchmark scenario selector replaces the retired
+`PARTITIONED_PHYSICAL` case with `PARTITIONED_DYNAMIC` and can normalize
+legacy **BENCHMARK** metadata during scenario selection.
 
 ### Permanent benchmark fixture
 
-The benchmark creates a separate **database on the same EC2 SQL Server 2022 Developer container**:
+The benchmark remains a separate **database on the same EC2 SQL Server
+2022 Developer instance**:
 
 ```text
 sql_benchmark_db
 ```
 
-with two permanent tables containing the same deterministic logical rows:
+Two 10,000,000-row source tables retain the **same logical data** and
+`CHAR(512)` payload but have different SQL Server physical layouts:
 
 ```text
 benchmark.copy_source_unpartitioned
 benchmark.copy_source_partitioned
 ```
 
-Default scale:
-
-```text
-10,000,000 rows per table
-CHAR(512) payload per row
-same logical schema and generated values
-```
-
-The partitioned table uses monthly `event_date` partitions for 2026. Both tables
-remain in the source database after setup; benchmark scenarios change only
-metadata/runtime strategy, not the source data.
-
-The benchmark scenarios are:
+The partitioned source uses monthly `event_date` partitions in 2026.
+That source layout remains useful even though Fabric always uses
+**query-mode** Copy. Four benchmark scenarios vary source layout versus
+connector execution strategy:
 
 ```text
 UNPARTITIONED_NONE
 UNPARTITIONED_DYNAMIC
 PARTITIONED_NONE
-PARTITIONED_PHYSICAL
+PARTITIONED_DYNAMIC
 ```
 
-This separates physical-layout effects from Copy Activity execution strategy and
-avoids inflating the e-commerce business fixture only to manufacture a scale
-test.
+No benchmark data needs to be regenerated solely for this change.
 
 ## Benchmark procedure
 
@@ -323,4 +278,4 @@ that every connector supports the same partition mechanisms.
 
 ### EC2 SQL Server Developer sizing note
 
-The benchmark generator defaults to **10,000,000 rows per table** across two permanent fixture tables (`CHAR(512)` payload), reflecting the original benchmark intent rather than the short-lived RDS Express-sized 1M version. This is a DEV/test workload: confirm EBS free space, SQL data/log growth and Fabric egress cost before generation. Do not assume 80 GiB EBS will always be sufficient for arbitrary future increases in test data or index size. Retest generic `SqlServerSource`/`SqlServerTable` serialization, Query/Table and partition options in Fabric DEV; identical SQL expressions do not guarantee connector-level acceptance.
+The benchmark generator defaults to **10,000,000 rows per table** across two permanent fixture tables (`CHAR(512)` payload), reflecting the original benchmark intent rather than the short-lived RDS Express-sized 1M version. This is a DEV/test workload: confirm EBS free space, SQL data/log growth and Fabric egress cost before generation. Do not assume 80 GiB EBS will always be sufficient for arbitrary future increases in test data or index size. Retest generic `SqlServerSource` query-mode and partition options in Fabric DEV; repository validation alone does not establish runtime acceptance.

@@ -74,6 +74,12 @@ scenario is not changed by a later seed run. The scenario selector below
 controls activation; an all-config master run should not include benchmarks
 until one is explicitly enabled.
 
+**Existing DEV upgrade:** if a benchmark config was previously seeded using
+`PHYSICAL_PARTITIONS`, run the updated scenario selector once (including
+`DISABLE`) to normalize that legacy BENCHMARK-only option. The fresh-install
+seed intentionally does not overwrite existing benchmark settings. Other source
+configs are not changed by this benchmark utility.
+
 ## Scenario selection
 
 Edit only the two local variables in
@@ -90,7 +96,7 @@ Supported scenarios:
 UNPARTITIONED_NONE
 UNPARTITIONED_DYNAMIC
 PARTITIONED_NONE
-PARTITIONED_PHYSICAL
+PARTITIONED_DYNAMIC
 DISABLE
 ```
 
@@ -99,7 +105,8 @@ parallelism. Use a positive integer only for a later benchmark-backed tuning tes
 
 The scenario script atomically disables other benchmark configs, activates exactly one, sets
 its `copy_options`, selects a scenario-specific Bronze target table, and returns
-the `ingestion_config_id`.
+the `ingestion_config_id`. **All four active scenarios use query-mode Copy**;
+source tables may still have different physical SQL Server layouts.
 
 Run `pl_ingest_orchestrator` with an explicit request:
 
@@ -134,7 +141,7 @@ Run at least:
 | UNPARTITIONED_NONE | unpartitioned | NONE |
 | UNPARTITIONED_DYNAMIC | unpartitioned | DYNAMIC_RANGE on benchmark_id |
 | PARTITIONED_NONE | monthly physical partitions | NONE |
-| PARTITIONED_PHYSICAL | monthly physical partitions | PHYSICAL_PARTITIONS |
+| PARTITIONED_DYNAMIC | monthly physical partitions | DYNAMIC_RANGE on benchmark_id |
 
 Record the Copy Activity output/monitoring metrics for each run, especially
 duration, rows, data volume, throughput, and used parallel copies. Also observe
@@ -152,4 +159,8 @@ The benchmark uses a **separate database on the existing EC2 SQL Server 2022 Dev
 
 SQL Server **Developer Edition is for development/testing, not production use**. Capture EC2 instance type, EBS size/IOPS, SQL Server edition, CPU and memory load, network egress, row counts and effective parallelism for each run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
 
-`PARTITIONED_PHYSICAL` also requires a source table that is genuinely partitioned; validate DDL support, actual partition layout and copy behavior on the chosen SQL Server version/edition before reporting a result. Do not assume higher parallelism is faster on a burstable EC2 SQL Server instance.
+The physically partitioned source table is retained to study how SQL Server
+physical layout affects `NONE` versus `DYNAMIC_RANGE` **query-mode** Copy.
+`PHYSICAL_PARTITIONS` is not an available framework copy strategy.
+Do not assume Dynamic Range always equals native physical-partition scan
+performance or that more parallelism is faster on a burstable EC2 instance.
