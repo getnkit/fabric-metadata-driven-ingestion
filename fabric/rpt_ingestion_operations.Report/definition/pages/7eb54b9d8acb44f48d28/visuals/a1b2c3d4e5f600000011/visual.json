@@ -137,6 +137,24 @@
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "ObjectHistory"
+                  }
+                },
+                "Property": "end_time"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
       }
     },
     "drillFilterOtherVisuals": true,
@@ -282,24 +300,6 @@
           }
         }
       ]
-    },
-    "sortDefinition": {
-      "sort": [
-        {
-          "field": {
-            "Column": {
-              "Expression": {
-                "SourceRef": {
-                  "Entity": "ObjectHistory"
-                }
-              },
-              "Property": "end_time"
-            }
-          },
-          "direction": "Descending"
-        }
-      ],
-      "isDefaultSort": false
     }
   }
 }
