@@ -66,7 +66,7 @@ The generated report must be runtime-validated after Git Sync.
 
 All stored times are UTC. No automatic page refresh is required for MVP.
 
-## 4. Visual refinement (2026-10-12)
+## 4. Initial code-authored prototype: visual refinement (superseded)
 
 - Zero-fill DAX count KPIs (especially Failed Sources). Retain semantic counts.
 - Show UTC date plus hour/minute for model timestamps; source SQL values stay intact.
@@ -79,7 +79,7 @@ All stored times are UTC. No automatic page refresh is required for MVP.
   time formatting, correct status mapping and history sorting. Static checks
   do not establish runtime behavior.
 
-## 5. Compact operations view (2026-10-12)
+## 5. Initial code-authored prototype: compact operations view (superseded)
 
 - Header now states only **latest recorded batch per source** and **UTC**;
   descriptions of status precedence remain in this engineering note rather
@@ -108,7 +108,7 @@ All stored times are UTC. No automatic page refresh is required for MVP.
   no title scrollbars, UTC time, and column width after Fabric Sync. **Static
   PBIR JSON checks do not prove Report import or runtime behavior.**
 
-## 6. DEV report acceptance record (2026-10-12)
+## 6. Initial prototype DEV acceptance record (2026-10-12)
 
 **Status: PASS — Power BI Operational Monitoring MVP, visual/runtime scope.**
 
@@ -137,3 +137,44 @@ No additional PBIR/TMDL/SQL pipeline edits are required to close the
 **Operational Monitoring Report MVP** on this evidence. The broader
 orchestrator-failure notification acceptance remains tracked separately in
 `docs/operations/orchestrator-failure-alerting.md`.
+
+## 7. Power BI Desktop-authored canonical baseline (2026-10-12)
+
+The **current official** Report and Semantic Model in `fabric/` use the
+PBIR/TMDL definitions authored via Power BI Desktop and committed back from
+Fabric as `rpt_ingestion_operations_practice` (commit `188663e`).
+The practice definitions replace the earlier code-authored report/model
+content in the canonical paths. The existing canonical Fabric item logical IDs
+are deliberately preserved to avoid breaking downstream references.
+
+- Official items: `rpt_ingestion_operations` (Report) and
+  `sm_ingestion_operations` (Semantic Model).
+- One page named **Operations**, 16:9 layout, with four KPI cards, a Source
+  System slicer, latest-batch summary table, companion outcome-count chart,
+  and **Object Execution History** (10 columns).
+- Semantic tables `LatestSource` and `ObjectHistory` use DirectQuery to
+  `audit.v_monitor_latest_source` and `audit.v_monitor_object_history`
+  in Fabric SQL Database, with an active single-direction relationship
+  by `source_system`.
+- **7 DAX measures**: `Source Systems`, `Failed Sources`, `Objects`,
+  `Latest Activity (UTC)`, `Successful Objects`, `Failed Objects`,
+  `Skipped Objects`. Earlier helper `Valid Source Option` and formatted-text
+  `Last Activity` are **not** part of the current model.
+- Slicer and status chart exclude null `source_system` using a direct visual
+  filter; no hardcoded allowlist. Source summary table/chart sort by Source
+  System ascending. Object History sorts by `end_time` descending.
+- The summary table includes Source System, Status, Objects, Success, Failed,
+  Skipped and Last End (UTC). History includes Source System, Object, Run Type,
+  Status, Source Rows, Target Rows, Duration (s), End (UTC), Error Code, and
+  Pipeline Run ID.
+- Timestamps remain UTC and are displayed with seconds; the KPI uses the
+  native DateTime measure rather than a FORMAT-to-text workaround.
+- All auditing limitations above remain unchanged: no RUNNING, pre-object-audit
+  failure, or guaranteed completeness for a batch still in progress.
+
+The prior screenshot acceptance belongs to the initial prototype. A screenshot
+of the new practice report in Fabric shows the expected All Sources data,
+metrics, and layout. **After applying the canonical replacements via Fabric
+Git Update, re-open the official Report and confirm rendering, credentials,
+filter interaction, and History sorting before decommissioning any workspace
+practice items.** Static file checks cannot certify that sync step.

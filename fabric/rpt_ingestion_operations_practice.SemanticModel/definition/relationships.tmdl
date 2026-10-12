@@ -1,4 +1,0 @@
-relationship 76183c45-85cd-b692-24e1-3aa362a953dd
-	fromColumn: ObjectHistory.source_system
-	toColumn: LatestSource.source_system
-

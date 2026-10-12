@@ -1,3 +1,18 @@
 model Model
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: th-TH
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["ObjectHistory","LatestSource"]
+
+ref table ObjectHistory
+ref table LatestSource
+
+ref cultureInfo en-US
+

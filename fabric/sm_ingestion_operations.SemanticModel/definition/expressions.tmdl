@@ -1,3 +1,0 @@
-/// Replace SQL server for the operational Fabric SQL Database; no credentials are stored here.
-expression ControlSqlServer = "6j37c7ougv4uthql2zudf5m3ra-6fcoxgexxg6ejngvdk4amt47k4.database.fabric.microsoft.com,1433" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
-expression ControlSqlDatabase = "sqldb_ingestion_control-9c67fb4e-b716-4b47-904b-185650af6a71" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]

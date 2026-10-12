@@ -1,59 +1,176 @@
 table ObjectHistory
+	lineageTag: 3c58417a-c436-4b30-9f71-c44f0741d291
+
 	column ingestion_log_id
 		dataType: int64
+		isNullable: false
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: afc4cebf-966a-40e9-9663-d9f64582944c
+		summarizeBy: sum
 		sourceColumn: ingestion_log_id
+
+		annotation SummarizationSetBy = Automatic
+
 	column source_system
 		dataType: string
+		sourceProviderType: nvarchar(100)
+		lineageTag: f9cb9a0a-c05e-4b64-b5bc-436f9962449b
+		summarizeBy: none
 		sourceColumn: source_system
+
+		annotation SummarizationSetBy = Automatic
+
 	column source_entity
 		dataType: string
+		sourceProviderType: nvarchar(257)
+		lineageTag: f931e37f-483e-4b19-bc27-e628ee822b00
+		summarizeBy: none
 		sourceColumn: source_entity
+
+		annotation SummarizationSetBy = Automatic
+
 	column ingestion_config_id
 		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 94fc299d-7e83-41ef-a489-7e6661eb1d4b
+		summarizeBy: sum
 		sourceColumn: ingestion_config_id
+
+		annotation SummarizationSetBy = Automatic
+
 	column batch_id
 		dataType: string
+		sourceProviderType: nvarchar(36)
+		lineageTag: 9e2aec19-89b4-4977-aaa7-89a554127aef
+		summarizeBy: none
 		sourceColumn: batch_id
+
+		annotation SummarizationSetBy = Automatic
+
 	column pipeline_run_id
 		dataType: string
+		isNullable: false
+		sourceProviderType: nvarchar(100)
+		lineageTag: de5bbb06-18ec-42b6-9447-0221bc7a7d9e
+		summarizeBy: none
 		sourceColumn: pipeline_run_id
+
+		annotation SummarizationSetBy = Automatic
+
 	column run_type
 		dataType: string
+		isNullable: false
+		sourceProviderType: varchar(20)
+		lineageTag: f8a3b5ca-76c7-47f2-b460-9f67e716f97c
+		summarizeBy: none
 		sourceColumn: run_type
+
+		annotation SummarizationSetBy = Automatic
+
 	column load_strategy
 		dataType: string
+		sourceProviderType: varchar(20)
+		lineageTag: 116b00d5-3472-4a4f-88b1-b378f1beafe7
+		summarizeBy: none
 		sourceColumn: load_strategy
+
+		annotation SummarizationSetBy = Automatic
+
 	column status
 		dataType: string
+		isNullable: false
+		sourceProviderType: varchar(20)
+		lineageTag: 4e316c53-44fb-43db-a438-43f24ad31075
+		summarizeBy: none
 		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
 	column source_row_count
 		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: d932edbe-9778-48e5-8d3e-545d2c3e0c77
+		summarizeBy: sum
 		sourceColumn: source_row_count
+
+		annotation SummarizationSetBy = Automatic
+
 	column target_row_count
 		dataType: int64
+		formatString: 0
+		sourceProviderType: bigint
+		lineageTag: b7e95589-718b-47f6-8d5c-970cfe042c8f
+		summarizeBy: sum
 		sourceColumn: target_row_count
+
+		annotation SummarizationSetBy = Automatic
+
 	column duration_seconds
 		dataType: int64
+		isNullable: false
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: a4734dbd-c264-442f-9e5d-769108aff743
+		summarizeBy: sum
 		sourceColumn: duration_seconds
+
+		annotation SummarizationSetBy = Automatic
+
 	column start_time
 		dataType: dateTime
-		formatString: "yyyy-mm-dd hh:nn"
+		isNullable: false
+		formatString: General Date
+		sourceProviderType: datetime2
+		lineageTag: 9bb11333-69cc-4e73-bb87-c3b082bba4af
+		summarizeBy: none
 		sourceColumn: start_time
+
+		annotation SummarizationSetBy = Automatic
+
 	column end_time
 		dataType: dateTime
-		formatString: "yyyy-mm-dd hh:nn"
+		isNullable: false
+		formatString: yyyy-mm-dd hh:nn:ss
+		sourceProviderType: datetime2
+		lineageTag: f78cd4b5-739b-43ad-a978-f80e80869d1c
+		summarizeBy: none
 		sourceColumn: end_time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isDateTimeCustom":true}
+
 	column error_code
 		dataType: string
+		sourceProviderType: nvarchar(100)
+		lineageTag: b209814f-70fa-41a7-8efe-7dd0effeb3a6
+		summarizeBy: none
 		sourceColumn: error_code
+
+		annotation SummarizationSetBy = Automatic
+
 	column error_message
 		dataType: string
+		sourceProviderType: nvarchar(4000)
+		lineageTag: 56429a76-fa7a-442a-91ae-a612e2e7321b
+		summarizeBy: none
 		sourceColumn: error_message
-	partition 'ObjectHistory' = m
+
+		annotation SummarizationSetBy = Automatic
+
+	partition ObjectHistory = m
 		mode: directQuery
 		source =
-			let
-				Source = Sql.Database(ControlSqlServer, ControlSqlDatabase),
-				Data = Source{[Schema="audit", Item="v_monitor_object_history"]}[Data]
-			in
-				Data
+				let
+				    Source = Sql.Database("6j37c7ougv4uthql2zudf5m3ra-6fcoxgexxg6ejngvdk4amt47k4.database.fabric.microsoft.com,1433", "sqldb_ingestion_control-9c67fb4e-b716-4b47-904b-185650af6a71"),
+				    audit_v_monitor_object_history = Source{[Schema="audit",Item="v_monitor_object_history"]}[Data]
+				in
+				    audit_v_monitor_object_history
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
