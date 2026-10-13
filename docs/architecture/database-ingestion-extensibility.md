@@ -16,6 +16,7 @@ pl_ingest_orchestrator
                       -> pl_ingest_sql_server_full_adapter
                   -> SQL_SERVER|INCREMENTAL
                       -> pl_ingest_sql_server_incremental_adapter
+                          -> pl_ingest_sql_server_incremental_loader
 ```
 
 The DATABASE router is intentionally a thin pattern-level connector/strategy
@@ -77,8 +78,7 @@ actual Copy pair and execution mode rather than inheriting this setting blindly.
 
 ## Copy type-conversion policy
 
-All six SQL Server 2022 Developer on EC2 -> Lakehouse Bronze Copy branches (FULL Query/Table AUTO/TUNED
-and INCREMENTAL Query AUTO/TUNED) use automatic source-schema mapping with
+All four SQL Server 2022 Developer on EC2 -> Lakehouse Bronze Copy branches (FULL and INCREMENTAL, each with Query-mode AUTO/TUNED) use automatic source-schema mapping with
 `TabularTranslator.typeConversion = true` and
 `typeConversionSettings.allowDataTruncation = false`.
 

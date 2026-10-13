@@ -1,41 +1,142 @@
-# fabric-metadata-driven-ingestion
+# Fabric Metadata-Driven Batch Ingestion
 
-The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2** using Fabric's generic **SQL Server** connector; the Control Plane remains a separate **Fabric SQL Database**. Connection type: `SQL_SERVER`, logical source ref: `SQL_SERVER_ECOMMERCE`. Fresh installations use `scripts/control/03_seed_connection_settings.sql` to register source and target connections.
+**A reproducible batch ingestion framework built on Microsoft Fabric.**
 
-## EC2 Source Infrastructure
+Microsoft Fabric Data Factory · Fabric SQL Database · Lakehouse/Delta ·
+SQL Server · SFTP · PySpark · Power BI
 
-- [Docker Compose source stack](infrastructure/source/README.md) — SQL Server 2022 Developer + SFTP on one EC2 host, environment template, persistent SFTP host identity and safe deployment/upload instructions.
+Instead of hand-building and maintaining a separate end-to-end pipeline for
+every source object, this personal engineering project uses **one shared
+Control Plane** to determine *what to ingest*, *how to ingest it*, and
+*where to land it*. Fabric Pipelines implement routing and connector-native
+copy; Notebooks handle reusable file parsing and failed-batch Delta cleanup.
 
-## Starter Kit — Fresh Installation
+**Current implementation:** SQL Server 2022 Developer on EC2 and SFTP demo
+sources, writing append-only Bronze Delta tables. This is a **batch-only DEV
+framework**, not a production-certified ingestion platform.
 
-This repository tracks the **current** Microsoft Fabric ingestion framework,
-not a chain of historical upgrade patches.
+## Architecture at a glance
 
-1. [Environment Rebuild — Fresh DEV From Git](docs/operations/environment-rebuild.md): follow the end-to-end, workspace-loss / clean-room re-creation checklist and ID rebinding inventory.
-2. [Starter Kit run order](scripts/RUN_ORDER.md): prepare Fabric items,
-   five Variable Library runtime bindings, core SQL, and optional demo fixtures.
-3. **Mandatory Control Plane scripts:** `01_create_control_schema.sql` →
-   `02_create_control_procedures.sql` →
-   `99_verify_control_plane.sql`.
-4. **Optional DEV demo only:** `03_seed_connection_settings.sql` and
-   `04_seed_ingestion_metadata.sql` (SQL Server 2022 Developer on EC2 + SFTP examples).
-5. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
-   describes constraints, non-destructive bootstrap and release gates.
+```mermaid
+flowchart LR
+    subgraph SRC["Demo source systems (EC2)"]
+      SQL["SQL Server 2022"]
+      SFTP["SFTP — CSV / TSV"]
+    end
+    subgraph FABRIC["Microsoft Fabric"]
+      CP[("SQL Database<br/>Config · Connections · Watermarks")]
+      ORCH["Data Factory Pipelines<br/>Orchestrator · Dispatcher · Controller · Routers"]
+      SQLCP["SQL Server Query-mode Copy<br/>FULL / INCREMENTAL"]
+      BIN["SFTP Binary Copy"]
+      LAND["Lakehouse Files<br/>Landing"]
+      NB["Notebook<br/>Parse / append"]
+      BRONZE[("Lakehouse Bronze<br/>Append-only Delta")]
+      AUDIT[("SQL Database<br/>Terminal Object Audit")]
+      VIEWS["Monitoring SQL Views"]
+      PBI["Semantic Model +<br/>Power BI Operations Report"]
+    end
+    CP -- "metadata / checkpoints" --> ORCH
+    ORCH --> SQLCP
+    ORCH --> BIN
+    SQL --> SQLCP --> BRONZE
+    SFTP --> BIN --> LAND --> NB --> BRONZE
+    ORCH -- "transactional finalize" --> AUDIT
+    AUDIT --> VIEWS --> PBI
+    ORCH -- "guarded advancement" --> CP
+```
 
-**Note:** Installation scripts do not upgrade existing populated Control Databases. Review migrations separately.
+The full [pipeline topology and design rationale](docs/portfolio/architecture.md)
+covers internal adapters, failure compensation, and the separation between
+control state and source data.
 
-## Architecture
+## Implemented capabilities
 
-- [Fabric Data Factory limits and framework guardrails](docs/architecture/fabric-data-factory-limits.md) — platform limits and framework design guardrails.
-- [Database copy performance strategy](docs/architecture/database-copy-performance.md) — metadata-driven dynamic-range partitioning and evidence-based parallel-copy overrides.
-- [SQL Server 2022 Developer on EC2 copy benchmark](scripts/source/benchmark-db/README.md) — 10M-row per table unpartitioned/physically-partitioned source fixtures for query-mode NONE vs DYNAMIC_RANGE testing.
-- [File ingestion design](docs/architecture/file-ingestion-design.md) — SFTP Landing/Bronze design, recursive ingestion, watermarking, and reusable file loader.
-- [Pipeline activity naming](docs/architecture/pipeline-activity-naming.md) — naming and pipeline-vs-notebook responsibility boundaries.
+| Area | What is implemented |
+| --- | --- |
+| **Metadata-driven execution** | One `control.ingestion_config` table; config selection by all-active, source-system scope, or explicit config requests |
+| **Database ingestion** | SQL Server FULL / timestamp-watermark INCREMENTAL; query-mode Copy; `NONE` or `DYNAMIC_RANGE` partitioning; optional parallel-copy override |
+| **File ingestion** | SFTP FULL / incremental by remote `last_modified_time`; Binary Copy into Landing; Notebook parses **DELIMITED_TEXT only** (CSV/TSV) |
+| **Execution intent** | `REGULAR` and `BACKFILL`, independent from persisted `FULL` / `INCREMENTAL` load strategy |
+| **State safety** | Persistent watermarks, guarded success finalization, optimistic state-update conflict detection; no checkpoint advancement for backfill or no-data skips |
+| **Bronze discipline** | Immutable successful batch appends with batch/run lineage; compensating cleanup scoped to the current failed execution |
+| **Operations** | Terminal object audit with SUCCESS / FAILED / SKIPPED plus supported WARN / CANCELLED statuses; source-level SQL views and a Desktop-authored Power BI report |
+| **Rebuildability** | Fabric item definitions, SQL scripts, EC2 Docker Compose source setup, fixtures, and a [fresh-DEV rebuild runbook](docs/operations/environment-rebuild.md) |
 
-## Operations
+The operational entry point is **`pl_ingest_orchestrator`**. Internal child
+pipelines are implementation details, not independent run targets.
 
-- [Bronze compensating cleanup](docs/operations/bronze-compensating-cleanup.md) — defines the Bronze invariant: every successful REGULAR/BACKFILL execution appends a new immutable batch; deletion is limited to compensating cleanup of the current failed batch.
-- [Retry, rerun, and backfill semantics](docs/operations/retry-rerun-backfill.md) — defines `run_type` (REGULAR/BACKFILL) independently from configured `load_strategy` (FULL/INCREMENTAL), including FULL and INCREMENTAL backfill behavior.
-- [Top-level run request examples](docs/operations/run-request-examples.md) — run all active configs, optionally scope ALL ACTIVE by `source_system`, or submit an explicit mixed REGULAR/BACKFILL request array. Separate source-system runs use distinct Batch IDs and share one pipeline definition.
-- [Orchestrator failure alerting](docs/operations/orchestrator-failure-alerting.md) — one pipeline-level failure notification boundary without notification activities in every child pipeline.
-- [Operational monitoring report](docs/operations/monitoring-report.md) — current Desktop-authored Power BI baseline, per-source terminal audit summaries, object history and known limits.
+## Design decisions worth discussing
+
+- **Control Plane separate from Data Plane.** SQL Database keeps execution
+  metadata, watermark state, and audit; Lakehouse Bronze stores ingestion rows.
+- **Connector-native Copy where possible.** SQL Server ingestion stays in
+  Fabric Copy; Spark is used when Landing files need parsing or Delta cleanup.
+- **AUTO vs TUNED are distinct Copy branches.** A DEV PoC showed that explicitly
+  setting `parallelCopies = 0` is *not* equivalent to omitting the property
+  for service-managed AUTO behavior.
+- **Backfill is not a watermark reset.** Historical incremental ranges are
+  explicit and cannot overwrite the current operational checkpoint.
+- **No distributed transaction claim.** Failed Bronze writes require
+  execution-scoped compensation; only success finalization can advance
+  operational state.
+- **Keep the scope honest.** No implemented CDC, API connector, streaming,
+  Silver/Gold transformations, data-contract subsystem, or production SLA.
+
+See [Architecture & Trade-offs](docs/portfolio/architecture.md) and
+[Interview Walkthrough](docs/portfolio/interview-notes.md) for explanations
+grounded in the current repository rather than aspirational features.
+
+## Observed DEV evidence (not a production benchmark)
+
+| Observation | Recorded outcome | Interpretation |
+| --- | --- | --- |
+| Demo all-active run | 8 terminal object audits: 2 SUCCESS, 6 SKIPPED | Runtime example; not a full failure-path certification |
+| Dispatcher `batchCount` comparison | 9m29s at 3 vs 4m44s at 8 for the documented light DEV run | Scoped DEV experiment, **not** general capacity scaling |
+| Isolated 10M-row SQL Copy PoC | `parallelCopies: 0` copied 10M rows, `copyDuration=483s`, `usedParallelCopies=1` | Tests explicit zero; **not** AUTO equivalence |
+| Power BI monitoring | Observed 2 Source Systems, 8 latest-batch Objects, 0 Failed Sources | Snapshot-based monitoring evidence, not real-time master job status |
+
+Detailed [Evidence Register & Benchmark Plan](docs/portfolio/evidence.md)
+separates observed results from experiments still requiring complete runs.
+Screenshots/recordings are not bundled into the repository as verified evidence.
+
+## Getting started / rebuilding later
+
+**For a fresh DEV:** follow
+[Environment Rebuild — Fresh DEV From Git](docs/operations/environment-rebuild.md)
+first. It covers infrastructure, Fabric Git sync, SQL bootstrap, Connections,
+Variable Library values, metadata seeds, Power BI DirectQuery rebinding,
+and acceptance checks.
+
+For detailed step order and sample data, see
+[scripts/RUN_ORDER.md](scripts/RUN_ORDER.md). The demo is reproducible from
+Definitions + generated fixtures, but **Git is not a backup** of historical
+watermarks, audit records, Lakehouse rows or credentials.
+
+```text
+fabric/                  Fabric item definitions: 12 Pipelines, 3 Notebooks,
+                         Control SQL Database, Lakehouse, Library, Report/Model
+scripts/control/         SQL bootstrap, connection/config seeds, verification
+scripts/source/          SQL Server demo + benchmark fixtures; SFTP CSV samples
+infrastructure/source/   Docker Compose for SQL Server + SFTP
+docs/architecture/       Technical rationale and connector contracts
+docs/operations/         Runbooks, monitoring and failure semantics
+docs/portfolio/          Architecture story, measured evidence, interview notes
+```
+
+**Other useful references:** [Run parameters](docs/operations/run-request-examples.md) ·
+[Watermark semantics](docs/architecture/generic-incremental-watermark.md) ·
+[Copy tuning](docs/architecture/database-copy-performance.md) ·
+[Bronze compensation](docs/operations/bronze-compensating-cleanup.md) ·
+[Monitoring report](docs/operations/monitoring-report.md)
+
+### Portability and scope caveat
+
+The checked-in Fabric Variable Library and Power BI DirectQuery model
+contain **DEV environment IDs / endpoint names**. These are not portable
+credentials. Rebinding and permission grants are mandatory in a new workspace.
+The SQL Project also contains a workspace-specific Entra principal that must
+be reviewed rather than applied blindly.
+
+The architecture is designed to *illustrate engineering choices* with
+runnable DEV artifacts, not to imply deployment to multiple vendors or
+full end-to-end disaster recovery.
