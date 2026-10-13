@@ -159,7 +159,10 @@ Current reusable notebooks:
 
 ```text
 nb_cleanup_bronze_batch_rows
-= idempotent Delta cleanup scoped by _batch_id
+= idempotent Delta cleanup scoped by (_batch_id, _pipeline_run_id)
+
+nb_cleanup_landing_batch_files
+= execution-scoped Lakehouse Files Landing-folder cleanup
 
 nb_load_file_landing_to_bronze
 = batch-scoped recursive Landing parse + technical metadata + Bronze Delta append
