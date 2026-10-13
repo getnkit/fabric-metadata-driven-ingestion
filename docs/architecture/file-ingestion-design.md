@@ -138,36 +138,21 @@ The framework intentionally does not auto-clean after an ambiguous
 `sp_finalize_success` failure because the control transaction may already have
 committed.
 
-Business data-quality and a governed Data Contract model are intentionally outside
-the current M76 scope.
+Business data-quality and a governed Data Contract model are outside
+the current implementation scope.
 
-## Scope of M76
+## FULL snapshot semantics
 
-The first implementation proves one metadata-driven CSV path:
+The `inventory_snapshot.csv` fixture represents the complete current
+inventory. Its stable filename avoids a FULL config sweeping up historical
+date-stamped snapshots in the same delivery folder. Each successful FULL
+ingestion stores an execution-scoped Landing copy and appends a Bronze batch.
+The separate `inventory_movement` FILE/INCREMENTAL feed uses the shared
+checkpoint table and the remote SFTP Last Modified timestamp.
 
-```text
-FILE + FULL + CSV
-  -> Landing
-  -> Bronze
-```
+## SFTP source and Landing path
 
-The first FILE/FULL fixture is deliberately modeled as a complete inventory
-snapshot so FULL semantics are natural: the delivered file represents the full
-inventory state for the snapshot time.
-
-The producer publishes a stable current-snapshot filename (`inventory_snapshot.csv`).
-Using a stable name avoids a FULL run accidentally replaying every historical
-date-stamped snapshot in the source folder. Each run preserves the raw file in
-a batch-specific Landing subfolder before Bronze ingestion.
-
-Incremental FILE ingestion reuses the framework-wide pipeline watermark state
-rather than introducing a FILE-specific state table. The first incremental feed
-is `inventory_movement` and uses the source file Last Modified timestamp as
-its checkpoint during normal REGULAR execution.
-
-## First physical adapter and source story
-
-The first physical FILE adapter is SFTP.
+The implemented physical FILE adapter is SFTP.
 
 The demo models an external logistics vendor. The provider's
 Warehouse Management System (WMS) publishes a complete inventory snapshot to its
@@ -209,7 +194,7 @@ The source inventory rows use the same SKU convention as the ECOMMERCE catalog
 (`SKU000001`, `SKU000002`, and so on), which gives the demo a realistic
 cross-source relationship without duplicating the SQL Server source tables.
 
-## Initial FILE fixture
+## SFTP FULL fixture
 
 Repository fixture:
 
@@ -236,7 +221,7 @@ inventory_status
 snapshot_at
 ```
 
-## Initial FILE configuration
+## SFTP FULL configuration
 
 ```text
 source_system      = LOGISTICS_VENDOR
@@ -267,21 +252,16 @@ watermark_field    = NULL
 }
 ```
 
-The FILE/FULL config is active because its route has passed acceptance testing.
+The SFTP FILE/FULL config is active in the DEV seed.
 
-## SFTP account roles
+## SFTP account boundary (current DEV)
 
-The demo uses two SFTP identities to preserve the producer/consumer boundary:
-
-```text
-vendor_sftp_user
-= producer-side account used to simulate the external logistics vendor delivering files
-
-fabric_sftp_user
-= read-only consumer account used by Fabric Data Factory
-```
-
-The account name `vendor_sftp_user` is therefore intentional in this scenario.
+The versioned Docker Compose fixture provisions **one** SFTP login,
+`sftp_logistics_vendor`, using `atmoz/sftp`. The demo uses host-side
+SCP staging followed by copy into the bound outbound folder; Fabric accesses
+that folder via this single demo SFTP identity. The current DEV setup does
+not enforce separate producer and read-only consumer identities. Those
+would require additional account/permission setup.
 
 ## FILE incremental feed
 
@@ -514,7 +494,7 @@ The **FILE Router** performs the single framework-level supported-format guard b
 
 ## Generating new incremental SFTP fixtures for DEV tests
 
-The two checked-in `inventory_movement_*.csv` files are static reproducible
+The three checked-in `inventory_movement_*.csv` files are static reproducible
 fixtures. To simulate new provider deliveries, run the [local Python movement
 generator](../../scripts/source/sftp/README.md): one new 6-row CSV, no arguments,
 UTC `YYYY/MM/` subfolder, unique UTC-stamped filename and movement IDs.
