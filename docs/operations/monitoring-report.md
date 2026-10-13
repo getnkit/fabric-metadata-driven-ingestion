@@ -109,8 +109,11 @@ No visual must depend on the names of the two demo sources.
   relationships.
 - `scripts/monitoring/01_create_monitoring_views.sql` — runnable SQL views.
 - `fabric/sqldb_ingestion_control.SQLDatabase/audit/Views/` — SQL Project views.
-- [Power BI README](../../powerbi/IngestionOperations/README.md) — deployment
-  instructions for the Desktop-authored Report.
-
-The superseded code-generated Power BI prototype and its intermediate
-decisions are preserved in Git **history**; they are not deployment guidance.
+For a new workspace, create the three monitoring views, import/sync both
+canonical Fabric artifacts, rebind the model's two DirectQuery partitions to
+the new SQL Database, configure Entra credentials and verify the four KPI
+cards, Source System slicer, latest-batch summary and 10-column history.
+See [Environment Rebuild](environment-rebuild.md) for the deployment and
+connection/ID checklist. For future edits, use Power BI Desktop and commit
+the native PBIR/TMDL definitions to the canonical `fabric/` paths.
+The earlier generated prototype remains only in Git history.
