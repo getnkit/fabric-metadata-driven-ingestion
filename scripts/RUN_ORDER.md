@@ -5,6 +5,12 @@ Fabric ingestion framework. It is NOT a historical upgrade checklist.
 Core Control/Audit SQL is the same across DEV, UAT and PROD; source demo and
 benchmark fixtures are optional and DEV-only.
 
+**Starting from a lost/empty workspace?** First follow the
+[end-to-end Environment Rebuild runbook](../docs/operations/environment-rebuild.md)
+for prerequisites, source infrastructure, connection/ID rebinding, report
+DirectQuery binding and recovery limitations. This file remains the canonical
+SQL/script run order and runtime contract reference.
+
 ## A. Prerequisites / Fabric items
 
 - Fabric workspace with `sqldb_ingestion_control`, Bronze Lakehouse, the

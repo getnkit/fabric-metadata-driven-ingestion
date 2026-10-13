@@ -11,14 +11,15 @@ The current relational demo source is **SQL Server 2022 Developer on Ubuntu EC2*
 This repository tracks the **current** Microsoft Fabric ingestion framework,
 not a chain of historical upgrade patches.
 
-1. [Starter Kit run order](scripts/RUN_ORDER.md): prepare Fabric items,
+1. [Environment Rebuild — Fresh DEV From Git](docs/operations/environment-rebuild.md): follow the end-to-end, workspace-loss / clean-room re-creation checklist and ID rebinding inventory.
+2. [Starter Kit run order](scripts/RUN_ORDER.md): prepare Fabric items,
    five Variable Library runtime bindings, core SQL, and optional demo fixtures.
-2. **Mandatory Control Plane scripts:** `01_create_control_schema.sql` →
+3. **Mandatory Control Plane scripts:** `01_create_control_schema.sql` →
    `02_create_control_procedures.sql` →
    `99_verify_control_plane.sql`.
-3. **Optional DEV demo only:** `03_seed_connection_settings.sql` and
+4. **Optional DEV demo only:** `03_seed_connection_settings.sql` and
    `04_seed_ingestion_metadata.sql` (SQL Server 2022 Developer on EC2 + SFTP examples).
-4. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
+5. [SQL Control Plane baseline](docs/operations/sql-control-plane-hardening.md)
    describes constraints, non-destructive bootstrap and release gates.
 
 **Note:** Installation scripts do not upgrade existing populated Control Databases. Review migrations separately.
