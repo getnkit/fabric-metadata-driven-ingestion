@@ -253,6 +253,28 @@ PARTITIONED_DYNAMIC       (query, DYNAMIC_RANGE on event_date)
 
 No benchmark data needs to be regenerated solely for this change.
 
+## Observed AUTO vs explicit zero (DEV PoC, 2026-10-12)
+
+A separate temporary Copy Activity tested the same **10,000,000-row**
+`benchmark.copy_source_partitioned` using query-mode `DYNAMIC_RANGE`
+on `event_date`. With the Copy payload explicitly setting
+`"parallelCopies": 0`, the run **succeeded**, copying 10,000,000 rows;
+`usedParallelCopies = 1`, `copyDuration = 483` seconds, reported
+throughput approximately **23.08 MB/s**, and `usedDataIntegrationUnits = 4`.
+
+With the property **omitted** (the native AUTO mode), the run was
+observed **in progress** using `usedParallelCopies = 4`. This is direct
+evidence of **different runtime parallelism** between omitted vs zero in
+this workload; it does **not** establish a completed AUTO elapsed-time
+or representative throughput benchmark. Do not promote the partial AUTO
+result into a performance-speedup claim.
+
+**Design consequence:** keep `if_parallel_copy_override` and two Copy
+branches (AUTO omits the property; TUNED supplies a positive override).
+The pipeline parameter `0` is strictly a routing sentinel and must
+not be forwarded as a numeric `parallelCopies` value. This is a
+behavioral guardrail, not an instruction to tune every source manually.
+
 ## Benchmark procedure
 
 Use representative data volume and compare the same source/sink path.

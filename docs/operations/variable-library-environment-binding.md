@@ -19,10 +19,9 @@ A Connection GUID is **not** a workspace ID or SQL Database item ID. Record each
 one from the correct DEV/UAT/PROD workspace and connection, and verify that the
 workspace user has permission to use it. Do not paste display names instead of
 GUIDs. Set the workspace GUID and other runtime bindings in the active value set for each environment.
-Clear DEV-specific values before publishing the Starter Kit as a reusable public template.
-Do not commit passwords, tokens, or other credentials.
+The current Git-tracked Variable Library still contains **DEV-specific GUIDs** in its default values. These are not credentials but are **not portable** to a new workspace. Do not deploy/run in another environment before replacing and validating all five active values. See the [Environment Rebuild guide](environment-rebuild.md) for an explicit inventory and setup order. Do not commit passwords, tokens, or other credentials.
 
-Each of the eleven framework pipelines declares only the library variables it
+Each of the twelve framework pipelines declares only the library variables it
 consumes under `properties.libraryVariables` and resolves them locally with
 `@pipeline().libraryVariables.<name>`. This deliberately **does not** introduce
 pipeline parameter forwarding for runtime connection IDs.
