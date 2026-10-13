@@ -108,8 +108,13 @@ host key, overwrite the existing `.env`, or run `docker compose down -v`.
 
 ## D. Create the Fabric workspace and import definitions
 
-1. Create/connect the fresh workspace and configure Source control for this
-   repository and chosen branch/revision. Inspect the Git Update preview.
+1. Create/connect the fresh workspace and configure **Settings > Git integration**
+   for repository `getnkit/fabric-metadata-driven-ingestion`, the desired
+   branch, and **Git folder `fabric`**. Do **not** leave the folder blank:
+   the Fabric item definitions live under `fabric/`, not the repository root.
+   Prefer a dedicated `rebuild/<environment>` branch based on the selected
+   baseline so DEV-specific edits cannot accidentally affect `main`.
+   Inspect the initial **Update from Git** preview before importing items.
    If desired items are unsupported or fail to materialize, create the
    missing item in Fabric by hand and reconcile against its tracked definition;
    do not assume a Git commit alone deploys every resource.
@@ -200,8 +205,12 @@ values with the worksheet values:
 
 The committed Library currently includes **old DEV GUIDs as defaults**.
 Treat them as **stale in a new workspace**. Never attempt a run before
-replacing/validating all five. Check each pipeline's Library variables
-bindings rather than hardcoding individual pipeline parameters. See
+replacing/validating all five. A newly imported Library initially uses
+its **Default** value set; the active-set selection is workspace state,
+whereas Default values are stored in Git. After rebinding, review the
+Source control diff and do not Commit new environment GUIDs to `main`.
+Check each pipeline's Library variables bindings rather than hardcoding
+individual pipeline parameters. See
 [Variable Library binding contract](variable-library-environment-binding.md).
 
 ### F2. Check pipeline/notebook graph
