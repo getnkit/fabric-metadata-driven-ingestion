@@ -1,4 +1,4 @@
-# Evidence Register & Benchmark Plan
+# Experimental Evidence & Benchmark Test Plan
 
 **Rule:** observed source logs/screenshots are different from estimates,
 controlled comparisons, and future tests. Numbers below come from the
@@ -76,10 +76,9 @@ production cost, scalability or enterprise SLAs.
 
 **These files are proposed names, not existing images.** Add only actual,
 reviewed screenshots after masking passwords, tenant-specific endpoints,
-private hostnames, personal identities and credentials. For the publicly
-shared portfolio, use synthetic data and no private client artifacts.
+private hostnames, personal identities and credentials. For any public technical documentation, use synthetic data and no private client artifacts.
 
-## Portfolio claims checklist
+## Verified and outstanding test coverage
 
 - [x] Metadata-driven SQL Server + SFTP batch ingestion implementation exists
 - [x] FULL + INCREMENTAL routing with REGULAR + BACKFILL intent
@@ -91,4 +90,4 @@ shared portfolio, use synthetic data and no private client artifacts.
 - [ ] Public screenshot bundle from verified artifacts
 - [ ] Production-scale throughput, SLO and sustained reliability evidence
 
-The unchecked entries are deliberately **not** advertised as completed.
+The unchecked entries are deliberately **not** represented as completed.

@@ -1,9 +1,8 @@
 # Architecture & Design Decisions
 
 **Scope:** implemented batch framework at the current Git baseline.
-This is a walkthrough for portfolio reviewers; the canonical operational
-contracts are maintained under [architecture](../architecture/) and
-[operations](../operations/).
+This technical walkthrough explains implemented design decisions and boundaries.
+The linked references and tracked Fabric/SQL artifacts define the current behavior.
 
 ## What problem does this solve?
 
@@ -129,7 +128,7 @@ finalization. This is the point of the compensating-cleanup design.
 This is **compensation + optimistic state control**, not a distributed
 transaction across Delta and SQL.
 
-## Trade-offs to explain in an interview
+## Engineering trade-offs and non-goals
 
 | Choice | Why | What it does *not* solve |
 | --- | --- | --- |
@@ -154,7 +153,7 @@ transaction across Delta and SQL.
   [watermarks](../architecture/generic-incremental-watermark.md),
   and [Bronze compensation](../operations/bronze-compensating-cleanup.md).
 
-**What I would extend next, if there were real requirements:** integrate a
+**Potential extensions where requirements justify them:** integrate a
 second relational connector behind the existing DATABASE router, broaden
 file-format support, or improve execution-level observability and data
 quality. These are explicitly *future options*, not current features.
