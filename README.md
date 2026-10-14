@@ -1,12 +1,12 @@
 # Fabric Metadata-Driven Batch Ingestion
 
-**A reproducible batch ingestion framework built on Microsoft Fabric.**
+**A source-visible, production-oriented technical reference for learning metadata-driven batch ingestion with Microsoft Fabric.**
 
 Microsoft Fabric Data Factory · Fabric SQL Database · Lakehouse/Delta ·
 SQL Server · SFTP · PySpark · Power BI
 
 Instead of hand-building and maintaining a separate end-to-end pipeline for
-every source object, this personal engineering project uses **one shared
+every source object, this implementation uses **one shared
 Control Plane** to determine *what to ingest*, *how to ingest it*, and
 *where to land it*. Fabric Pipelines implement routing and connector-native
 copy; Notebooks handle reusable file parsing and failed-batch Delta cleanup.
@@ -14,6 +14,12 @@ copy; Notebooks handle reusable file parsing and failed-batch Delta cleanup.
 **Current implementation:** SQL Server 2022 Developer on EC2 and SFTP demo
 sources, writing append-only Bronze Delta tables. This is a **batch-only DEV
 framework**, not a production-certified ingestion platform.
+
+**Learning path:** Start with the [step-by-step reading guide](docs/guides/learning-path.md)
+to trace metadata tables, Pipeline routing, Watermark state, Bronze
+compensation and Monitoring through actual project definitions. The
+[architecture walkthrough](docs/architecture/framework-overview.md)
+explains the design decisions and their limits.
 
 ## Architecture at a glance
 
@@ -45,7 +51,7 @@ flowchart LR
     ORCH -- "guarded advancement" --> CP
 ```
 
-The full [pipeline topology and design rationale](docs/portfolio/architecture.md)
+The full [pipeline topology and design rationale](docs/architecture/framework-overview.md)
 covers internal adapters, failure compensation, and the separation between
 control state and source data.
 
@@ -65,7 +71,7 @@ control state and source data.
 The operational entry point is **`pl_ingest_orchestrator`**. Internal child
 pipelines are implementation details, not independent run targets.
 
-## Design decisions worth discussing
+## Design decisions and trade-offs
 
 - **Control Plane separate from Data Plane.** SQL Database keeps execution
   metadata, watermark state, and audit; Lakehouse Bronze stores ingestion rows.
@@ -82,9 +88,8 @@ pipelines are implementation details, not independent run targets.
 - **Keep the scope honest.** No implemented CDC, API connector, streaming,
   Silver/Gold transformations, data-contract subsystem, or production SLA.
 
-See [Architecture & Trade-offs](docs/portfolio/architecture.md) and
-[Interview Walkthrough](docs/portfolio/interview-notes.md) for explanations
-grounded in the current repository rather than aspirational features.
+See [Architecture & Design Decisions](docs/architecture/framework-overview.md)
+for detailed rationale and implementation boundaries.
 
 ## Observed DEV evidence (not a production benchmark)
 
@@ -95,7 +100,7 @@ grounded in the current repository rather than aspirational features.
 | Isolated 10M-row SQL Copy PoC | `parallelCopies: 0` copied 10M rows, `copyDuration=483s`, `usedParallelCopies=1` | Tests explicit zero; **not** AUTO equivalence |
 | Power BI monitoring | Observed 2 Source Systems, 8 latest-batch Objects, 0 Failed Sources | Snapshot-based monitoring evidence, not real-time master job status |
 
-Detailed [Evidence Register & Benchmark Plan](docs/portfolio/evidence.md)
+Detailed [Evidence Register & Benchmark Plan](docs/benchmarks/evidence-and-test-plan.md)
 separates observed results from experiments still requiring complete runs.
 Screenshots/recordings are not bundled into the repository as verified evidence.
 
@@ -120,10 +125,11 @@ scripts/source/          SQL Server demo + benchmark fixtures; SFTP CSV samples
 infrastructure/source/   Docker Compose for SQL Server + SFTP
 docs/architecture/       Technical rationale and connector contracts
 docs/operations/         Runbooks, monitoring and failure semantics
-docs/portfolio/          Architecture story, measured evidence, interview notes
+docs/guides/             A guided technical reading path
+docs/benchmarks/        Experimental evidence and reproducible test plan
 ```
 
-**Other useful references:** [Run parameters](docs/operations/run-request-examples.md) ·
+**Other useful references:** [Learning path](docs/guides/learning-path.md) · [Run parameters](docs/operations/run-request-examples.md) ·
 [Watermark semantics](docs/architecture/generic-incremental-watermark.md) ·
 [Copy tuning](docs/architecture/database-copy-performance.md) ·
 [Bronze compensation](docs/operations/bronze-compensating-cleanup.md) ·
@@ -140,3 +146,11 @@ be reviewed rather than applied blindly.
 The architecture is designed to *illustrate engineering choices* with
 runnable DEV artifacts, not to imply deployment to multiple vendors or
 full end-to-end disaster recovery.
+
+## Publication and reuse status
+
+This public repository is **source-visible, but currently has no open-source
+license**. Public visibility alone does not grant reuse, redistribution, or
+relicensing rights. Ownership and confidentiality must be reviewed before any
+open-source license is added or reuse permissions are asserted. This
+repository does not claim client endorsement or production certification.
