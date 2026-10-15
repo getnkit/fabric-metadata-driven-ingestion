@@ -49,7 +49,7 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | Figure | What the reader should see | Where it belongs |
 | --- | --- | --- |
 | F01 | A compact architecture diagram naming the Control Plane, Dispatcher, adapters, Landing, Bronze, and Audit | README / architecture overview |
-| F02 | SQL results showing the `LOGISTICS_VENDOR` FULL and INCREMENTAL config rows side by side | SFTP ingestion guide, step 1 |
+| F02 | SQL results showing `ECOMMERCE` and `LOGISTICS_VENDOR` configuration rows, including FULL and INCREMENTAL | [Control Plane](control-plane.md) and SFTP ingestion guide |
 | F03 | The Orchestrator parameters with `p_run_requests=[]` and `p_source_system=LOGISTICS_VENDOR` | SFTP ingestion guide, step 2 |
 | F04 | Actual Orchestrator or child-pipeline run graph, with the dispatch route visible | SFTP ingestion guide, step 2 |
 | F05 | FILE Router properties showing the supported-format gate and route selection | FILE adapter reference |
@@ -60,8 +60,9 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | F10 | A no-new-files FILE INCREMENTAL `SKIPPED` run plus unchanged checkpoint | Incremental watermark reference |
 | F11 | Explicit BACKFILL request, audit bounds, and unchanged operational checkpoint | Backfill / reliability reference |
 | F12 | Power BI Operations report with source summary and Object Execution History | Monitoring guide |
+| F13 | `lkp_ingestion_config` Lookup settings and selected Object Controller route | [Pipeline Orchestration](pipeline-orchestration.md) |
 
-Start with **F02, F03, F04, F06, F07, F08**. They tell the main story. Add the remaining figures only when their scenario is reproducible.
+Start with **F01, F02, F03, F04, F13** to explain the architecture, metadata, and orchestration. Then capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible. Add the remaining figures only when their scenario is reproducible.
 
 Use a rendered Mermaid diagram for F01, not a synthetic Fabric product screenshot. For complex canvases, use a focused screenshot plus a simplified diagram instead of shrinking the entire activity graph until labels are unreadable.
 
@@ -127,9 +128,9 @@ This loosely follows the collaborative drafting and reader-testing method descri
 
 ## Proposed chapter order
 
-1. Metadata and Control Plane: introduce one config row and its related connections.
-2. Orchestrator and dispatch: show all-active, source-scoped and explicit requests.
-3. FILE adapter: use the two Logistics feeds in the [SFTP walkthrough](sftp-file-ingestion.md).
+1. Metadata and Control Plane: start with the [Control Plane guide](control-plane.md) and a real configuration query.
+2. Orchestrator and dispatch: use the [Pipeline Orchestration guide](pipeline-orchestration.md) to show all-active, source-scoped and explicit requests.
+3. FILE adapter: use the two Logistics feeds in the [SFTP File Ingestion guide](sftp-file-ingestion.md).
 4. DATABASE adapter: show SQL Server Query-mode Copy, FULL/INCREMENTAL, and Copy settings.
 5. Watermark and BACKFILL: demonstrate state invariants with before/after verification.
 6. Finalization and recovery: trace the finalizer and compensating cleanup with verified evidence.
