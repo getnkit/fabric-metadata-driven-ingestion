@@ -19,6 +19,13 @@ framework**, not a production-certified ingestion platform.
 
 ## Architecture at a glance
 
+![Metadata-driven batch ingestion architecture showing the shared Control Plane, Data Factory orchestration, SQL Server and SFTP data paths, Bronze Lakehouse, and audit monitoring](docs/assets/architecture-overview.svg)
+
+The illustration shows the implemented **batch-only DEV architecture** at a conceptual level. The source-specific adapters, watermark guards, and compensation flows are described in the [architecture reference](docs/architecture/framework-overview.md).
+
+<details>
+<summary>View the detailed Mermaid technical diagram</summary>
+
 ```mermaid
 flowchart LR
     subgraph SRC["Demo source systems (EC2)"]
@@ -46,6 +53,8 @@ flowchart LR
     AUDIT --> VIEWS --> PBI
     ORCH -- "guarded advancement" --> CP
 ```
+
+</details>
 
 The full [pipeline topology and design rationale](docs/architecture/framework-overview.md)
 covers internal adapters, failure compensation, and the separation between
