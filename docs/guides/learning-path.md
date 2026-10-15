@@ -62,8 +62,8 @@ single-object BACKFILL request. Why do they reach the same Dispatcher?
 
 ## 4 — Compare physical DATABASE and FILE adapters
 
-**DATABASE:** Read [Database Extensibility](../architecture/database-ingestion-extensibility.md)
-and [Copy Strategy](../architecture/database-copy-performance.md).
+**DATABASE:** Start with [SQL Server Database Ingestion](sql-server-database-ingestion.md), then read [Database Extensibility](../architecture/database-ingestion-extensibility.md)
+and [Copy Strategy](../architecture/database-copy-performance.md) for the full connector and tuning contracts.
 SQL Server FULL/INCREMENTAL uses native **Query-mode Copy** to append to
 Lakehouse Bronze. Connector execution options include `NONE` or
 `DYNAMIC_RANGE` partitioning and an optional positive `parallel_copies`
