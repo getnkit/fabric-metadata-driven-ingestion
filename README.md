@@ -21,7 +21,7 @@ framework**, not a production-certified ingestion platform.
 
 ![Metadata-driven batch ingestion architecture showing the shared Control Plane, Data Factory orchestration, SQL Server and SFTP data paths, Bronze Lakehouse, and audit monitoring](docs/assets/architecture-overview.svg)
 
-The illustration shows the implemented **batch-only DEV architecture** at a conceptual level. The source-specific adapters, watermark guards, and compensation flows are described in the [architecture reference](docs/architecture/framework-overview.md).
+The illustration shows the implemented **batch-only DEV architecture** at a conceptual level. The [Pipeline Orchestration guide](docs/guides/pipeline-orchestration.md) includes a focused diagram of how run requests are selected and dispatched. Source-specific adapters, watermark guards, and compensation flows are described in the [architecture reference](docs/architecture/framework-overview.md).
 
 <details>
 <summary>View the detailed Mermaid technical diagram</summary>
