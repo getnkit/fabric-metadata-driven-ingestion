@@ -137,10 +137,10 @@ The DATABASE and FILE Routers keep connector-specific behavior out of the Object
 
 | Router | Route expression | Implemented destinations |
 | --- | --- | --- |
-| `pl_ingest_database_router` | `source_connection_type | load_strategy` | `SQL_SERVER|FULL`, `SQL_SERVER|INCREMENTAL` |
-| `pl_ingest_file_router` | `source_connection_type | load_strategy` | `SFTP|FULL`, `SFTP|INCREMENTAL` |
+| `pl_ingest_database_router` | Source connection type and load strategy | `SQL_SERVER\|FULL`, `SQL_SERVER\|INCREMENTAL` |
+| `pl_ingest_file_router` | Source connection type and load strategy | `SFTP\|FULL`, `SFTP\|INCREMENTAL` |
 
-The table uses the pipe character as part of the route key. The expression is built with `concat` and uppercasing in the Router activities.
+The route key joins the uppercased connection type and load strategy with the pipe character (`|`), using `concat` in the Router activities.
 
 The FILE Router first checks `if_supported_file_format`. At present, the accepted format is `DELIMITED_TEXT`. The SQL Server INCREMENTAL adapter adds a separate Loader pipeline for Copy execution and finalization. Each physical adapter is responsible for source-specific extraction, processing boundaries, and failure handling.
 
