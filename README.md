@@ -129,7 +129,7 @@ docs/guides/             A guided technical reading path
 docs/benchmarks/        Experimental evidence and reproducible test plan
 ```
 
-**Other useful references:** [Learning path](docs/guides/learning-path.md) · [Run parameters](docs/operations/run-request-examples.md) ·
+**Other useful references:** [Learning path](docs/guides/learning-path.md) · [SFTP ingestion guide](docs/guides/sftp-file-ingestion.md) · [Run parameters](docs/operations/run-request-examples.md) ·
 [Watermark semantics](docs/architecture/generic-incremental-watermark.md) ·
 [Copy tuning](docs/architecture/database-copy-performance.md) ·
 [Bronze compensation](docs/operations/bronze-compensating-cleanup.md) ·
