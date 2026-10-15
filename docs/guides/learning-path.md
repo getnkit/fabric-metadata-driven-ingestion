@@ -70,7 +70,8 @@ Lakehouse Bronze. Connector execution options include `NONE` or
 `DYNAMIC_RANGE` partitioning and an optional positive `parallel_copies`
 override.
 
-**FILE:** Read [File Ingestion](../architecture/file-ingestion-design.md).
+**FILE:** Start with the [SFTP File Ingestion Guide](sftp-file-ingestion.md),
+then read [File Ingestion](../architecture/file-ingestion-design.md) for more detail.
 SFTP files are copied in Binary mode to execution-scoped Lakehouse Files
 Landing. `nb_load_file_landing_to_bronze.Notebook` parses and appends
 **DELIMITED_TEXT only**. JSON/Parquet file ingestion is not implemented.
