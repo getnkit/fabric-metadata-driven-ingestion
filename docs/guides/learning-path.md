@@ -1,9 +1,6 @@
 # Technical Learning Path — Metadata-Driven Batch Ingestion
 
-This guide helps readers learn from the **implemented Microsoft Fabric
-framework**, in a recommended order. It is not just a high-level architecture
-diagram: each step points to the SQL scripts, Pipeline definitions and
-Notebooks that implement the behavior.
+This reading guide starts with the framework architecture and metadata, then follows one run through orchestration and the source-specific adapters. Each section links to the SQL scripts, Pipeline definitions, or Notebooks that implement the behavior.
 
 **Platform scope:** Microsoft Fabric Data Factory, Fabric SQL Database and
 Lakehouse Bronze. Many design principles are relevant to Azure Data Factory,
@@ -26,7 +23,9 @@ Delta rows, and what can happen between Bronze Commit and SQL Finalization.
 
 ## 2 — Build a mental model of metadata
 
-Read [Control schema bootstrap](../../scripts/control/01_create_control_schema.sql),
+Begin with [Control Plane and Ingestion Configuration](control-plane.md).
+It explains the four SQL Control/Audit tables with read-only queries against the DEV example.
+For the exact schema and seed statements, read [Control schema bootstrap](../../scripts/control/01_create_control_schema.sql),
 [connection metadata seed](../../scripts/control/03_seed_connection_settings.sql),
 and [ingestion metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql).
 
@@ -45,7 +44,7 @@ FULL configs have no Watermark checkpoint.
 
 ## 3 — Follow the request through orchestration
 
-Open the actual JSON definitions under:
+Read [Pipeline Orchestration and Run Requests](pipeline-orchestration.md) to follow the master run, Paginator, Dispatcher, Object Controller, and Routers. Then open the actual JSON definitions under:
 - `fabric/pl_ingest_orchestrator.DataPipeline/`
 - `fabric/pl_ingest_config_paginator.DataPipeline/`
 - `fabric/pl_ingest_config_dispatcher.DataPipeline/`
@@ -137,12 +136,14 @@ For factual DEV observations and a reproducible benchmark design, read
 
 | Your goal | Suggested steps |
 | --- | --- |
-| Understand metadata design and orchestration | 1–3 |
+| Understand metadata design and orchestration | 1–3, including the Control Plane and Pipeline Orchestration guides |
 | Implement SQL Server or SFTP batch adapters | 2–4 |
 | Reason about Watermark, SKIPPED and BACKFILL | 2, 5 |
 | Handle failures across Bronze/SQL | 5–6 |
 | Build audit-backed operations visibility | 7 |
 | Set up the demo / evaluate benchmark evidence | 8 |
+
+For the planned real DEV screenshots and matching test cases, see the [Documentation and Screenshot Plan](documentation-and-screenshot-plan.md). This is a capture plan, not a collection of verified run images.
 
 **Publication note:** The source is publicly viewable, but there is
 currently **no open-source license**. Visibility does not itself grant
