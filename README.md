@@ -15,7 +15,7 @@ copy; Notebooks handle reusable file parsing and failed-batch Delta cleanup.
 sources, writing append-only Bronze Delta tables. This is a **batch-only DEV
 framework**, not a production-certified ingestion platform.
 
-**Start here:** Read the [learning path](docs/guides/learning-path.md) for the recommended order. The [architecture overview](docs/architecture/framework-overview.md) explains the design, followed by [Control Plane](docs/guides/control-plane.md) and [Pipeline Orchestration](docs/guides/pipeline-orchestration.md). From there, explore the SQL Server DATABASE implementation or the [SFTP file example](docs/guides/sftp-file-ingestion.md).
+**Start here:** Read the [learning path](docs/guides/learning-path.md) for the recommended order. The [architecture overview](docs/architecture/framework-overview.md) explains the design, followed by [Control Plane](docs/guides/control-plane.md) and [Pipeline Orchestration](docs/guides/pipeline-orchestration.md). From there, explore [SQL Server Database Ingestion](docs/guides/sql-server-database-ingestion.md) or [SFTP File Ingestion](docs/guides/sftp-file-ingestion.md).
 
 ## Architecture at a glance
 
@@ -125,7 +125,7 @@ docs/guides/             A guided technical reading path
 docs/benchmarks/        Experimental evidence and reproducible test plan
 ```
 
-**Other useful references:** [Learning path](docs/guides/learning-path.md) · [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) · [SFTP file ingestion](docs/guides/sftp-file-ingestion.md) · [Run parameters](docs/operations/run-request-examples.md) ·
+**Other useful references:** [Learning path](docs/guides/learning-path.md) · [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) · [SQL Server database ingestion](docs/guides/sql-server-database-ingestion.md) · [SFTP file ingestion](docs/guides/sftp-file-ingestion.md) · [Run parameters](docs/operations/run-request-examples.md) ·
 [Watermark semantics](docs/architecture/generic-incremental-watermark.md) ·
 [Copy tuning](docs/architecture/database-copy-performance.md) ·
 [Bronze compensation](docs/operations/bronze-compensating-cleanup.md) ·
