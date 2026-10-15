@@ -4,6 +4,10 @@ The Control Plane tells the framework which source objects exist. The orchestrat
 
 This guide follows the implemented Fabric Data Factory Pipeline definitions from the entry parameters to the DATABASE and FILE Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are unfamiliar.
 
+![Pipeline orchestration diagram showing the explicit-request validation and active-configuration paginator converging at a shared Dispatcher and Object Controller before DATABASE and FILE routing](../assets/pipeline-orchestration.svg)
+
+*Conceptual flow based on the tracked Fabric Pipeline definitions. This is not a screenshot of a particular run.*
+
 ## 1. Start at the master pipeline
 
 The supported entry point is `pl_ingest_orchestrator`. Its parameters are:
