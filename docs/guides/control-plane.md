@@ -171,7 +171,7 @@ You can inspect the exact Lookup and Switch definitions in:
 
 The seed scripts are for creating or preparing a DEV example, **not** read-only verification scripts. In particular, re-running the ingestion metadata seed may update existing demo configuration rows. Use the SELECT statements above when you only want to study the current environment.
 
-**Next:** [Pipeline Orchestration](pipeline-orchestration.md) shows how the master selects these configuration rows and dispatches them. Then follow [Database Ingestion](../architecture/database-ingestion-extensibility.md) or [SFTP File Ingestion](sftp-file-ingestion.md) into the source-specific adapters.
+**Next:** [Pipeline Orchestration](pipeline-orchestration.md) shows how the master selects these configuration rows and dispatches them. Then follow [SQL Server Database Ingestion](sql-server-database-ingestion.md) or [SFTP File Ingestion](sftp-file-ingestion.md) into the source-specific adapters.
 
 ### Suggested screenshots
 
