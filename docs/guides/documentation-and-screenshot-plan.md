@@ -61,6 +61,9 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | F11 | Explicit BACKFILL request, audit bounds, and unchanged operational checkpoint | Backfill / reliability reference |
 | F12 | Power BI Operations report with source summary and Object Execution History | Monitoring guide |
 | F13 | `lkp_ingestion_config` Lookup settings and selected Object Controller route | [Pipeline Orchestration](pipeline-orchestration.md) |
+| F14 | SQL Server FULL and INCREMENTAL configuration rows in `control.ingestion_config` | [SQL Server Database Ingestion](sql-server-database-ingestion.md) |
+| F15 | `lkp_current_watermark`, `lkp_source_upper_bound`, and resulting incremental Copy | SQL Server database guide |
+| F16 | SQL Server audit row and watermark before/after for the same actual run | SQL Server database guide |
 
 Start with **F01, F02, F03, F04, F13** to explain the architecture, metadata, and orchestration. Then capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible. Add the remaining figures only when their scenario is reproducible.
 
@@ -82,6 +85,8 @@ These are proposed capture sessions. They have not been executed by this documen
 | S06: invalid scope | Supply both a nonblank `p_source_system` and a nonempty `p_run_requests` | `AMBIGUOUS_RUN_SCOPE` before object dispatch | Expect no object-level audit for this master-level rejection |
 | S07: recovery evidence | Reuse an existing verified failed execution or a deliberately isolated, reviewed DEV fault-injection test | Compensation path and audit correlation | Do not damage an active workspace merely to produce a screenshot |
 | S08: monitoring | Open the official Power BI report after a verified audit | Latest source summary and object history | This is terminal object audit, not a live master-run status view |
+| S09: SQL Server FULL | Select the actual `catalog.product_categories` config ID and run it through the master | Query-mode Copy, new Bronze batch, terminal audit | Successful FULL appends and does not create a watermark |
+| S10: SQL Server INCREMENTAL | Select the actual `crm.customers` config ID and capture state before/after a REGULAR run | Source-derived HIGH, Copy branch when the boundary advances, finalized checkpoint | No-new-data may SKIP; only claim a watermark change if observed |
 
 For an explicit single-object REGULAR request use the JSON shape below after looking up the current `ingestion_config_id`:
 
@@ -131,7 +136,7 @@ This loosely follows the collaborative drafting and reader-testing method descri
 1. Metadata and Control Plane: start with the [Control Plane guide](control-plane.md) and a real configuration query.
 2. Orchestrator and dispatch: use the [Pipeline Orchestration guide](pipeline-orchestration.md) to show all-active, source-scoped and explicit requests.
 3. FILE adapter: use the two Logistics feeds in the [SFTP File Ingestion guide](sftp-file-ingestion.md).
-4. DATABASE adapter: show SQL Server Query-mode Copy, FULL/INCREMENTAL, and Copy settings.
+4. DATABASE adapter: use the [SQL Server Database Ingestion guide](sql-server-database-ingestion.md) to show Query-mode Copy, FULL/INCREMENTAL, and Copy settings.
 5. Watermark and BACKFILL: demonstrate state invariants with before/after verification.
 6. Finalization and recovery: trace the finalizer and compensating cleanup with verified evidence.
 7. Audit and operations: connect SQL views to Power BI and explain observability gaps.
