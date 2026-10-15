@@ -2,7 +2,7 @@
 
 This guide follows the existing `LOGISTICS_VENDOR` demo through its control metadata, Fabric pipelines, Lakehouse Landing and Bronze, and SQL audit. The point is to understand how one pipeline framework handles two file workloads without building a separate orchestration tree for each file.
 
-You can read the artifacts without running Fabric. The optional verification queries require an already configured DEV environment. If you are setting up a new workspace, complete the [environment rebuild guide](../operations/environment-rebuild.md) first.
+For the shared metadata and master pipeline first, read [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md). You can read the artifacts below without running Fabric. The optional verification queries require an already configured DEV environment. If you are setting up a new workspace, complete the [environment rebuild guide](../operations/environment-rebuild.md) first.
 
 ## What you will learn
 
