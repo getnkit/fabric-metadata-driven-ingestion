@@ -1,150 +1,84 @@
 # Fabric Metadata-Driven Batch Ingestion
 
-**A source-visible, production-oriented technical reference for learning metadata-driven batch ingestion with Microsoft Fabric.**
+This repository demonstrates **metadata-driven batch ingestion in Microsoft Fabric**. Instead of creating a separate pipeline for every source object, it uses shared orchestration, configuration, and state management to ingest SQL Server tables and SFTP files into append-only Lakehouse Bronze Delta tables.
 
-Microsoft Fabric Data Factory · Fabric SQL Database · Lakehouse/Delta ·
-SQL Server · SFTP · PySpark · Power BI
+**Technology:** Fabric Data Factory · Fabric SQL Database · Lakehouse / Delta · SQL Server 2022 · SFTP · PySpark · Power BI
 
-Instead of hand-building and maintaining a separate end-to-end pipeline for
-every source object, this implementation uses **one shared
-Control Plane** to determine *what to ingest*, *how to ingest it*, and
-*where to land it*. Fabric Pipelines implement routing and connector-native
-copy; Notebooks handle reusable file parsing and failed-batch Delta cleanup.
-
-**Current implementation:** SQL Server 2022 Developer on EC2 and SFTP demo
-sources, writing append-only Bronze Delta tables. This is a **batch-only DEV
-framework**, not a production-certified ingestion platform.
-
-**Start here:** Read the [learning path](docs/guides/learning-path.md) for the recommended order. The [architecture overview](docs/architecture/framework-overview.md) explains the design, followed by [Control Plane](docs/guides/control-plane.md) and [Pipeline Orchestration](docs/guides/pipeline-orchestration.md). From there, explore [SQL Server Database Ingestion](docs/guides/sql-server-database-ingestion.md) or [SFTP File Ingestion](docs/guides/sftp-file-ingestion.md).
-
-## Architecture at a glance
+## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph SRC["Demo sources on EC2"]
+    subgraph SOURCES["Demo sources"]
         SQL["SQL Server 2022"]
         SFTP["SFTP · CSV / TSV"]
     end
-    subgraph FABRIC["Microsoft Fabric · batch DEV"]
-        CP[("Fabric SQL Database<br/>Config · Connections · Watermarks · Audit")]
-        ORCH["Data Factory Pipelines<br/>Select · Validate · Dispatch"]
-        SQLCOPY["Query-mode Copy<br/>FULL / INCREMENTAL"]
-        LAND["SFTP Binary Copy<br/>Lakehouse Files Landing"]
-        NB["Notebook<br/>Parse delimited files"]
+    subgraph FABRIC["Microsoft Fabric"]
+        META[("SQL Database<br/>Configuration · Watermarks · Audit")]
+        ORCH["Data Factory Pipelines<br/>Orchestrate · Dispatch · Route"]
+        DBCOPY["SQL Server Query-mode Copy<br/>FULL / INCREMENTAL"]
+        FCOPY["SFTP Binary Copy"]
+        LAND["Lakehouse Files Landing"]
+        NB["Notebook<br/>Parse files"]
         BRONZE[("Lakehouse Bronze<br/>Append-only Delta")]
-        OPS["Monitoring SQL Views<br/>Power BI Operations Report"]
+        MON["Monitoring SQL Views<br/>Power BI Report"]
     end
-    CP -->|"configuration / checkpoints"| ORCH
-    ORCH --> SQLCOPY
-    ORCH --> LAND
-    SQL --> SQLCOPY --> BRONZE
-    SFTP --> LAND --> NB --> BRONZE
-    ORCH -.->|"finalize audit / guarded watermark"| CP
-    CP --> OPS
+    META -->|"configuration / checkpoints"| ORCH
+    ORCH --> DBCOPY
+    ORCH --> FCOPY
+    SQL --> DBCOPY --> BRONZE
+    SFTP --> FCOPY --> LAND --> NB --> BRONZE
+    ORCH -.->|"finalize audit / guarded checkpoint"| META
+    META --> MON
 ```
 
-This conceptual view summarizes the implemented **batch-only DEV architecture**, not an observed run. The Data Factory orchestration group includes the child adapters that invoke finalization; the SQL Control Plane holds terminal object audits as well as configuration and checkpoints. See [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) for the dispatch flow and the source-specific guides for the detailed activity paths.
+The **Control Plane** stores configuration, connection references, checkpoints, and terminal object audits in Fabric SQL Database. Data Factory Pipelines resolve and dispatch object requests. SQL Server Copy loads directly to Bronze; SFTP Copy preserves files in Landing before a Notebook parses them into Bronze.
 
-The full [pipeline topology and design rationale](docs/architecture/framework-overview.md)
-covers internal adapters, failure compensation, and the separation between
-control state and source data.
+See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline boundaries and trade-offs.
 
-## Implemented capabilities
+## Key behaviors
 
-| Area | What is implemented |
+| Area | Behavior |
 | --- | --- |
-| **Metadata-driven execution** | One `control.ingestion_config` table; config selection by all-active, source-system scope, or explicit config requests |
-| **Database ingestion** | SQL Server FULL / timestamp-watermark INCREMENTAL; query-mode Copy; `NONE` or `DYNAMIC_RANGE` partitioning; optional parallel-copy override |
-| **File ingestion** | SFTP FULL / incremental by remote `last_modified_time`; Binary Copy into Landing; Notebook parses **DELIMITED_TEXT only** (CSV/TSV) |
-| **Execution intent** | `REGULAR` and `BACKFILL`, independent from persisted `FULL` / `INCREMENTAL` load strategy |
-| **State safety** | Persistent watermarks, guarded success finalization, optimistic state-update conflict detection; no checkpoint advancement for backfill or no-data skips |
-| **Bronze discipline** | Immutable successful batch appends with batch/run lineage; compensating cleanup scoped to the current failed execution |
-| **Operations** | Terminal object audit with SUCCESS / FAILED / SKIPPED plus supported WARN / CANCELLED statuses; source-level SQL views and a Desktop-authored Power BI report |
-| **Rebuildability** | Fabric item definitions, SQL scripts, EC2 Docker Compose source setup, fixtures, and a [fresh-DEV rebuild runbook](docs/operations/environment-rebuild.md) |
+| **Metadata-driven routing** | `control.ingestion_config` defines source objects, load strategies, and targets; `control.connection_settings` resolves logical connections. |
+| **Run selection** | `pl_ingest_orchestrator` runs all active objects, a source-system subset, or explicit object requests. |
+| **Database ingestion** | SQL Server FULL and timestamp-watermark INCREMENTAL use Query-mode Copy to append Bronze Delta. |
+| **File ingestion** | SFTP FULL and Last Modified INCREMENTAL use Binary Copy to Landing and Notebook parsing for CSV/TSV (`DELIMITED_TEXT`). |
+| **Run semantics** | `REGULAR` and `BACKFILL` are execution intents. Successful historical BACKFILL does not advance the operational watermark; no-new-data runs can finish `SKIPPED`. |
+| **Reliability** | Guarded watermark updates, terminal object audits, and execution-scoped compensation handle selected failure cases without claiming a distributed transaction. |
+| **Monitoring** | SQL views over `audit.ingestion_log` feed the Power BI Operations Report. |
 
-The operational entry point is **`pl_ingest_orchestrator`**. Internal child
-pipelines are implementation details, not independent run targets.
+## Explore the implementation
 
-## Design decisions and trade-offs
+| Topic | Guide |
+| --- | --- |
+| End-to-end walkthrough | [Technical Learning Path](docs/guides/learning-path.md) |
+| Configuration, run requests, and dispatch | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
+| SQL Server FULL / INCREMENTAL | [Database Ingestion](docs/guides/sql-server-database-ingestion.md) |
+| SFTP FULL / INCREMENTAL | [File Ingestion](docs/guides/sftp-file-ingestion.md) |
+| Checkpoint behavior and failure recovery | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Bronze Compensating Cleanup](docs/operations/bronze-compensating-cleanup.md) |
+| Monitoring and recorded experiments | [Operations Monitoring](docs/operations/monitoring-report.md) · [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
 
-- **Control Plane separate from Data Plane.** SQL Database keeps execution
-  metadata, watermark state, and audit; Lakehouse Bronze stores ingestion rows.
-- **Connector-native Copy where possible.** SQL Server ingestion stays in
-  Fabric Copy; Spark is used when Landing files need parsing or Delta cleanup.
-- **AUTO vs TUNED are distinct Copy branches.** A DEV PoC showed that explicitly
-  setting `parallelCopies = 0` is *not* equivalent to omitting the property
-  for service-managed AUTO behavior.
-- **Backfill is not a watermark reset.** Historical incremental ranges are
-  explicit and cannot overwrite the current operational checkpoint.
-- **No distributed transaction claim.** Failed Bronze writes require
-  execution-scoped compensation; only success finalization can advance
-  operational state.
-- **Keep the scope honest.** No implemented CDC, API connector, streaming,
-  Silver/Gold transformations, data-contract subsystem, or production SLA.
+The implementation is tracked under `fabric/` (12 Data Pipelines, 3 Notebooks, SQL Database, Lakehouse, and Power BI definitions). SQL setup and example fixtures are under `scripts/`; the optional SQL Server/SFTP demo-source environment is under `infrastructure/source/`.
 
-See [Architecture & Design Decisions](docs/architecture/framework-overview.md)
-for detailed rationale and implementation boundaries.
+## Run the DEV example
 
-## Observed DEV evidence (not a production benchmark)
+1. Follow the [Environment Rebuild Guide](docs/operations/environment-rebuild.md) to provision or connect the required Fabric items, sources, connections, and Variable Library values.
+2. Use [scripts/RUN_ORDER.md](scripts/RUN_ORDER.md) for SQL bootstrap, sample metadata, and source data setup.
+3. Start **`pl_ingest_orchestrator`** in Fabric. To select the active SFTP demo objects, set:
 
-| Observation | Recorded outcome | Interpretation |
-| --- | --- | --- |
-| Demo all-active run | 8 terminal object audits: 2 SUCCESS, 6 SKIPPED | Runtime example; not a full failure-path certification |
-| Dispatcher `batchCount` comparison | 9m29s at 3 vs 4m44s at 8 for the documented light DEV run | Scoped DEV experiment, **not** general capacity scaling |
-| Isolated 10M-row SQL Copy PoC | `parallelCopies: 0` copied 10M rows, `copyDuration=483s`, `usedParallelCopies=1` | Tests explicit zero; **not** AUTO equivalence |
-| Power BI monitoring | Observed 2 Source Systems, 8 latest-batch Objects, 0 Failed Sources | Snapshot-based monitoring evidence, not real-time master job status |
+   ```text
+   p_run_requests = []
+   p_source_system = "LOGISTICS_VENDOR"
+   ```
 
-Detailed [Evidence Register & Benchmark Plan](docs/benchmarks/evidence-and-test-plan.md)
-separates observed results from experiments still requiring complete runs.
-Screenshots/recordings are not bundled into the repository as verified evidence.
+4. Inspect the resulting object executions in Fabric Monitor and the terminal rows in `audit.ingestion_log`. Use the [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) to correlate Landing, Bronze, audit, and watermark behavior.
 
-## Getting started / rebuilding later
+Child pipelines are implementation components; use `pl_ingest_orchestrator` as the supported entry point.
 
-**For a fresh DEV:** follow
-[Environment Rebuild — Fresh DEV From Git](docs/operations/environment-rebuild.md)
-first. It covers infrastructure, Fabric Git sync, SQL bootstrap, Connections,
-Variable Library values, metadata seeds, Power BI DirectQuery rebinding,
-and acceptance checks.
+## Scope and limitations
 
-For detailed step order and sample data, see
-[scripts/RUN_ORDER.md](scripts/RUN_ORDER.md). The demo is reproducible from
-Definitions + generated fixtures, but **Git is not a backup** of historical
-watermarks, audit records, Lakehouse rows or credentials.
+This is a **batch-only DEV reference implementation** for SQL Server and SFTP. It does not implement CDC, streaming, API ingestion, Silver/Gold transformations, or production operations/SLA guarantees. The SQL control/audit database and Bronze Lakehouse do not share an end-to-end distributed transaction.
 
-```text
-fabric/                  Fabric item definitions: 12 Pipelines, 3 Notebooks,
-                         Control SQL Database, Lakehouse, Library, Report/Model
-scripts/control/         SQL bootstrap, connection/config seeds, verification
-scripts/source/          SQL Server demo + benchmark fixtures; SFTP CSV samples
-infrastructure/source/   Docker Compose for SQL Server + SFTP
-docs/architecture/       Technical rationale and connector contracts
-docs/operations/         Runbooks, monitoring and failure semantics
-docs/guides/             A guided technical reading path
-docs/benchmarks/        Experimental evidence and reproducible test plan
-```
+Fabric item definitions may contain environment-specific workspace IDs and connection references; a fresh deployment requires rebinding. For observed DEV runs and the limits of the performance experiments, see the [Evidence Register](docs/benchmarks/evidence-and-test-plan.md).
 
-**Other useful references:** [Learning path](docs/guides/learning-path.md) · [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) · [SQL Server database ingestion](docs/guides/sql-server-database-ingestion.md) · [SFTP file ingestion](docs/guides/sftp-file-ingestion.md) · [Run parameters](docs/operations/run-request-examples.md) ·
-[Watermark semantics](docs/architecture/generic-incremental-watermark.md) ·
-[Copy tuning](docs/architecture/database-copy-performance.md) ·
-[Bronze compensation](docs/operations/bronze-compensating-cleanup.md) ·
-[Monitoring report](docs/operations/monitoring-report.md)
-
-### Portability and scope caveat
-
-The checked-in Fabric Variable Library and Power BI DirectQuery model
-contain **DEV environment IDs / endpoint names**. These are not portable
-credentials. Rebinding and permission grants are mandatory in a new workspace.
-The SQL Project also contains a workspace-specific Entra principal that must
-be reviewed rather than applied blindly.
-
-The architecture is designed to *illustrate engineering choices* with
-runnable DEV artifacts, not to imply deployment to multiple vendors or
-full end-to-end disaster recovery.
-
-## Publication and reuse status
-
-This public repository is **source-visible, but currently has no open-source
-license**. Public visibility alone does not grant reuse, redistribution, or
-relicensing rights. Ownership and confidentiality must be reviewed before any
-open-source license is added or reuse permissions are asserted. This
-repository does not claim client endorsement or production certification.
+**License:** No license is included. Public access to the source does not by itself grant reuse or redistribution rights.
