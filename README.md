@@ -58,7 +58,7 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 | Checkpoint behavior and failure recovery | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Bronze Compensating Cleanup](docs/operations/bronze-compensating-cleanup.md) |
 | Monitoring and recorded experiments | [Operations Monitoring](docs/operations/monitoring-report.md) · [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
 
-The implementation is tracked under `fabric/` (12 Data Pipelines, 3 Notebooks, SQL Database, Lakehouse, and Power BI definitions). SQL setup and example fixtures are under `scripts/`; the optional SQL Server/SFTP demo-source environment is under `infrastructure/source/`.
+The implementation is tracked under `fabric/` (Pipelines, Notebooks, SQL Database, Lakehouse, and Power BI definitions). SQL setup and example fixtures are under `scripts/`; the optional SQL Server/SFTP demo-source environment is under `infrastructure/source/`.
 
 ## Run the DEV example
 
