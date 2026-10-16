@@ -247,7 +247,7 @@ Match the Fabric object Run ID, SQL audit row, and Bronze `_pipeline_run_id` whe
 
 A successful Delta write and the SQL Control Database finalization are not one distributed transaction. The framework uses execution-scoped Bronze cleanup when a failed write may have left rows behind. If success finalization fails with an uncertain outcome, the incremental recovery flow checks durable state before deciding how to proceed.
 
-Those behaviors are documented separately in [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md). They should not be simplified into a claim that every rerun is automatically exactly once at business-record level.
+The [Bronze Compensating Cleanup runbook](../operations/bronze-compensating-cleanup.md) now includes activity-level Mermaid diagrams for both **Bronze write failure** and **post-finalization reconciliation**. Follow those diagrams alongside the Pipeline JSON to see why cleanup is conditional on the failure boundary. These behaviors should not be simplified into a claim that every rerun is automatically exactly once at business-record level.
 
 ### Suggested screenshots
 
