@@ -42,6 +42,20 @@ Better:
 
 The second version tells readers what to look for in the repository and can be checked against an artifact.
 
+## Diagram strategy
+
+Use **Mermaid by default** for diagrams that explain executable logic, routing, state, and dependencies. Keep the source embedded in Markdown so changes can be reviewed with the surrounding implementation. Prefer two focused diagrams over one wall of Pipeline activities.
+
+| Level | What it answers | Recommended format |
+| --- | --- | --- |
+| Framework overview | Which major subsystems exchange metadata and data? | Concise Mermaid; optional carefully reviewed SVG for the README's published overview |
+| Pipeline-level flow | How do Orchestrator, Paginator, Dispatcher, Controller, and Routers interact? | Mermaid showing pipeline boundaries and the meaningful decisions |
+| Activity-level flow | Why does a particular INCREMENTAL, SKIPPED, or recovery branch run? | Mermaid extracted from the actual Pipeline JSON; focus on decision activities and critical failure paths |
+
+The first activity-level examples are in [SQL Server Database Ingestion](sql-server-database-ingestion.md). Avoid an all-activities, all-pipelines poster. If detail would make an individual diagram unreadable, link the canonical Pipeline JSON instead.
+
+A conceptual Mermaid or SVG diagram is **not runtime evidence**. Separate it from Fabric Monitor screenshots that show real activities and outcomes. Do not add screenshot-style activity icons or synthetic Fabric canvases just to make a diagram look like a runtime trace.
+
 ## Screenshots to capture
 
 Capture only views that answer a question the walkthrough has raised. Use the same sample source and a consistent run identity across adjacent screenshots where possible.
@@ -65,9 +79,9 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | F15 | `lkp_current_watermark`, `lkp_source_upper_bound`, and resulting incremental Copy | SQL Server database guide |
 | F16 | SQL Server audit row and watermark before/after for the same actual run | SQL Server database guide |
 
-Start with **F01, F02, F03, F04, F13** to explain the architecture, metadata, and orchestration. Then capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible. Add the remaining figures only when their scenario is reproducible.
+Start with **F01, F02, F03, F04, F13** to explain the architecture, metadata, and orchestration. Then capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible.
 
-Use a rendered Mermaid diagram for F01, not a synthetic Fabric product screenshot. For complex canvases, use a focused screenshot plus a simplified diagram instead of shrinking the entire activity graph until labels are unreadable.
+For F01, keep the canonical Mermaid technical view; the existing README SVG is an optional conceptual overview, not a synthetic Fabric product screenshot. For complex canvases, use a focused screenshot plus a simplified diagram instead of shrinking the entire activity graph until labels are unreadable.
 
 The [benchmark evidence plan](../benchmarks/evidence-and-test-plan.md) tracks measured performance experiments separately. Do not mix benchmark screenshots with the core educational walkthrough unless they clarify a particular Copy setting.
 
