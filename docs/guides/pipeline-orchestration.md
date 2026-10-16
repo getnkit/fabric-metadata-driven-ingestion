@@ -4,10 +4,6 @@ The Control Plane tells the framework which source objects exist. The orchestrat
 
 This guide follows the implemented Fabric Data Factory Pipeline definitions from the entry parameters to the DATABASE and FILE Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are unfamiliar.
 
-![Pipeline orchestration diagram showing the explicit-request validation and active-configuration paginator converging at a shared Dispatcher and Object Controller before DATABASE and FILE routing](../assets/pipeline-orchestration.svg)
-
-*Conceptual flow based on the tracked Fabric Pipeline definitions. This is not a screenshot of a particular run.*
-
 ## 1. Start at the master pipeline
 
 The supported entry point is `pl_ingest_orchestrator`. Its parameters are:
@@ -66,27 +62,21 @@ Open [the Orchestrator definition](../../fabric/pl_ingest_orchestrator.DataPipel
 
 The two paths rejoin logically at the Dispatcher:
 
-```text
-                       pl_ingest_orchestrator
-                              |
-                   validate runtime bindings
-                              |
-                      validate run scope
-                              |
-               +--------------+--------------+
-               |                             |
-      explicit request array           empty request array
-               |                             |
-    usp_validate_run_requests      pl_ingest_config_paginator
-               |                             |
-               +-------------+---------------+
-                             |
-                 pl_ingest_config_dispatcher
-                             |
-                 pl_ingest_object_controller
-                             |
-                    DATABASE or FILE Router
+```mermaid
+flowchart TD
+    A["pl_ingest_orchestrator"] --> B["Check required bindings<br/>and run scope"]
+    B --> C{"Explicit p_run_requests?"}
+    C -->|Yes| D["sp_validate_run_requests"]
+    C -->|No| E["pl_ingest_config_paginator"]
+    D --> F["pl_ingest_config_dispatcher"]
+    E --> F
+    F --> G["pl_ingest_object_controller"]
+    G --> H{"Ingestion pattern"}
+    H -->|DATABASE| I["pl_ingest_database_router"]
+    H -->|FILE| J["pl_ingest_file_router"]
 ```
+
+*Conceptual routing based on the checked-in Fabric Pipeline definitions. Validation and pre-dispatch failure branches are summarized; this is not a screenshot of a particular run.*
 
 The explicit request path invokes `control.usp_validate_run_requests` before dispatch. The Paginator path first obtains active configurations from SQL. In either case, the Dispatcher receives an array of object requests and a shared Batch ID.
 
