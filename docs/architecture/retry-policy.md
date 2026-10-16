@@ -9,7 +9,8 @@ Use retry according to side-effect semantics, not activity type alone.
 | Audit-only finalizer (`advance_watermark = false`) | 2 | Finalization is idempotent by `pipeline_run_id`; repeated calls do not create duplicate audit rows. |
 | State-mutating finalizer (may use `advance_watermark = true`) | 0 | Watermark mutation and semantic conflicts must not be retried blindly. |
 | Idempotent cleanup notebook | 1 | Cleanup can be repeated safely, but notebook startup is relatively expensive. |
-| Copy to Bronze / final data store | 0 | Repeating a write is not inherently idempotent; partial writes must be compensated before rerun. |\n| SFTP Binary Copy to batch-isolated Landing | 2 | Landing is scoped by `batch_id`, Binary + PreserveHierarchy can safely retry transient transfer failures within the same run, and failed batches are cleaned up after retries are exhausted. |
+| Copy to Bronze / final data store | 0 | Repeating a write is not inherently idempotent; partial writes must be compensated before rerun. |
+| SFTP Binary Copy to batch-isolated Landing | 2 | Landing is scoped by `batch_id`, Binary + PreserveHierarchy can safely retry transient transfer failures within the same run, and failed batches are cleaned up after retries are exhausted. |
 | Invoke Pipeline | 0 | Child pipelines own their own retry and side-effect handling. |
 
 ## Finalizer rule
