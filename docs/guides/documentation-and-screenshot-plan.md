@@ -48,21 +48,21 @@ Use **Mermaid by default** for diagrams that explain executable logic, routing, 
 
 | Level | What it answers | Recommended format |
 | --- | --- | --- |
-| Framework overview | Which major subsystems exchange metadata and data? | Concise Mermaid; optional carefully reviewed SVG for the README's published overview |
+| Framework overview | Which major subsystems exchange metadata and data? | Concise Mermaid in README, linked to detailed technical references |
 | Pipeline-level flow | How do Orchestrator, Paginator, Dispatcher, Controller, and Routers interact? | Mermaid showing pipeline boundaries and the meaningful decisions |
 | Activity-level flow | Why does a particular INCREMENTAL, SKIPPED, or recovery branch run? | Mermaid extracted from the actual Pipeline JSON; focus on decision activities and critical failure paths |
 
 The activity-level examples are in [SQL Server Database Ingestion](sql-server-database-ingestion.md) (incremental boundary and Copy decisions), [SFTP File Ingestion](sftp-file-ingestion.md) (Last Modified selection, Landing consistency, and SKIPPED), and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) (write-failure cleanup and finalization reconciliation). Avoid an all-activities, all-pipelines poster. If detail would make an individual diagram unreadable, link the canonical Pipeline JSON instead.
 
-A conceptual Mermaid or SVG diagram is **not runtime evidence**. Separate it from Fabric Monitor screenshots that show real activities and outcomes. Do not add screenshot-style activity icons or synthetic Fabric canvases just to make a diagram look like a runtime trace.
+A conceptual Mermaid diagram is **not runtime evidence**. Separate it from Fabric Monitor screenshots that show real activities and outcomes. Do not add screenshot-style activity icons or synthetic Fabric canvases just to make a diagram look like a runtime trace.
 
-## Screenshots to capture
+## Diagrams and DEV screenshots
 
-Capture only views that answer a question the walkthrough has raised. Use the same sample source and a consistent run identity across adjacent screenshots where possible.
+F01 is a source-editable Mermaid diagram, not a DEV screenshot. For F02–F16, capture only actual views that answer a question the walkthrough has raised. Use the same sample source and a consistent run identity across adjacent screenshots where possible.
 
 | Figure | What the reader should see | Where it belongs |
 | --- | --- | --- |
-| F01 | A compact architecture diagram naming the Control Plane, Dispatcher, adapters, Landing, Bronze, and Audit | README / architecture overview |
+| F01 | Mermaid overview naming source systems, Control Plane, orchestration, physical adapters, Landing, Bronze, and audit/monitoring | README / architecture overview |
 | F02 | SQL results showing `ECOMMERCE` and `LOGISTICS_VENDOR` configuration rows, including FULL and INCREMENTAL | [Control Plane](control-plane.md) and SFTP ingestion guide |
 | F03 | The Orchestrator parameters with `p_run_requests=[]` and `p_source_system=LOGISTICS_VENDOR` | SFTP ingestion guide, step 2 |
 | F04 | Actual Orchestrator or child-pipeline run graph, with the dispatch route visible | SFTP ingestion guide, step 2 |
@@ -79,9 +79,9 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | F15 | `lkp_current_watermark`, `lkp_source_upper_bound`, and resulting incremental Copy | SQL Server database guide |
 | F16 | SQL Server audit row and watermark before/after for the same actual run | SQL Server database guide |
 
-Start with **F01, F02, F03, F04, F13** to explain the architecture, metadata, and orchestration. Then capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible.
+Use **F01** as the conceptual entry diagram, then capture **F02, F03, F04, F13** to show actual metadata and orchestration in DEV. Capture **F06, F07, F08** for the SFTP execution. Add the remaining figures only when their scenario is reproducible.
 
-For F01, keep the canonical Mermaid technical view; the existing README SVG is an optional conceptual overview, not a synthetic Fabric product screenshot. For complex canvases, use a focused screenshot plus a simplified diagram instead of shrinking the entire activity graph until labels are unreadable.
+For F01, maintain the Mermaid block directly in README; do not create an alternate exported illustration merely to duplicate it. For complex canvases, use a focused screenshot plus a simplified diagram instead of shrinking the entire activity graph until labels are unreadable.
 
 The [benchmark evidence plan](../benchmarks/evidence-and-test-plan.md) tracks measured performance experiments separately. Do not mix benchmark screenshots with the core educational walkthrough unless they clarify a particular Copy setting.
 
