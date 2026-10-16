@@ -90,6 +90,23 @@ If cleanup succeeds, the original ingestion failure is finalized with watermark 
 
 If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, and the pipeline fails explicitly. Do not rerun blindly until the failed batch has been reconciled.
 
+### Bronze write failure: compensate the affected execution
+
+The following flow summarizes the **post-write failure branch**. Both SQL Server Copy and the SFTP Bronze Loader Notebook can reach an activity named `nb_cleanup_bronze_write_failed`; these are activities in their respective pipelines, not one shared Pipeline invocation.
+
+```mermaid
+flowchart TD
+    W["Bronze write failed<br/>Copy or Notebook"] --> C["nb_cleanup_bronze_write_failed"]
+    C -->|Succeeded| A["sp_finalize_bronze_write_failed"]
+    A --> F["fail_bronze_write"]
+    C -->|Failed| AF["sp_finalize_bronze_write_cleanup_failed"]
+    AF --> FF["fail_bronze_write_cleanup"]
+```
+
+This path is **not** triggered by pre-write metadata or boundary validation failures. Its Cleanup Notebook targets the specific Bronze table and the `(_batch_id, _pipeline_run_id)` pair. A successful cleanup leads to a terminal **FAILED** audit for the original write failure; cleanup failure is separately surfaced as `BRONZE_CLEANUP_FAILED`.
+
+FILE ingestion also has **Landing Copy** and file-count consistency failure branches, with their own Landing cleanup activities (for example, `nb_cleanup_landing_copy_failed`). Do not treat those as the Bronze write-failure branch above. See the [SQL Server INCREMENTAL Loader](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json) and [SFTP INCREMENTAL Adapter](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json) for the full, source-specific dependencies.
+
 ## Audit error-message length contract
 
 The Fabric SQL Database stores `audit.ingestion_log.error_message` and the finalize procedure parameter as `NVARCHAR(4000)`. All 15 Finalizers that consume activity error messages use `take()` instead of `substring()`; `take()` safely handles shorter messages.
@@ -115,6 +132,27 @@ recovery Fail messages retain diagnostic context without complex expressions.
 
 The child pipeline reads a **committed terminal Audit record** matched by
 `ingestion_config_id`, `batch_id`, and `pipeline_run_id` and classifies it:
+
+### Activity-level flow: reconcile the committed outcome
+
+The recovery child reads `audit.ingestion_log` using the exact `ingestion_config_id`, `batch_id`, and object `pipeline_run_id`. Its SQL Lookup maps committed `SUCCESS` to `COMMITTED_SUCCESS`, committed `FAILED / WATERMARK_CONFLICT` to `CONFIRMED_CONFLICT`, and missing or other outcomes to `OTHER`.
+
+```mermaid
+flowchart TD
+    A["sp_finalize_success<br/>activity failed"] --> B["inv_ingest_incremental_finalize_recovery"]
+    B --> C["lkp_finalize_outcome"]
+    C -->|Lookup failed| LF["fail_finalize_outcome_lookup"]
+    C -->|Lookup succeeded| S{"sw_finalize_outcome"}
+    S -->|COMMITTED_SUCCESS| OK["fail_finalize_committed"]
+    S -->|OTHER or absent| U["fail_finalize_unconfirmed"]
+    S -->|CONFIRMED_CONFLICT_DATABASE| D["nb_cleanup_bronze_finalize_conflict"]
+    S -->|CONFIRMED_CONFLICT_FILE| F["nb_cleanup_bronze_finalize_conflict_file"]
+    F -->|Bronze cleanup succeeded| L["nb_cleanup_landing_finalize_conflict"]
+```
+
+The diagram deliberately stops at the conflict cleanup activities: their **Succeeded/Failed terminal `Fail` activities** are listed in the [recovery pipeline JSON](../../fabric/pl_ingest_incremental_finalize_recovery.DataPipeline/pipeline-content.json). In the DATABASE conflict branch, successful Bronze cleanup is followed by `fail_confirmed_watermark_conflict`; failed cleanup by `fail_bronze_finalize_cleanup`. In the FILE conflict branch, successful Bronze **and** Landing cleanup is followed by `fail_confirmed_watermark_conflict_file`; failures use `fail_bronze_finalize_cleanup_file` or `fail_landing_finalize_cleanup`.
+
+**Decision rule:** only the confirmed conflict branches run automatic finalization-failure compensation. `COMMITTED_SUCCESS`, `OTHER`, and Audit Lookup failure all preserve data for reconciliation, even though the Pipeline reports a failure.
 
 | Confirmed audit outcome | Recovery action | Final pipeline status |
 | --- | --- | --- |
