@@ -138,6 +138,58 @@ ORDER BY c.source_object;
 
 For a normal incremental file run, the committed watermark supplies the lower bound and the run start time supplies the upper bound. The SFTP file selection uses the remote **Last Modified** timestamp. It does not use a timestamp inside the CSV payload.
 
+### Step A: validate state and establish the processing window
+
+The FILE Router has already checked `DELIMITED_TEXT` before invoking `pl_ingest_sftp_incremental_adapter`. Within the adapter, the first decisions are:
+
+```mermaid
+flowchart TD
+    A{"if_supported_watermark_field"} -->|Yes| B["lkp_current_watermark"]
+    A -->|No| X["sp_finalize_unsupported_watermark_field"]
+    B --> C{"if_state_found"}
+    C -->|No| Y["sp_finalize_state_not_found"]
+    C -->|Yes| D["set_processing_lower_bound"]
+    D --> E["set_processing_upper_bound"]
+    E --> F{"if_valid_processing_boundary"}
+    F -->|No| Z["sp_finalize_invalid_processing_boundary"]
+    F -->|Yes| G["set_landing_relative_path"]
+```
+
+The supported watermark field is `last_modified_time`. The Lookup matches **both** `ingestion_config_id` and `watermark_field`. For `REGULAR`, `set_processing_lower_bound` reads the committed checkpoint and `set_processing_upper_bound` takes `p_start_time`. For `BACKFILL`, the corresponding values come from the explicitly requested bounds. **Both run types require `HIGH > LOW`** for FILE ingestion; a missing checkpoint, an unsupported field, or an invalid boundary follows a failure-finalization branch.
+
+The diagram shows the initial `sp_finalize_*` activities for rejected requests and omits their dependent `fail_*` activities for readability. The exact Activity dependencies are in the [SFTP INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json).
+
+### Step B: discover files, copy to Landing, then decide whether to write Bronze
+
+The valid window proceeds through the connector's recursive **Binary Copy** and the post-copy decisions:
+
+```mermaid
+flowchart TD
+    A["copy_sftp_to_landing"] -->|Succeeded| B{"if_landing_file_count_consistent"}
+    A -.->|Failed| L["nb_cleanup_landing_copy_failed"]
+    B -->|No| M["nb_cleanup_landing_file_count_mismatch"]
+    B -->|Yes| C{"if_no_new_data"}
+    C -->|filesRead = 0| S["sp_finalize_no_new_data_skipped"]
+    C -->|filesRead > 0| N["nb_load_file_landing_to_bronze"]
+    N -->|Succeeded| F["sp_finalize_success"]
+    N -.->|Failed| BC["nb_cleanup_bronze_write_failed"]
+    F -.->|Failed| R["inv_ingest_incremental_finalize_recovery"]
+```
+
+`copy_sftp_to_landing` uses the configured `source_path` and trimmed `source_options.file_name_pattern` (for example, `inventory_movement_*.csv`) with recursive SFTP traversal. The source settings use `modifiedDatetimeStart` and `modifiedDatetimeEnd` formatted as UTC `yyyy-MM-ddTHH:mm:ss.fffZ`. The documented SFTP selection window is:
+
+```text
+LOW <= remote Last Modified < HIGH
+```
+
+This is **not** the SQL Server timestamp predicate (`LOW < updated_at <= HIGH`). The SFTP connector discovers and filters files; the filename is not the checkpoint. Copy uses `PreserveHierarchy` into the isolated Landing directory. The Notebook parses the landed delimited-text files and appends Bronze Delta rows only when the copy reports new files.
+
+**File-count consistency is checked before SKIPPED:** `if_landing_file_count_consistent` requires `filesRead = filesWritten`. A consistent `0 / 0` proceeds to `if_no_new_data`, which finalizes `SKIPPED` with zero counts, skips the Bronze Notebook, and sets `advance_watermark = false`. This applies to both REGULAR and BACKFILL.
+
+With `filesRead > 0`, a successful Bronze Notebook leads to `sp_finalize_success`. Only `REGULAR` requests can advance the watermark during successful finalization; BACKFILL leaves the operational checkpoint unchanged. A failed Landing Copy or file-count mismatch triggers **Landing cleanup**; a failed Bronze Notebook triggers **Bronze cleanup**; and a failed success-finalization activity invokes the shared recovery pipeline instead of deleting Bronze blindly. The failure branches' additional Finalize and Fail activities are deliberately not expanded in this diagram. See [FILE Ingestion Design](../architecture/file-ingestion-design.md) and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md).
+
+**What the diagrams establish:** these are conceptual traces of the checked-in Pipeline activities, not evidence of a new DEV execution or a measured file scan. They do not imply support for JSON/Parquet readers or CDC.
+
 If the scan finds no matching files, the run is `SKIPPED` and the checkpoint does not advance. A successful REGULAR incremental run with matching files can advance the watermark through guarded SQL finalization. An explicitly requested BACKFILL uses supplied historical bounds and does not move the operational checkpoint.
 
 The full boundary rules are recorded in [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md). Do not infer file ingestion from the payload's business event date.
