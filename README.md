@@ -19,42 +19,31 @@ framework**, not a production-certified ingestion platform.
 
 ## Architecture at a glance
 
-![Metadata-driven batch ingestion architecture showing the shared Control Plane, Data Factory orchestration, SQL Server and SFTP data paths, Bronze Lakehouse, and audit monitoring](docs/assets/architecture-overview.svg)
-
-The illustration shows the implemented **batch-only DEV architecture** at a conceptual level. The [Pipeline Orchestration guide](docs/guides/pipeline-orchestration.md) includes a focused diagram of how run requests are selected and dispatched. Source-specific adapters, watermark guards, and compensation flows are described in the [architecture reference](docs/architecture/framework-overview.md).
-
-<details>
-<summary>View the detailed Mermaid technical diagram</summary>
-
 ```mermaid
 flowchart LR
-    subgraph SRC["Demo source systems (EC2)"]
-      SQL["SQL Server 2022"]
-      SFTP["SFTP — CSV / TSV"]
+    subgraph SRC["Demo sources on EC2"]
+        SQL["SQL Server 2022"]
+        SFTP["SFTP · CSV / TSV"]
     end
-    subgraph FABRIC["Microsoft Fabric"]
-      CP[("SQL Database<br/>Config · Connections · Watermarks")]
-      ORCH["Data Factory Pipelines<br/>Orchestrator · Dispatcher · Controller · Routers"]
-      SQLCP["SQL Server Query-mode Copy<br/>FULL / INCREMENTAL"]
-      BIN["SFTP Binary Copy"]
-      LAND["Lakehouse Files<br/>Landing"]
-      NB["Notebook<br/>Parse / append"]
-      BRONZE[("Lakehouse Bronze<br/>Append-only Delta")]
-      AUDIT[("SQL Database<br/>Terminal Object Audit")]
-      VIEWS["Monitoring SQL Views"]
-      PBI["Semantic Model +<br/>Power BI Operations Report"]
+    subgraph FABRIC["Microsoft Fabric · batch DEV"]
+        CP[("Fabric SQL Database<br/>Config · Connections · Watermarks · Audit")]
+        ORCH["Data Factory Pipelines<br/>Select · Validate · Dispatch"]
+        SQLCOPY["Query-mode Copy<br/>FULL / INCREMENTAL"]
+        LAND["SFTP Binary Copy<br/>Lakehouse Files Landing"]
+        NB["Notebook<br/>Parse delimited files"]
+        BRONZE[("Lakehouse Bronze<br/>Append-only Delta")]
+        OPS["Monitoring SQL Views<br/>Power BI Operations Report"]
     end
-    CP -- "metadata / checkpoints" --> ORCH
-    ORCH --> SQLCP
-    ORCH --> BIN
-    SQL --> SQLCP --> BRONZE
-    SFTP --> BIN --> LAND --> NB --> BRONZE
-    ORCH -- "transactional finalize" --> AUDIT
-    AUDIT --> VIEWS --> PBI
-    ORCH -- "guarded advancement" --> CP
+    CP -->|"configuration / checkpoints"| ORCH
+    ORCH --> SQLCOPY
+    ORCH --> LAND
+    SQL --> SQLCOPY --> BRONZE
+    SFTP --> LAND --> NB --> BRONZE
+    ORCH -.->|"finalize audit / guarded watermark"| CP
+    CP --> OPS
 ```
 
-</details>
+This conceptual view summarizes the implemented **batch-only DEV architecture**, not an observed run. The Data Factory orchestration group includes the child adapters that invoke finalization; the SQL Control Plane holds terminal object audits as well as configuration and checkpoints. See [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) for the dispatch flow and the source-specific guides for the detailed activity paths.
 
 The full [pipeline topology and design rationale](docs/architecture/framework-overview.md)
 covers internal adapters, failure compensation, and the separation between
