@@ -190,9 +190,7 @@ With `filesRead > 0`, a successful Bronze Notebook leads to `sp_finalize_success
 
 **What the diagrams establish:** these are conceptual traces of the checked-in Pipeline activities, not evidence of a new DEV execution or a measured file scan. They do not imply support for JSON/Parquet readers or CDC.
 
-If the scan finds no matching files, the run is `SKIPPED` and the checkpoint does not advance. A successful REGULAR incremental run with matching files can advance the watermark through guarded SQL finalization. An explicitly requested BACKFILL uses supplied historical bounds and does not move the operational checkpoint.
-
-The full boundary rules are recorded in [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md). Do not infer file ingestion from the payload's business event date.
+Unlike the SQL Server INCREMENTAL adapter, which can skip a REGULAR `HIGH = LOW` window before the Loader, SFTP determines whether new data exists **after** its Binary Copy completes and the file counts are checked. See [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) for the comparison and timestamp rules. Do not infer file ingestion from the payload's business event date.
 
 ## 5. Verify the terminal object audits
 
