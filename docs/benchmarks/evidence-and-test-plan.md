@@ -63,20 +63,28 @@ three times) instead of ranking single runs.
 Fabric resources; do not extrapolate a SQL Server Developer/EC2 DEV result to
 production cost, scalability or enterprise SLAs.
 
-## Screenshot / artifact capture checklist (not yet bundled)
+## Screenshot and artifact capture (not yet bundled)
 
-| Suggested file | What the screenshot should establish |
-| --- | --- |
-| `assets/architecture-overview.png` | Architecture slide or Mermaid screenshot with sources/control/ingestion/audit |
-| `assets/orchestrator-run.png` | Orchestrator and object-level runs for a real SUCCESS/SKIPPED batch |
-| `assets/bronze-sample.png` | Bronze schema/lineage columns; no private or sensitive data |
-| `assets/watermark-and-audit.png` | One audited run aligned to current watermark with IDs redacted where appropriate |
-| `assets/powerbi-operations.png` | Desktop-authored final Report and slicer interactions |
-| `assets/benchmark-copy.png` | Completed Copy run details with scenario, rows, duration and parallel copies |
+The framework architecture is maintained as **source-editable Mermaid in
+[README](../../README.md)**. It is a conceptual diagram and should not be
+presented as a screenshot from Fabric DEV.
 
-**These files are proposed names, not existing images.** Add only actual,
-reviewed screenshots after masking passwords, tenant-specific endpoints,
-private hostnames, personal identities and credentials. For any public technical documentation, use synthetic data and no private client artifacts.
+Use the [Documentation and Screenshot Plan](../guides/documentation-and-screenshot-plan.md)
+as the **single capture checklist** for the guided ingestion walkthrough:
+F02–F16 identify the actual Fabric, Control SQL, Bronze and Power BI views to
+capture, and S01–S10 define the expected DEV scenarios. F01 is the README
+Mermaid diagram, not an additional capture task.
+
+For performance evidence in this document, record the Copy Activity output
+and its matching source/target verification **per tested scenario**, including
+the Activity Run ID, row counts, duration, throughput, used parallel copies,
+partition strategy and relevant environment/load context. Retain the
+observed-versus-incomplete distinction for E03 and E04; an in-progress AUTO
+snapshot is not a completed benchmark.
+
+Add images only after reviewing the matching run, masking credentials,
+tenant-specific endpoints, private hostnames and personal identities. Public
+examples must use synthetic data, not private client artifacts.
 
 ## Verified and outstanding test coverage
 
