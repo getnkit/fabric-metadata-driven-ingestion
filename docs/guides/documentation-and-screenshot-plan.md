@@ -52,7 +52,7 @@ Use **Mermaid by default** for diagrams that explain executable logic, routing, 
 | Pipeline-level flow | How do Orchestrator, Paginator, Dispatcher, Controller, and Routers interact? | Mermaid showing pipeline boundaries and the meaningful decisions |
 | Activity-level flow | Why does a particular INCREMENTAL, SKIPPED, or recovery branch run? | Mermaid extracted from the actual Pipeline JSON; focus on decision activities and critical failure paths |
 
-The activity-level examples are in [SQL Server Database Ingestion](sql-server-database-ingestion.md) (incremental boundary and Copy decisions) and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) (write-failure cleanup and finalization reconciliation). Avoid an all-activities, all-pipelines poster. If detail would make an individual diagram unreadable, link the canonical Pipeline JSON instead.
+The activity-level examples are in [SQL Server Database Ingestion](sql-server-database-ingestion.md) (incremental boundary and Copy decisions), [SFTP File Ingestion](sftp-file-ingestion.md) (Last Modified selection, Landing consistency, and SKIPPED), and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) (write-failure cleanup and finalization reconciliation). Avoid an all-activities, all-pipelines poster. If detail would make an individual diagram unreadable, link the canonical Pipeline JSON instead.
 
 A conceptual Mermaid or SVG diagram is **not runtime evidence**. Separate it from Fabric Monitor screenshots that show real activities and outcomes. Do not add screenshot-style activity icons or synthetic Fabric canvases just to make a diagram look like a runtime trace.
 
@@ -71,7 +71,7 @@ Capture only views that answer a question the walkthrough has raised. Use the sa
 | F07 | Notebook execution output and Bronze table columns including `_batch_id` and `_pipeline_run_id` | SFTP ingestion guide, step 3 or 5 |
 | F08 | SQL audit row for the same object execution and batch | SFTP ingestion guide, step 5 |
 | F09 | Before/after watermark values for a successful FILE INCREMENTAL run with new remote files | Incremental watermark reference |
-| F10 | A no-new-files FILE INCREMENTAL `SKIPPED` run plus unchanged checkpoint | Incremental watermark reference |
+| F10 | FILE INCREMENTAL Copy output with `filesRead = 0`, `filesWritten = 0`; terminal `SKIPPED` audit and unchanged checkpoint | [SFTP File Ingestion](sftp-file-ingestion.md) and incremental watermark reference |
 | F11 | Explicit BACKFILL request, audit bounds, and unchanged operational checkpoint | Backfill / reliability reference |
 | F12 | Power BI Operations report with source summary and Object Execution History | Monitoring guide |
 | F13 | `lkp_ingestion_config` Lookup settings and selected Object Controller route | [Pipeline Orchestration](pipeline-orchestration.md) |
