@@ -80,7 +80,31 @@ A later successful FULL run appends another batch. It does not truncate or repla
 
 The `crm.customers` configuration has `load_strategy = INCREMENTAL` and `watermark_field = updated_at`.
 
-The INCREMENTAL Adapter starts by looking up the state for the exact `ingestion_config_id` and watermark field in `control.pipeline_watermarks`. It then determines the upper bound for a REGULAR run with the source query:
+The INCREMENTAL Adapter starts by looking up the state for the exact `ingestion_config_id` and watermark field in `control.pipeline_watermarks`. The following **activity-level** diagram traces its control decisions, not every error-message or variable-assignment detail in the JSON.
+
+```mermaid
+flowchart TD
+    A["lkp_current_watermark"] --> B{"if_state_found"}
+    B -->|No| BS["sp_finalize_state_not_found"]
+    B -->|Yes| C["set_processing_lower_bound"]
+    C --> D{"if_regular_run"}
+    D -->|REGULAR| E["lkp_source_upper_bound"]
+    E --> F["set_processing_upper_bound_regular"]
+    E -.->|Lookup fails| EF["sp_finalize_source_query_failed"]
+    D -->|BACKFILL| G["set_processing_upper_bound_backfill"]
+    F --> H{"if_valid_processing_boundary"}
+    G --> H
+    H -->|No| HF["sp_finalize_invalid_processing_boundary"]
+    H -->|Yes| I{"if_no_new_data"}
+    I -->|Yes| J["sp_finalize_no_new_data_skipped"]
+    I -->|No| K["inv_ingest_sql_server_incremental_loader"]
+```
+
+**How to read this:** `lkp_current_watermark` and `if_state_found` validate the saved state first. REGULAR gets HIGH from a source Lookup; BACKFILL uses the explicitly requested HIGH. After boundary validation, only a REGULAR `HIGH = LOW` window takes the early `SKIPPED` branch. The other valid windows invoke the Loader.
+
+The diagram stops at the initial finalize activities on the error branches to remain readable. Their dependent `fail_*` activities, along with the exact Fabric dependencies and error handling, remain in the [INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sql_server_incremental_adapter.DataPipeline/pipeline-content.json). The diagram is derived from the checked-in definition, **not** an observed DEV run.
+
+For a REGULAR run the upper bound comes from a source query:
 
 ```sql
 SELECT MAX([updated_at]) AS upper_bound
@@ -137,6 +161,27 @@ The FULL Adapter and INCREMENTAL Loader each have two Copy branches:
 | `copy_source_to_bronze_tuned` | Positive `parallel_copies` override | Set explicitly from metadata |
 
 The routing gate checks that the Copy options are valid before the Copy stage. The optional dynamic-range mode uses a partition predicate generated for the SQL Server connector; it does not change the ingestion checkpoint definition.
+
+The separate **INCREMENTAL Loader** implements the Copy and finalization portion of the flow:
+
+```mermaid
+flowchart TD
+    A["set_ingestion_timestamp"] --> B{"if_valid_copy_options"}
+    B -->|No| BAD["sp_finalize_invalid_copy_options"]
+    B -->|Yes| C{"if_parallel_copy_override"}
+    C -->|Positive override| T["copy_source_to_bronze_tuned"]
+    C -->|Service-managed AUTO| U["copy_source_to_bronze_auto"]
+    T --> F["sp_finalize_success"]
+    U --> F
+    F -.->|Finalizer fails| REC["inv_ingest_incremental_finalize_recovery"]
+    C -.->|Copy branch fails| CL["nb_cleanup_bronze_write_failed"]
+    CL -->|Cleanup succeeds| CF["sp_finalize_bronze_write_failed"]
+    CL -->|Cleanup fails| CFF["sp_finalize_bronze_write_cleanup_failed"]
+```
+
+The solid arrows show the normal execution path; dashed arrows mark the **failed activity dependencies** in the Fabric definition. The Cleanup Notebook is triggered when the Copy branch fails; it is not part of a successful Copy path. The Finalizer recovery child is invoked only when `sp_finalize_success` fails, because a failed response does not prove whether the SQL transaction committed.
+
+The complete definitions also include the count-setting activities following each Copy and terminal `Fail` activities after error finalization. They are omitted from the visual only to keep the control decisions legible; see the [INCREMENTAL Loader JSON](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json) and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) for those details.
 
 An earlier isolated DEV experiment showed that explicitly setting `parallelCopies = 0` was not equivalent to omitting the property. This is why the AUTO branch omits it. Do not treat that observation as a general performance benchmark.
 
