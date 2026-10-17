@@ -239,4 +239,4 @@ Study [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md
 
 The next step is to follow the [complete technical learning path](learning-path.md), which covers SQL Server Copy, optimistic finalization, recovery, and monitoring in more detail.
 
-**About the examples:** this guide documents definitions and expected framework behavior. Screenshots of individual runs will be added only after the matching DEV scenario has been executed and verified. It does not claim to demonstrate an independently repeated run inside this document.
+The examples describe the checked-in implementation, not the outcome of a new run. Use the audit query above and Fabric Monitor to verify an actual execution.
