@@ -1,7 +1,6 @@
-# SQL Control Plane — Current Starter Kit Baseline
+# SQL Control Plane — Schema and Verification
 
-This document describes the **current Personal SQL baseline**, not migration
-history. The physical schema source of truth is
+This reference describes the implemented Control/Audit SQL schema, its installation order, and checks for a fresh environment. The physical schema source of truth is
 `fabric/sqldb_ingestion_control.SQLDatabase/`; the canonical quickstart is
 [`scripts/RUN_ORDER.md`](../../scripts/RUN_ORDER.md).
 
