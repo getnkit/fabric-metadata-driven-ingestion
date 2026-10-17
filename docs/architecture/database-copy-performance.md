@@ -1,10 +1,10 @@
 # Database Copy Performance Strategy
 
-## Status
+## Implemented scope
 
-Implemented for the current SQL Server 2022 Developer on EC2 -> Bronze adapter.
+The current SQL Server 2022 Developer on EC2 adapter uses Copy activities in Fabric Data Pipelines to ingest data into Bronze.
 
-The framework keeps orchestration in Fabric Data Factory Copy activities and uses
+The framework keeps orchestration in Fabric Data Pipelines and uses
 connector-native parallel partitioning rather than moving simple relational
 extraction into Spark. Spark remains appropriate when the workload is a
 distributed transformation rather than connector-native data movement.
