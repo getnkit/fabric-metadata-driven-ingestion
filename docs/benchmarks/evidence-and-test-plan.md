@@ -63,28 +63,13 @@ three times) instead of ranking single runs.
 Fabric resources; do not extrapolate a SQL Server Developer/EC2 DEV result to
 production cost, scalability or enterprise SLAs.
 
-## Screenshot and artifact capture (not yet bundled)
+## Evaluating the evidence
 
-The framework architecture is maintained as **source-editable Mermaid in
-[README](../../README.md)**. It is a conceptual diagram and should not be
-presented as a screenshot from Fabric DEV.
+The architecture diagram in [README](../../README.md) explains the design; it is not a measured result. The table above distinguishes completed DEV observations from incomplete or planned comparisons.
 
-Use the [Documentation and Screenshot Plan](../guides/documentation-and-screenshot-plan.md)
-as the **single capture checklist** for the guided ingestion walkthrough:
-F02–F16 identify the actual Fabric, Control SQL, Bronze and Power BI views to
-capture, and S01–S10 define the expected DEV scenarios. F01 is the README
-Mermaid diagram, not an additional capture task.
+For each new Copy performance result, record the Pipeline/Activity Run ID, input and output counts, elapsed time, throughput, `usedParallelCopies`, partition mode, and source/capacity conditions. Compare like-for-like runs and repeat measurements before interpreting a difference as a performance improvement.
 
-For performance evidence in this document, record the Copy Activity output
-and its matching source/target verification **per tested scenario**, including
-the Activity Run ID, row counts, duration, throughput, used parallel copies,
-partition strategy and relevant environment/load context. Retain the
-observed-versus-incomplete distinction for E03 and E04; an in-progress AUTO
-snapshot is not a completed benchmark.
-
-Add images only after reviewing the matching run, masking credentials,
-tenant-specific endpoints, private hostnames and personal identities. Public
-examples must use synthetic data, not private client artifacts.
+A screenshot is useful only when it can be tied to the same observed run and its source/target checks. Before publishing artifacts, remove credentials, tenant-specific endpoints, private hostnames and personal information. Use synthetic data, never customer data. In particular, the in-progress AUTO observation in E04 is **not** a completed benchmark.
 
 ## Verified and outstanding test coverage
 
