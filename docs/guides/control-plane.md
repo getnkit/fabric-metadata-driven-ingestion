@@ -173,6 +173,6 @@ The seed scripts are for creating or preparing a DEV example, **not** read-only 
 
 **Next:** [Pipeline Orchestration](pipeline-orchestration.md) shows how the master selects these configuration rows and dispatches them. Then follow [SQL Server Database Ingestion](sql-server-database-ingestion.md) or [SFTP File Ingestion](sftp-file-ingestion.md) into the source-specific adapters.
 
-### Suggested screenshots
+### Check the execution contract
 
-When capturing the real DEV example, the useful views are the configuration query results, the Watermark query, and the Object Controller's `lkp_ingestion_config` activity settings. Capture actual values only after checking the environment. The [Documentation and Screenshot Plan](documentation-and-screenshot-plan.md) tracks that work.
+Use the read-only configuration and watermark queries above to identify the actual object and its checkpoint. Then inspect `lkp_ingestion_config` in the checked-in [Object Controller definition](../../fabric/pl_ingest_object_controller.DataPipeline/pipeline-content.json) to see how the metadata is passed to the router. The SQL results depend on the active DEV environment; do not assume the example IDs or values match a fresh deployment.
