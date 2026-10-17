@@ -1,4 +1,4 @@
-# Ingestion Operations — Monitoring Report (Current Baseline)
+# Ingestion Operations — Monitoring Report
 
 ## Purpose and limits
 
@@ -7,7 +7,7 @@ Model `sm_ingestion_operations` are authored in Power BI Desktop and tracked
 in `fabric/` as PBIR/TMDL. The Report was subsequently synced back to Fabric
 and verified visually/operationally in DEV (2026-10-13).
 
-This MVP reads **terminal object-level ingestion audit** from the Fabric SQL
+The report reads **terminal object-level ingestion audit** from the Fabric SQL
 Database. It does **not** create a separate master-run audit, Eventhouse,
 real-time refresh engine or scheduled report pipeline. It cannot show
 RUNNING work, master failures before object audit, or unpersisted audit
@@ -116,4 +116,3 @@ cards, Source System slicer, latest-batch summary and 10-column history.
 See [Environment Rebuild](environment-rebuild.md) for the deployment and
 connection/ID checklist. For future edits, use Power BI Desktop and commit
 the native PBIR/TMDL definitions to the canonical `fabric/` paths.
-The earlier generated prototype remains only in Git history.
