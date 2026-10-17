@@ -139,11 +139,20 @@ transaction across Delta and SQL.
 | Append-only successful batches | Preserve ingestion execution lineage, support intentional historical backfill | Global deduplication or a full snapshot versioning system |
 | Source-status Power BI report | Simple audit-backed operational visibility without another ingestion pipeline | Live RUNNING view, failure before object audit, verified alert inbox delivery |
 
+## Scaling and extension considerations
+
+The current framework uses a shared orchestration entry point and bounded parallelism. These choices fit its DEV batch scope, but larger workloads may require additional coordination:
+
+- **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object outcomes.
+- **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations **within one run**. This is not a database-connection limit: one object execution can use multiple connections, and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency policies or a shared per-source execution budget.
+- **Overlapping executions and locking.** Multiple orchestrator runs can select the same ingestion configuration at the same time. Guarded SQL watermark finalization detects certain state conflicts, but does not prevent duplicate work or overlapping Bronze writes. If those overlaps must be prevented, execution locking or time-bounded leases may be considered; the required lock scope depends on the shared state and target resources.
+
+These are **possible extensions, not implemented features**. The current framework does not provide cross-system dependency coordination, shared per-source concurrency enforcement, or execution locks. The design should be revisited only when workload requirements justify the additional complexity.
 ## Reuse boundaries
 
 - Current sources are the **SQL Server** and **SFTP** demo paths, not an
   implemented multi-vendor ingestion marketplace.
-- Concurrency in the master is limited; no per-configuration execution lock.
+- Dispatcher concurrency is bounded per run; there is no shared per-source limit or execution lock.
 - Optional benchmark tables are DEV-only; their existence is not proof of
   scalable production performance.
 - Avoid hardcoding DEV Connection IDs into any new deployment. See the
