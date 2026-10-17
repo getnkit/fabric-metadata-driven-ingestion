@@ -1,8 +1,8 @@
 # Database Ingestion Extensibility
 
-## Status
+## Implemented scope
 
-Accepted for the current blueprint.
+The DATABASE Router currently supports SQL Server FULL and INCREMENTAL adapters. The boundaries described below can support other relational connectors, but no second database connector is implemented in this repository.
 
 ## Current architecture
 
