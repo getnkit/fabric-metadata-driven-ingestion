@@ -2,7 +2,7 @@
 
 The Control Plane tells the framework which source objects exist. The orchestration pipelines decide which objects to run in a particular execution and pass their metadata to the appropriate adapter.
 
-This guide follows the implemented Fabric Data Factory Pipeline definitions from the entry parameters to the DATABASE and FILE Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are unfamiliar.
+This guide follows the implemented Microsoft Fabric Data Pipeline definitions from the entry parameters to the DATABASE and FILE Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are unfamiliar.
 
 ## 1. Start at the master pipeline
 
@@ -175,7 +175,7 @@ The expected result depends on the remote files and current checkpoint. A FULL s
 
 Use the shared Batch ID to connect the object outcomes, and the object Pipeline Run ID to inspect a specific execution. A master run that fails before object dispatch may have **no object audit record**. Use Fabric Monitor for that case.
 
-If you are documenting this run, capture the parameter screen, actual route, and matching audit results. See [Documentation and Screenshot Plan](documentation-and-screenshot-plan.md). Do not label a designed path as a verified execution until you have checked it in DEV.
+For verification, compare the master run parameters and child activity outcomes in Fabric Monitor with the object audit rows returned by the query. The diagram describes the implemented routing; only an observed run establishes what happened in a particular execution.
 
 ## 8. What to read next
 
