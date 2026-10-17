@@ -1,10 +1,8 @@
 # File Ingestion Design
 
-## Status
+## Implemented scope
 
-FILE/FULL is implemented and acceptance-tested. FILE/INCREMENTAL extends the same design by reusing the framework-wide pipeline watermark state.
-
-The personal project intentionally keeps FILE ingestion lean:
+SFTP FULL and INCREMENTAL ingestion share the FILE routing design and the framework-wide pipeline watermark state. The current implementation keeps FILE ingestion focused on:
 
 - one shared `control.ingestion_config`
 - first-class `source_path`, `landing_path`, and `file_format`
