@@ -1,84 +1,87 @@
 # Fabric Metadata-Driven Batch Ingestion
 
-This repository demonstrates **metadata-driven batch ingestion in Microsoft Fabric**. Instead of creating a separate pipeline for every source object, it uses shared orchestration, configuration, and state management to ingest SQL Server tables and SFTP files into append-only Lakehouse Bronze Delta tables.
+Building a separate pipeline for each source table can be a sensible choice when the requirements are simple and stable. But as more tables and source systems are added, maintaining the same ingestion logic across many pipelines takes more effort.
 
-**Technology:** Fabric Data Factory · Fabric SQL Database · Lakehouse / Delta · SQL Server 2022 · SFTP · PySpark · Power BI
+This project explores a **metadata-driven approach to batch ingestion using Microsoft Fabric Data Pipelines**. Rather than creating a new pipeline for every source object, a shared framework reads configuration tables to decide what to ingest, how to load it, and where to store it. The goal is to reduce repetitive pipeline development while keeping control over incremental state, audit logging, and failure handling.
+
+The implementation uses **SQL Server and SFTP** as example sources and writes to **append-only Bronze Delta tables** in a Fabric Lakehouse.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph SOURCES["Demo sources"]
+    subgraph SOURCES["Example sources"]
         SQL["SQL Server 2022"]
         SFTP["SFTP · CSV / TSV"]
     end
     subgraph FABRIC["Microsoft Fabric"]
-        META[("SQL Database<br/>Configuration · Watermarks · Audit")]
-        ORCH["Data Factory Pipelines<br/>Orchestrate · Dispatch · Route"]
-        DBCOPY["SQL Server Query-mode Copy<br/>FULL / INCREMENTAL"]
-        FCOPY["SFTP Binary Copy"]
-        LAND["Lakehouse Files Landing"]
+        CTRL[("Fabric SQL Database<br/>Configurations · Watermarks · Audit")]
+        PIPE["Fabric Data Pipelines<br/>Select · Validate · Dispatch"]
+        DB["Query-mode Copy<br/>FULL / INCREMENTAL"]
+        FILE["SFTP Binary Copy"]
+        LAND["Lakehouse Files<br/>Landing"]
         NB["Notebook<br/>Parse files"]
-        BRONZE[("Lakehouse Bronze<br/>Append-only Delta")]
-        MON["Monitoring SQL Views<br/>Power BI Report"]
+        BRONZE[("Lakehouse Bronze<br/>Delta tables")]
+        REPORT["SQL monitoring views<br/>Power BI report"]
     end
-    META -->|"configuration / checkpoints"| ORCH
-    ORCH --> DBCOPY
-    ORCH --> FCOPY
-    SQL --> DBCOPY --> BRONZE
-    SFTP --> FCOPY --> LAND --> NB --> BRONZE
-    ORCH -.->|"finalize audit / guarded checkpoint"| META
-    META --> MON
+    CTRL -->|"configuration / state"| PIPE
+    PIPE --> DB
+    PIPE --> FILE
+    SQL --> DB --> BRONZE
+    SFTP --> FILE --> LAND --> NB --> BRONZE
+    PIPE -.->|"audit / guarded checkpoint update"| CTRL
+    CTRL --> REPORT
 ```
 
-The **Control Plane** stores configuration, connection references, checkpoints, and terminal object audits in Fabric SQL Database. Data Factory Pipelines resolve and dispatch object requests. SQL Server Copy loads directly to Bronze; SFTP Copy preserves files in Landing before a Notebook parses them into Bronze.
+The framework separates **control and state** from **data movement**. Fabric SQL Database stores ingestion configurations, connection references, watermarks, and terminal object audits. Fabric pipelines handle request selection and routing. SQL Server data is copied directly to Bronze; SFTP files are preserved in Landing before a Notebook reads and appends them to Bronze.
 
-See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline boundaries and trade-offs.
+For the decisions behind this design, see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
-## Key behaviors
+## How it works
 
-| Area | Behavior |
+| Part | What it does |
 | --- | --- |
-| **Metadata-driven routing** | `control.ingestion_config` defines source objects, load strategies, and targets; `control.connection_settings` resolves logical connections. |
-| **Run selection** | `pl_ingest_orchestrator` runs all active objects, a source-system subset, or explicit object requests. |
-| **Database ingestion** | SQL Server FULL and timestamp-watermark INCREMENTAL use Query-mode Copy to append Bronze Delta. |
-| **File ingestion** | SFTP FULL and Last Modified INCREMENTAL use Binary Copy to Landing and Notebook parsing for CSV/TSV (`DELIMITED_TEXT`). |
-| **Run semantics** | `REGULAR` and `BACKFILL` are execution intents. Successful historical BACKFILL does not advance the operational watermark; no-new-data runs can finish `SKIPPED`. |
-| **Reliability** | Guarded watermark updates, terminal object audits, and execution-scoped compensation handle selected failure cases without claiming a distributed transaction. |
-| **Monitoring** | SQL views over `audit.ingestion_log` feed the Power BI Operations Report. |
+| **Shared orchestration** | `pl_ingest_orchestrator` runs all active configurations, one source-system subset, or an explicit list of requests. |
+| **Metadata-driven routing** | `control.ingestion_config` and `control.connection_settings` identify source objects, supported loading patterns, and targets. |
+| **SQL Server ingestion** | FULL or timestamp-based INCREMENTAL loads use query-mode Copy into Bronze. |
+| **SFTP ingestion** | FULL or Last Modified INCREMENTAL loads use Binary Copy to Landing, followed by CSV/TSV parsing in a Notebook. |
+| **Incremental state** | A successful eligible `REGULAR` run can advance the watermark. `BACKFILL` and no-new-data `SKIPPED` runs do not advance it. |
+| **Failure handling and monitoring** | SQL finalization guards checkpoint updates; execution-scoped cleanup handles supported failure paths, and audit records feed the Power BI Operations Report. |
 
-## Explore the implementation
+**Why not one pipeline per table?** Separate pipelines may be simpler for a small, fixed set of sources or for objects that require very different logic. A metadata-driven framework adds setup and maintenance responsibilities, but becomes useful when many objects follow the same ingestion pattern and onboarding is frequent.
 
-| Topic | Guide |
+## Follow the implementation
+
+You can explore the design without deploying anything. Start with the [Technical Learning Path](docs/guides/learning-path.md), or go directly to the topic you want to understand:
+
+| Topic | Documentation |
 | --- | --- |
-| End-to-end walkthrough | [Technical Learning Path](docs/guides/learning-path.md) |
-| Configuration, run requests, and dispatch | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
-| SQL Server FULL / INCREMENTAL | [Database Ingestion](docs/guides/sql-server-database-ingestion.md) |
-| SFTP FULL / INCREMENTAL | [File Ingestion](docs/guides/sftp-file-ingestion.md) |
-| Checkpoint behavior and failure recovery | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Bronze Compensating Cleanup](docs/operations/bronze-compensating-cleanup.md) |
-| Monitoring and recorded experiments | [Operations Monitoring](docs/operations/monitoring-report.md) · [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
+| Configuration and orchestration | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
+| SQL Server ingestion | [Database Ingestion Guide](docs/guides/sql-server-database-ingestion.md) |
+| SFTP ingestion | [File Ingestion Guide](docs/guides/sftp-file-ingestion.md) |
+| Incremental windows and backfill | [Generic Incremental Watermark](docs/architecture/generic-incremental-watermark.md) |
+| Finalization and cleanup | [Bronze Compensating Cleanup](docs/operations/bronze-compensating-cleanup.md) |
+| Audit and monitoring | [Monitoring Report](docs/operations/monitoring-report.md) |
 
-The implementation is tracked under `fabric/` (Pipelines, Notebooks, SQL Database, Lakehouse, and Power BI definitions). SQL setup and example fixtures are under `scripts/`; the optional SQL Server/SFTP demo-source environment is under `infrastructure/source/`.
+The `fabric/` directory contains Fabric item definitions. `scripts/` contains SQL setup and demo fixtures; `infrastructure/source/` contains the optional demo-source setup.
 
-## Run the DEV example
+## Try the DEV example
 
-1. Follow the [Environment Rebuild Guide](docs/operations/environment-rebuild.md) to provision or connect the required Fabric items, sources, connections, and Variable Library values.
-2. Use [scripts/RUN_ORDER.md](scripts/RUN_ORDER.md) for SQL bootstrap, sample metadata, and source data setup.
-3. Start **`pl_ingest_orchestrator`** in Fabric. To select the active SFTP demo objects, set:
+To run the framework in a new DEV environment, follow the [Environment Rebuild Guide](docs/operations/environment-rebuild.md) and [SQL/source setup order](scripts/RUN_ORDER.md). A fresh workspace needs its own Fabric connections, permissions, and environment-specific bindings.
 
-   ```text
-   p_run_requests = []
-   p_source_system = "LOGISTICS_VENDOR"
-   ```
+After setup, run **`pl_ingest_orchestrator`**. For example, to select the active SFTP configurations:
 
-4. Inspect the resulting object executions in Fabric Monitor and the terminal rows in `audit.ingestion_log`. Use the [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) to correlate Landing, Bronze, audit, and watermark behavior.
+```text
+p_run_requests = []
+p_source_system = "LOGISTICS_VENDOR"
+```
 
-Child pipelines are implementation components; use `pl_ingest_orchestrator` as the supported entry point.
+Use Fabric Monitor and `audit.ingestion_log` to inspect the actual object outcomes. The [SFTP guide](docs/guides/sftp-file-ingestion.md) shows how to follow the run through Landing, Bronze, and the checkpoint. Child pipelines are internal components, not standalone entry points.
 
-## Scope and limitations
+## Scope
 
-This is a **batch-only DEV reference implementation** for SQL Server and SFTP. It does not implement CDC, streaming, API ingestion, Silver/Gold transformations, or production operations/SLA guarantees. The SQL control/audit database and Bronze Lakehouse do not share an end-to-end distributed transaction.
+This is a **batch-only DEV reference implementation** covering SQL Server and SFTP. File parsing currently supports **delimited text (CSV/TSV)**. It does not implement CDC, streaming, API ingestion, or Silver/Gold transformations. Fabric SQL Database and Delta Lakehouse writes are **not one distributed transaction**. It does not claim production operations or SLA guarantees.
 
-Fabric item definitions may contain environment-specific workspace IDs and connection references; a fresh deployment requires rebinding. For observed DEV runs and the limits of the performance experiments, see the [Evidence Register](docs/benchmarks/evidence-and-test-plan.md).
+The implementation and its limitations can be inspected in the linked definitions and guides. For recorded performance experiments, see [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md).
 
-**License:** No license is included. Public access to the source does not by itself grant reuse or redistribution rights.
+**License:** No license is currently included; public availability does not grant permission to reuse or redistribute the code.
