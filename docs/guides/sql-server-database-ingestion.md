@@ -249,8 +249,6 @@ A successful Delta write and the SQL Control Database finalization are not one d
 
 The [Bronze Compensating Cleanup runbook](../operations/bronze-compensating-cleanup.md) now includes activity-level Mermaid diagrams for both **Bronze write failure** and **post-finalization reconciliation**. Follow those diagrams alongside the Pipeline JSON to see why cleanup is conditional on the failure boundary. These behaviors should not be simplified into a claim that every rerun is automatically exactly once at business-record level.
 
-### Suggested screenshots
+### Check the run before drawing conclusions
 
-For this guide, capture the actual SQL Server FULL/INCREMENTAL metadata rows, a `copy_source_to_bronze_auto` run, the incremental `lkp_current_watermark` and `lkp_source_upper_bound` activities, and the matching SQL audit and watermark before/after. Record the Batch ID and Run IDs so the images can be tied to one execution.
-
-No screenshots or new execution results are supplied by this guide. The [Documentation and Screenshot Plan](documentation-and-screenshot-plan.md) lists the proposed DEV capture sessions.
+In Fabric Monitor, inspect the executed FULL or INCREMENTAL Copy branch and match its object Pipeline Run ID to `audit.ingestion_log`. For an incremental run, compare the stored watermark before and after finalization. The Copy activity's success alone does not confirm the terminal audit or checkpoint update. This guide documents implementation behavior; the observed result depends on the DEV source state at execution time.
