@@ -2,7 +2,7 @@
 
 This reading guide starts with the framework architecture and metadata, then follows one run through orchestration and the source-specific adapters. Each section links to the SQL scripts, Pipeline definitions, or Notebooks that implement the behavior.
 
-**Platform scope:** Microsoft Fabric Data Factory, Fabric SQL Database and
+**Platform scope:** Microsoft Fabric Data Pipelines, Fabric SQL Database and
 Lakehouse Bronze. Many design principles are relevant to Azure Data Factory,
 but its deployment formats and some activity features differ. The repo does
 not claim to contain deployable ADF assets.
@@ -143,9 +143,4 @@ For factual DEV observations and a reproducible benchmark design, read
 | Build audit-backed operations visibility | 7 |
 | Set up the demo / evaluate benchmark evidence | 8 |
 
-For the planned real DEV screenshots and matching test cases, see the [Documentation and Screenshot Plan](documentation-and-screenshot-plan.md). This is a capture plan, not a collection of verified run images.
-
-**Publication note:** The source is publicly viewable, but there is
-currently **no open-source license**. Visibility does not itself grant
-permission to copy, redistribute or relicense code. Confirm ownership
-and confidentiality clearance before granting broader reuse rights.
+The diagrams explain the intended design. For actual DEV outcomes, use the verification queries in each guide and the [recorded experimental evidence](../benchmarks/evidence-and-test-plan.md). Do not treat a diagram as proof of a completed run.
