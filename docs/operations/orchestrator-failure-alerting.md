@@ -52,17 +52,8 @@ operator failure notification = received
 
 Successful and SKIPPED runs do not need notifications in the current scope.
 
-## DEV alert validation status (reported 2026-10-04)
+## Observed DEV validation (2026-10-04)
 
-The user inspected the Activator Actions record and observed **two actual
-`pl_ingest_orchestrator` FAILED events** with associated rule/action activity.
-This supports **failure event detection and action invocation: PASS**.
+The recorded DEV test included **two `pl_ingest_orchestrator` FAILED events** with Activator rule/action activity. This is evidence of event detection and action invocation in that environment, not proof of notification delivery.
 
-**Recipient inbox receipt: NOT VERIFIED.** The test tenant/mailbox limitations
-prevented independent confirmation that the intended recipient received the
-notification. Do not describe end-to-end email delivery as PASS solely
-because the Activator action ran. This is a separate operational follow-up
-if dependable email notification becomes an acceptance requirement.
-
-This open verification does not block closure of the Power BI Operational
-Monitoring Report MVP, which is a read-only visual layer based on object audit.
+**Recipient inbox receipt was not independently verified.** The test tenant/mailbox conditions prevented confirmation that the intended recipient received the message. An environment that requires dependable alert delivery should verify receipt separately; an Activator action record alone is insufficient.
