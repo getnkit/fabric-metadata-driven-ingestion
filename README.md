@@ -18,7 +18,7 @@
   <a href="#run-the-example">Run the example</a>
 </p>
 
-Separate pipelines work well for a few source objects. As the number of objects grows, however, repeating load logic and watermark handling across pipelines becomes harder to maintain.
+Separate pipelines work well for a few source objects, but repeating the same load logic across many objects becomes harder to maintain.
 
 This repository implements a **metadata-driven ingestion framework in Microsoft Fabric**. Configuration tables define which source objects to process, how to load them, and where to write the results. Instead of building a pipeline for every object, the framework uses the same orchestration logic for different requests, with consistent watermark handling and run auditing.
 
@@ -28,11 +28,11 @@ The current implementation covers **batch ingestion** from SQL Server tables and
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks, and object audit records; the orchestration layer routes requests through Database or File adapters, loading Bronze Delta tables.](docs/assets/architecture-overview.svg)
 
-Fabric SQL Database stores source configuration, incremental checkpoints (**watermarks**), and completed object-run audits. Orchestration reads the configuration, selects the appropriate source adapter, and loads data into Bronze. See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the detailed pipeline structure and design decisions.
+Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline structure and design trade-offs.
 
 ## Design highlights
 
-- **Configuration-driven ingestion.** Configure different source objects without creating a separate pipeline for each one.
+- **Configuration-driven ingestion.** Metadata defines each object's load strategy, source adapter, and Bronze target.
 - **Full and incremental loads.** Choose FULL or INCREMENTAL loading through metadata, with processing tailored to each source type.
 - **Watermark management.** Watermarks advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged.
 - **Audit and monitoring.** Track pipeline execution in Fabric Monitor and review recorded ingestion results through SQL audit tables and Power BI.
@@ -47,8 +47,6 @@ Fabric SQL Database stores source configuration, incremental checkpoints (**wate
 | **4. Load into Bronze** | For SQL Server, a Fabric Copy activity reads a SQL query for a full table load or a timestamp-based incremental window. For SFTP, Binary Copy moves CSV files to Landing before a Notebook parses them and appends Delta rows. |
 | **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. Successful REGULAR incremental loads can advance the watermark; BACKFILL and no-new-data SKIPPED runs do not. |
 | **6. Inspect runs** | **Fabric Monitor** shows pipeline execution. The **Power BI Operations Report** summarizes recorded ingestion results from SQL audit data. |
-
-**When does this approach help?** Separate pipelines can be simpler for a few objects or specialized workloads. Metadata-driven orchestration becomes useful when many objects follow similar ingestion rules, though the configuration and orchestration logic still require maintenance.
 
 ## Explore the implementation
 
@@ -83,6 +81,6 @@ The orchestrator selects the objects and invokes the child pipelines for you. Af
 
 If you need demo source services, [the optional EC2/Docker Compose setup](infra/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
 
-**Note:** The implemented source adapters cover SQL Server and SFTP. Other connectors and broader scheduling or concurrency policies would need additional design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
+**Scope:** Additional source connectors and advanced scheduling or concurrency policies require further design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
 **License:** No license is currently included. Public access does not by itself grant reuse or redistribution rights.
