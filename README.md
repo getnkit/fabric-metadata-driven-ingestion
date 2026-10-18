@@ -7,7 +7,6 @@
 <p align="center">
   <img alt="Microsoft Fabric Data Pipelines" src="https://img.shields.io/badge/Microsoft%20Fabric-Data%20Pipelines-5B4B91?style=flat-square" />
   <img alt="Fabric SQL Database" src="https://img.shields.io/badge/Control-Fabric%20SQL%20Database-4C6487?style=flat-square" />
-  <img alt="SQL Server and SFTP sources" src="https://img.shields.io/badge/Sources-SQL%20Server%20%2B%20SFTP-526B82?style=flat-square" />
   <img alt="Lakehouse Delta destination" src="https://img.shields.io/badge/Target-Lakehouse%20Delta-397E78?style=flat-square" />
 </p>
 
