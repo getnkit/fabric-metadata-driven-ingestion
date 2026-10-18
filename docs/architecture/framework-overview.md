@@ -1,8 +1,6 @@
 # Architecture & Design Decisions
 
-**Scope:** implemented batch framework at the current Git baseline.
-This technical walkthrough explains implemented design decisions and boundaries.
-The linked references and tracked Fabric/SQL artifacts define the current behavior.
+This page explains the implemented architecture, the engineering decisions behind it, and their limits. The linked Fabric Pipelines, Notebooks, and SQL definitions are the source of truth for runtime behavior.
 
 ## What problem does this solve?
 
@@ -74,7 +72,7 @@ SQL Control Database are **not** one distributed transaction.
 flowchart LR
   SQL["SQL Server table"] --> Q["Query-mode Fabric Copy<br/>FULL or timestamp incremental"]
   Q --> B[("Bronze Delta append")]
-  S["SFTP CSV / TSV"] --> BC["Binary Copy"] --> L["Lakehouse Files<br/>Landing"]
+  S["SFTP CSV files"] --> BC["Binary Copy"] --> L["Lakehouse Files<br/>Landing"]
   L --> N["Notebook parse"] --> B
 ```
 
@@ -128,6 +126,24 @@ finalization. This is the point of the compensating-cleanup design.
 This is **compensation + optimistic state control**, not a distributed
 transaction across Delta and SQL.
 
+### What happens when something goes wrong?
+
+The most important distinction is whether a failure happened during the Bronze
+write or after SQL finalization was attempted. A failed activity does not by
+itself prove that the SQL transaction failed.
+
+| Observed condition | Framework response | Why it matters |
+| --- | --- | --- |
+| A Copy or Notebook write fails after touching Bronze | Attempt cleanup using the failed object's `_batch_id` and `_pipeline_run_id`; record the failure. A cleanup failure is reported separately. | A failed object must not remove rows from another object in the same batch. |
+| An incremental finalizer records `FAILED / WATERMARK_CONFLICT` | Verify the committed audit outcome, then compensate that execution's Bronze rows (and the FILE Landing leaf where applicable). | A stale run cannot move the operational checkpoint or keep its failed Bronze write as a successful batch. |
+| A finalizer activity fails but the matching audit already says `SUCCESS` | Preserve the committed data; surface the response failure instead of deleting the batch. | An activity error can occur after a successful SQL commit. |
+| The finalizer outcome cannot be read or confirmed | Preserve the affected data for operator reconciliation rather than performing blind cleanup. | Deleting a possibly committed batch could make state and data disagree. |
+
+The finalization-recovery branches above apply to the implemented **incremental**
+SQL Server and SFTP paths; do not assume the same recovery contract for FULL
+loads or every possible failure. See [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md)
+for the actual activity branches, audit codes, and verification steps.
+
 ## Engineering trade-offs and non-goals
 
 | Choice | Why | What it does *not* solve |
@@ -141,13 +157,14 @@ transaction across Delta and SQL.
 
 ## Scaling and extension considerations
 
-The current framework uses a shared orchestration entry point and bounded parallelism. These choices fit its DEV batch scope, but larger workloads may require additional coordination:
+The current framework uses a shared orchestration entry point and bounded parallelism. These choices provide basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational requirements may need additional coordination:
 
 - **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object outcomes.
 - **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations **within one run**. This is not a database-connection limit: one object execution can use multiple connections, and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency policies or a shared per-source execution budget.
-- **Overlapping executions and locking.** Multiple orchestrator runs can select the same ingestion configuration at the same time. Guarded SQL watermark finalization detects certain state conflicts, but does not prevent duplicate work or overlapping Bronze writes. If those overlaps must be prevented, execution locking or time-bounded leases may be considered; the required lock scope depends on the shared state and target resources.
+- **Overlapping executions and locking.** The checked-in master pipeline sets `concurrency = 1`, limiting simultaneous runs of that master within its workspace. This is not a lock on each ingestion configuration: another deployment, a changed concurrency setting, or work outside the master could still target the same state and Bronze data. Guarded SQL watermark finalization detects certain conflicts after work has begun; it does not prevent duplicate extraction or overlapping writes. Where cross-run exclusivity is required, define a per-configuration lock or lease policy before increasing concurrency.
 
 These are **possible extensions, not implemented features**. The current framework does not provide cross-system dependency coordination, shared per-source concurrency enforcement, or execution locks. The design should be revisited only when workload requirements justify the additional complexity.
+
 ## Reuse boundaries
 
 - Current sources are the **SQL Server** and **SFTP** demo paths, not an
