@@ -39,6 +39,8 @@ You can read the design and code without setting up a Fabric workspace. For a gu
 | How source configuration and orchestration work | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
 | How a SQL Server table reaches Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
 | How SFTP files move through Landing and Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
+| How SQL Server Copy partitioning and parallelism are designed | [Copy Performance Strategy](docs/architecture/database-copy-performance.md) |
+| How Fabric limits and environment bindings affect deployment | [Fabric Limits](docs/architecture/fabric-data-factory-limits.md) · [Environment Bindings](docs/operations/variable-library-environment-binding.md) |
 | How incremental checkpoints and recovery work | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
 | What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
 | What was observed in DEV performance experiments | [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
