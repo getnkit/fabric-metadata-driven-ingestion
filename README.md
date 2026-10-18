@@ -34,7 +34,7 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 ## Design highlights
 
-- **Configuration-driven ingestion.** Metadata defines each object's load strategy, source adapter, and Bronze target.
+- **Configuration-driven ingestion.** Metadata defines each source object's ingestion pattern, load strategy, and Bronze target.
 - **Full and incremental loads.** Choose FULL or INCREMENTAL loading through metadata, with processing tailored to each source type.
 - **Watermark management.** Watermarks advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged.
 - **Audit and monitoring.** Track pipeline execution in Fabric Monitor and review recorded ingestion results through SQL audit tables and Power BI.
