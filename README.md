@@ -47,7 +47,7 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 | **2. Select and dispatch** | The orchestration flow selects active configurations, optionally filtered by source system, or accepts explicit object requests. Pagination handles configuration pages, and dispatch sends object requests to the controller. |
 | **3. Route each object** | The controller checks each object's configuration and selects the DATABASE or FILE path. The router then invokes the adapter based on source connection type and load strategy. |
 | **4. Load into Bronze** | For SQL Server, a Fabric Copy activity reads a SQL query for a full table load or a timestamp-based incremental window. For SFTP, Binary Copy moves CSV files to Landing before a Notebook parses them and appends Delta rows. |
-| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. Successful REGULAR incremental loads can advance the watermark; BACKFILL and no-new-data SKIPPED runs do not. |
+| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. Incremental loads use `control.pipeline_watermarks` to track their checkpoints, which advance only after successful REGULAR runs. BACKFILL and no-new-data SKIPPED runs leave them unchanged. |
 | **6. Inspect runs** | **Fabric Monitor** shows pipeline execution. The **Power BI Operations Report** summarizes recorded ingestion results from SQL audit data. |
 
 ## Explore the implementation
