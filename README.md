@@ -57,13 +57,15 @@ You can explore the design and code without setting up a Fabric workspace. Follo
 | --- | --- |
 | Why the architecture is structured this way | [Architecture & Design Decisions](docs/architecture/framework-overview.md) |
 | How source configuration and orchestration work | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
-| How a SQL Server table reaches Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
-| How SFTP files move through Landing and Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
+| How SQL Server data is loaded into Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
+| How SFTP files are staged in Landing and loaded into Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
 | How SQL Server Copy partitioning and parallelism are designed | [Copy Performance Strategy](docs/architecture/database-copy-performance.md) |
-| How Fabric limits and environment bindings affect deployment | [Fabric Limits](docs/architecture/fabric-data-factory-limits.md) · [Environment Bindings](docs/operations/variable-library-environment-binding.md) |
-| How incremental checkpoints and recovery work | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
+| Fabric Data Factory limits and their impact on pipeline design | [Fabric Limits](docs/architecture/fabric-data-factory-limits.md) |
+| How to configure connections across environments | [Environment Bindings](docs/operations/variable-library-environment-binding.md) |
+| How incremental watermarks are managed | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) |
+| How failed ingestion writes are handled | [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
 | What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
-| Results and limits of the DEV benchmarks | [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
+| What was tested in DEV and what remains unverified | [DEV Tests & Benchmarks](docs/benchmarks/evidence-and-test-plan.md) |
 
 The `fabric/` directory contains Git-tracked Fabric item definitions, including pipelines, notebooks, SQL Database, Lakehouse, Variable Library, and Power BI assets. The `scripts/` directory contains SQL setup scripts and sample data.
 
