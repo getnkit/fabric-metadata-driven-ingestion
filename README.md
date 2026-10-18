@@ -18,9 +18,9 @@
   <a href="#run-the-example">Run the example</a>
 </p>
 
-Separate pipelines work well for a few source objects. As the number of objects grows, however, duplicated routing, checkpoint, and recovery logic becomes harder to maintain consistently.
+Separate pipelines work well for a few source objects. As the number of objects grows, however, repeating load logic and watermark handling across pipelines becomes harder to maintain.
 
-This repository implements a **metadata-driven ingestion framework in Microsoft Fabric**. Configuration tables define which source objects to process, how to load them, and where to write the results. Instead of building a pipeline for every object, the framework uses the same orchestration logic for different requests, with consistent watermark handling, auditing, and recovery.
+This repository implements a **metadata-driven ingestion framework in Microsoft Fabric**. Configuration tables define which source objects to process, how to load them, and where to write the results. Instead of building a pipeline for every object, the framework uses the same orchestration logic for different requests, with consistent watermark handling and run auditing.
 
 The current implementation covers **batch ingestion** from SQL Server tables and SFTP CSV files into **Bronze Delta tables in a Fabric Lakehouse**. Both source paths support FULL and INCREMENTAL loads.
 
@@ -28,14 +28,14 @@ The current implementation covers **batch ingestion** from SQL Server tables and
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks, and object audit records; the orchestration layer routes requests through Database or File adapters, loading Bronze Delta tables.](docs/assets/architecture-overview.svg)
 
-Fabric SQL Database stores source configuration, incremental checkpoints (**watermarks**), and completed object-run audits. Orchestration reads the configuration, selects the appropriate source adapter, and loads data into Bronze. See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for detailed routing, state management, and failure recovery.
+Fabric SQL Database stores source configuration, incremental checkpoints (**watermarks**), and completed object-run audits. Orchestration reads the configuration, selects the appropriate source adapter, and loads data into Bronze. See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the detailed pipeline structure and design decisions.
 
 ## Design highlights
 
-- **Configuration-based routing.** Each source object has its own configuration. The Object Controller uses that metadata to select the appropriate DATABASE or FILE adapter.
-- **Watermark protection.** REGULAR incremental runs advance the checkpoint only after successful guarded finalization. BACKFILL and no-new-data SKIPPED runs leave it unchanged.
-- **Failure recovery.** Failed writes can trigger cleanup limited to that object's execution. If SQL finalization is uncertain, the framework preserves data for reconciliation rather than blindly deleting a possibly committed batch.
-- **Run monitoring.** Fabric Monitor shows pipeline execution. SQL audit records and the Power BI report summarize completed object runs, but cannot show failures before an object audit is recorded.
+- **Configuration-driven ingestion.** Configure different source objects without creating a separate pipeline for each one.
+- **Full and incremental loads.** Choose FULL or INCREMENTAL loading through metadata, with processing tailored to each source type.
+- **Watermark management.** Watermarks advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged.
+- **Audit and monitoring.** Track pipeline execution in Fabric Monitor and review recorded ingestion results through SQL audit tables and Power BI.
 
 ## How the framework works
 
@@ -45,10 +45,10 @@ Fabric SQL Database stores source configuration, incremental checkpoints (**wate
 | **2. Select and dispatch** | `pl_ingest_orchestrator` selects all active configurations, one source system, or explicit object requests. A paginator and dispatcher pass the selected object requests to the Object Controller. |
 | **3. Route each object** | `pl_ingest_object_controller` reads the configuration. The DATABASE or FILE router then calls the matching SQL Server or SFTP adapter. The same orchestration structure serves different objects. |
 | **4. Load into Bronze** | For SQL Server, a Fabric Copy activity reads a SQL query for a full table load or a timestamp-based incremental window. For SFTP, Binary Copy moves CSV files to Landing before a Notebook parses them and appends Delta rows. |
-| **5. Record results and recover** | The framework records each completed object's outcome in `audit.ingestion_log`. Successful regular incremental runs can safely update their watermark; backfills and no-new-data runs do not. Selected failure paths remove data written by the affected execution without deleting other successful batches. |
-| **6. Inspect runs** | **Fabric Monitor** shows pipeline activity and failures. The **Power BI Operations Report** summarizes recorded object results from SQL audit data; it does not replace Fabric Monitor for in-progress runs or failures before an object audit exists. |
+| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. Successful REGULAR incremental loads can advance the watermark; BACKFILL and no-new-data SKIPPED runs do not. |
+| **6. Inspect runs** | **Fabric Monitor** shows pipeline execution. The **Power BI Operations Report** summarizes recorded ingestion results from SQL audit data. |
 
-**When does this approach help?** Separate pipelines can be simpler for a few objects or specialized workloads. Metadata-driven orchestration becomes useful when many objects follow similar ingestion rules, though the central configuration and recovery logic still require maintenance.
+**When does this approach help?** Separate pipelines can be simpler for a few objects or specialized workloads. Metadata-driven orchestration becomes useful when many objects follow similar ingestion rules, though the configuration and orchestration logic still require maintenance.
 
 ## Explore the implementation
 
