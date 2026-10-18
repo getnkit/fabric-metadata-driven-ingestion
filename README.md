@@ -28,7 +28,7 @@ The repository demonstrates the framework with end-to-end **batch ingestion exam
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks, and object audit records; the orchestration layer routes requests through Database or File adapters, loading Bronze Delta tables.](docs/assets/architecture-overview.svg)
 
-Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. Fabric Data Pipelines use this configuration to route each source object through the appropriate ingestion path into Bronze Delta tables in the Lakehouse.
+Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. Fabric Data Pipelines use this metadata to select an ingestion path for each source object and coordinate loading into Bronze Delta tables in the Lakehouse.
 
 See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline structure and design trade-offs.
 
@@ -42,16 +42,16 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 | Step | What happens |
 | --- | --- |
-| **1. Configure sources** | `control.ingestion_config` defines each source object, its DATABASE or FILE ingestion pattern, FULL or INCREMENTAL load strategy, and Bronze target. `control.connection_settings` maps logical connection references. |
-| **2. Select and dispatch** | The orchestration flow selects active configurations, optionally filtered by source system, or accepts explicit object requests. Pagination handles configuration pages, and dispatch sends object requests to the controller. |
+| **1. Configure sources** | `control.ingestion_config` defines each source object, its DATABASE or FILE ingestion pattern, FULL or INCREMENTAL load strategy, and Bronze target. `control.connection_settings` maps logical references to source and target connections. |
+| **2. Select and dispatch** | The orchestrator accepts explicit object requests or selects active configurations, optionally filtered by source system. A paginator reads active configurations in pages; the dispatcher passes each request to the controller. |
 | **3. Route each object** | The controller checks each object's configuration and selects the DATABASE or FILE path. The router then invokes the adapter based on source connection type and load strategy. |
-| **4. Load into Bronze** | For SQL Server, a Fabric Copy activity reads a SQL query for a full table load or a timestamp-based incremental window. For SFTP, Binary Copy moves CSV files to Landing before a Notebook parses them and appends Delta rows. |
-| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. Incremental loads use `control.pipeline_watermarks` to track their checkpoints, which advance only after successful REGULAR runs. BACKFILL and no-new-data SKIPPED runs leave them unchanged. |
+| **4. Load into Bronze** | For SQL Server, a Copy activity loads rows directly into Bronze using a full-table query or a timestamp-based incremental window. For SFTP, Binary Copy stages CSV files in Landing; a Notebook then parses and appends the rows to Bronze. |
+| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. `control.pipeline_watermarks` stores incremental checkpoints, which advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged. |
 | **6. Inspect runs** | **Fabric Monitor** shows pipeline execution. The **Power BI Operations Report** summarizes recorded ingestion results from SQL audit data. |
 
 ## Explore the implementation
 
-You can read the design and code without setting up a Fabric workspace. For a guided route through the project, start with the [step-by-step learning guide](docs/guides/learning-path.md). Or choose a topic:
+You can explore the design and code without setting up a Fabric workspace. Follow the [technical learning path](docs/guides/learning-path.md) for a guided walkthrough, or go straight to a topic below:
 
 | What you want to understand | Where to start |
 | --- | --- |
@@ -63,25 +63,25 @@ You can read the design and code without setting up a Fabric workspace. For a gu
 | How Fabric limits and environment bindings affect deployment | [Fabric Limits](docs/architecture/fabric-data-factory-limits.md) · [Environment Bindings](docs/operations/variable-library-environment-binding.md) |
 | How incremental checkpoints and recovery work | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
 | What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
-| What was observed in DEV performance experiments | [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
+| Results and limits of the DEV benchmarks | [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
 
-The `fabric/` directory contains the tracked Fabric pipeline, Notebook, SQL Database, Lakehouse, and Power BI item definitions. The `scripts/` directory contains SQL setup scripts and sample data.
+The `fabric/` directory contains Git-tracked Fabric item definitions, including pipelines, notebooks, SQL Database, Lakehouse, Variable Library, and Power BI assets. The `scripts/` directory contains SQL setup scripts and sample data.
 
 ## Run the example
 
-To reproduce the sample, follow the [fresh DEV workspace setup guide](docs/operations/environment-rebuild.md) and [SQL setup and sample data order](scripts/RUN_ORDER.md). The runbook targets a new, empty DEV workspace. Deployments to other environments require their own connections, permissions, item bindings, and validation; importing Git definitions alone is not sufficient.
+To reproduce the examples, follow the [fresh DEV workspace setup guide](docs/operations/environment-rebuild.md) and [SQL and sample-data setup sequence](scripts/RUN_ORDER.md). These instructions assume a new, empty DEV workspace. Other environments require their own connections, permissions, item bindings, and validation; importing Git definitions alone is not sufficient.
 
-Once the sources and Fabric items are configured, start `pl_ingest_orchestrator`. For example, to select the active SFTP example objects:
+Once the sources and Fabric items are configured, run `pl_ingest_orchestrator`. For example, to select the active SFTP source objects:
 
 ```text
 p_run_requests = []
 p_source_system = "LOGISTICS_VENDOR"
 ```
 
-The orchestrator selects the objects and invokes the child pipelines for you. After a run, check its activities in **Fabric Monitor**, then inspect `audit.ingestion_log` and the **Power BI Operations Report** for recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) shows how to compare Landing, Bronze, and watermark state.
+The orchestrator selects matching objects and invokes the required child pipelines. After the run, inspect its activities in **Fabric Monitor**, then check `audit.ingestion_log` and the **Power BI Operations Report** for recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) shows how to compare Landing, Bronze, and watermark state.
 
-If you need demo source services, [the optional EC2/Docker Compose setup](infra/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
+For optional SQL Server and SFTP demo services, see the [EC2/Docker Compose setup](infra/source/README.md). You do not need these services to explore the repository; review the environment-specific settings and safety notes before deploying them.
 
-**Scope:** Additional source connectors and advanced scheduling or concurrency policies require further design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
+**Scope:** This repository implements SQL Server and SFTP adapters. Additional connectors, advanced scheduling, and cross-run concurrency controls are outside its scope; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
 **License:** No license is currently included. Public access does not by itself grant reuse or redistribution rights.
