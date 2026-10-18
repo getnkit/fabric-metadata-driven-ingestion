@@ -28,7 +28,9 @@ The current implementation covers **batch ingestion** from SQL Server tables and
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks, and object audit records; the orchestration layer routes requests through Database or File adapters, loading Bronze Delta tables.](docs/assets/architecture-overview.svg)
 
-Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline structure and design trade-offs.
+Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. Fabric Data Pipelines use this configuration to route each source object through the appropriate ingestion path into Bronze Delta tables in the Lakehouse.
+
+See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline structure and design trade-offs.
 
 ## Design highlights
 
