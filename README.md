@@ -56,7 +56,8 @@ You can explore the design and code without setting up a Fabric workspace. Follo
 | What you want to understand | Where to start |
 | --- | --- |
 | Why the architecture is structured this way | [Architecture & Design Decisions](docs/architecture/framework-overview.md) |
-| How source configuration and orchestration work | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
+| How source configurations are managed | [Control Plane](docs/guides/control-plane.md) |
+| How ingestion requests are orchestrated and routed | [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
 | How SQL Server data is loaded into Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
 | How SFTP files are staged in Landing and loaded into Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
 | How SQL Server Copy partitioning and parallelism are designed | [Copy Performance Strategy](docs/architecture/database-copy-performance.md) |
@@ -67,11 +68,11 @@ You can explore the design and code without setting up a Fabric workspace. Follo
 | What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
 | What was tested in DEV and what remains unverified | [DEV Tests & Benchmarks](docs/benchmarks/evidence-and-test-plan.md) |
 
-The `fabric/` directory contains Git-tracked Fabric item definitions, including pipelines, notebooks, SQL Database, Lakehouse, Variable Library, and Power BI assets. The `scripts/` directory contains SQL setup scripts and sample data.
+The `fabric/` directory contains Git-tracked Fabric item definitions, including pipelines, notebooks, SQL Database, Lakehouse, Variable Library, and Power BI assets. The `scripts/` directory contains SQL setup scripts and sample data. The `infra/` directory provides an optional EC2/Docker Compose setup for the SQL Server and SFTP example sources.
 
 ## Run the example
 
-To reproduce the examples, follow the [fresh DEV workspace setup guide](docs/operations/environment-rebuild.md) and [SQL and sample-data setup sequence](scripts/RUN_ORDER.md). These instructions assume a new, empty DEV workspace. Other environments require their own connections, permissions, item bindings, and validation; importing Git definitions alone is not sufficient.
+To reproduce the examples, follow the [workspace setup guide](docs/operations/environment-rebuild.md) and [SQL and sample-data setup sequence](scripts/RUN_ORDER.md). These instructions are intended for a new, empty DEV workspace and should not be used to overwrite an existing environment.
 
 Once the sources and Fabric items are configured, run `pl_ingest_orchestrator`. For example, to select the active SFTP source objects:
 
@@ -82,7 +83,7 @@ p_source_system = "LOGISTICS_VENDOR"
 
 The orchestrator selects matching objects and invokes the required child pipelines. After the run, inspect its activities in **Fabric Monitor**, then check `audit.ingestion_log` and the **Power BI Operations Report** for recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) shows how to compare Landing, Bronze, and watermark state.
 
-For optional SQL Server and SFTP demo services, see the [EC2/Docker Compose setup](infra/source/README.md). You do not need these services to explore the repository; review the environment-specific settings and safety notes before deploying them.
+To set up the optional SQL Server and SFTP demo environment, see the [EC2/Docker Compose setup](infra/source/README.md). This environment is not required to explore the repository; review its configuration and security notes before deploying it.
 
 **Scope:** This repository implements SQL Server and SFTP adapters. Additional connectors, advanced scheduling, and cross-run concurrency controls are outside its scope; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
