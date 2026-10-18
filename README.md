@@ -2,32 +2,36 @@
 
 Building a separate pipeline for each table works well when the number of sources is small and requirements are stable. As more tables and source systems are added, however, repeating the same ingestion logic across many pipelines makes changes and maintenance harder.
 
-This repository explores **metadata-driven data pipelines in Microsoft Fabric**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic, but also requires consistent handling of checkpoints, failures, and run history.
+This repository implements **metadata-driven batch ingestion using Microsoft Fabric Data Pipelines**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic while keeping checkpoint management, auditing, and failure recovery consistent across objects.
 
-The working example ingests **SQL Server tables and CSV files from SFTP** into **Bronze Delta tables in a Fabric Lakehouse**. It is a **DEV reference implementation** for studying the design and trying it out, not a production-ready deployment.
+The working implementation ingests **SQL Server tables and CSV files from SFTP** into **Bronze Delta tables in a Fabric Lakehouse**. It applies **production-oriented design patterns** to state management, run auditing, and failure recovery. The framework has been developed and tested in DEV; production use requires further validation and operational controls.
 
 ## Architecture
 
 ```mermaid
 flowchart TB
     CONTROL["Fabric SQL Database<br/>Configuration · Watermarks · Run results"]
-    ORCH["Fabric Data Pipelines<br/>Shared orchestration and routing"]
-    SQL["SQL Server<br/>Read with Copy activity"]
-    SFTP["SFTP · CSV files<br/>Copy to Lakehouse Landing"]
-    NOTEBOOK["Notebook<br/>Read CSV files"]
+    ORCH["Fabric Data Pipelines<br/>Orchestration · Routing"]
+    SQL["SQL Server tables"]
+    SFTP["SFTP · CSV files"]
+    SQL_COPY["Copy activity<br/>SQL query"]
+    SFTP_COPY["Copy activity<br/>Binary file transfer"]
+    LANDING["Lakehouse Files<br/>Landing"]
+    NOTEBOOK["Notebook<br/>Parse CSV files"]
     BRONZE[("Fabric Lakehouse<br/>Bronze Delta tables")]
 
     CONTROL --> ORCH
-    ORCH --> SQL
-    ORCH --> SFTP
-    SQL --> BRONZE
-    SFTP --> NOTEBOOK
-    NOTEBOOK --> BRONZE
+    ORCH --> SQL_COPY
+    ORCH --> SFTP_COPY
+    SQL --> SQL_COPY
+    SFTP --> SFTP_COPY
+    SQL_COPY --> BRONZE
+    SFTP_COPY --> LANDING --> NOTEBOOK --> BRONZE
 ```
 
-*Simplified flow: SQL Server data goes directly to Bronze through a Copy activity. SFTP files first land in Lakehouse Files, then a Notebook reads the CSV data and writes to Bronze.*
+*Simplified flow: Fabric Data Pipelines route each object to its ingestion path. SQL Server tables are read through a Copy activity into Bronze; SFTP CSV files are copied to Lakehouse Files (Landing), then parsed by a Notebook and written to Bronze.*
 
-Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram leaves out audit updates and failure branches so the two data paths remain easy to follow.
+Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram shows the main data paths, not the separate steps that record run results, update watermarks, or handle failures.
 
 See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the full pipeline structure, design choices, and trade-offs.
 
