@@ -54,7 +54,7 @@
 <text x="91" y="542" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#315FB3" letter-spacing="1.2">DATABASE  ·  SQL SERVER</text>
 <text x="91" y="747" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#11858C" letter-spacing="1.2">FILE  ·  SFTP</text>
 <rect x="91" y="554" width="237" height="112" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
-<rect x="408" y="554" width="330" height="112" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
+<rect x="408" y="554" width="366" height="112" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
 <rect x="91" y="763" width="237" height="111" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
 <rect x="408" y="763" width="210" height="111" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
 <rect x="681" y="763" width="210" height="111" rx="16" fill="#fff" stroke="#DCE4EF" stroke-width="1.3"/>
@@ -72,7 +72,7 @@
 <text x="489" y="603" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="650" fill="#17223B">Copy activity</text>
 <text x="489" y="632" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="400" fill="#526079">SQL query · FULL / INCREMENTAL</text>
 <path d="M330 610 H402" fill="none" stroke="#315FB3" stroke-width="2.3" stroke-linecap="round" marker-end="url(#arrow)"/>
-<path d="M741 610 H1205" fill="none" stroke="#315FB3" stroke-width="2.3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M779 610 H1205" fill="none" stroke="#315FB3" stroke-width="2.3" stroke-linecap="round" marker-end="url(#arrow)"/>
 <text x="963" y="590" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#315FB3" text-anchor="middle" letter-spacing="1">DIRECT TO BRONZE</text>
 <rect x="107" y="789" width="54" height="54" rx="12" fill="#14868B" stroke="none" stroke-width="1"/>
 <path d="M124 798 H141 L149 806 V833 H124 Z" fill="none" stroke="#fff" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
