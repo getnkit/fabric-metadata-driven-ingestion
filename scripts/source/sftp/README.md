@@ -19,7 +19,7 @@ Upload the generated CSV to the **SFTP server** at
 `/outbound/inventory/movements/YYYY/MM/`, preserving its relative
 year/month folders. The current DEV Compose stack has a single SFTP
 login (`sftp_logistics_vendor`), not a separate producer account;
-the documented [host-side upload procedure](../../../infrastructure/source/README.md)
+the documented [host-side upload procedure](../../../infra/source/README.md)
 also works. This script only generates local files—it does not upload or
 change Fabric state.
 

@@ -32,9 +32,9 @@ The live combined Compose file was originally placed at `/home/ubuntu/compose.ya
 
 ```bash
 # On EC2, after cloning/pulling this repository:
-diff -u /home/ubuntu/compose.yaml infrastructure/source/docker-compose.yaml || true
+diff -u /home/ubuntu/compose.yaml infra/source/docker-compose.yaml || true
 # If the two configs have been checked and the versioned file is desired:
-cp infrastructure/source/docker-compose.yaml /home/ubuntu/compose.yaml
+cp infra/source/docker-compose.yaml /home/ubuntu/compose.yaml
 cd /home/ubuntu
 sudo docker compose config --quiet
 sudo docker compose up -d
@@ -47,8 +47,8 @@ Do not run `docker compose down -v`. For databases with important data, take a v
 
 1. Install Docker Engine and Docker Compose Plugin on Ubuntu. Provision an adequately sized EC2 instance and EBS volume; SQL Server's memory cap is 5120 MB, **not** a complete VM-sizing recommendation. Ensure the host has enough RAM for SQL Server, Ubuntu and both containers.
 2. Create the named volume before starting Compose: `sudo docker volume create fabric_sqlserver_data`. This project intentionally uses `external: true` to prevent accidental ownership changes between Compose project names.
-3. Run `bash infrastructure/source/init-sftp-host.sh` on EC2 (from the cloned repository). This prepares directories, ownership and a persistent ED25519 server host key. Re-running it preserves an existing host key.
-4. Copy `infrastructure/source/.env.example` to `/home/ubuntu/.env`; replace placeholder values with strong secrets. An existing instance must reuse its current `MSSQL_SA_PASSWORD` and `SFTP_PASSWORD`. Secure it with `chmod 600 /home/ubuntu/.env`. If the original SFTP password was generated earlier, it may still be in `/opt/fabric-sftp/.env`; never print or commit it in logs.
+3. Run `bash infra/source/init-sftp-host.sh` on EC2 (from the cloned repository). This prepares directories, ownership and a persistent ED25519 server host key. Re-running it preserves an existing host key.
+4. Copy `infra/source/.env.example` to `/home/ubuntu/.env`; replace placeholder values with strong secrets. An existing instance must reuse its current `MSSQL_SA_PASSWORD` and `SFTP_PASSWORD`. Secure it with `chmod 600 /home/ubuntu/.env`. If the original SFTP password was generated earlier, it may still be in `/opt/fabric-sftp/.env`; never print or commit it in logs.
 5. Place `compose.yaml` at `/home/ubuntu/compose.yaml`, then start:
    ```bash
    cd /home/ubuntu

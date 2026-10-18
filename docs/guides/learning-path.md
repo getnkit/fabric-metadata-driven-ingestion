@@ -124,7 +124,7 @@ Power BI Object History? Why or why not?
 
 Use the [Environment Rebuild Runbook](../operations/environment-rebuild.md),
 [SQL Run Order](../../scripts/RUN_ORDER.md), and
-[EC2 source setup](../../infrastructure/source/README.md).
+[EC2 source setup](../../infra/source/README.md).
 Cloud Connections, Fabric IDs, permissions and Power BI SQL endpoints must
 be rebound for a new workspace. Git is not a backup of prior Bronze rows,
 watermarks, historical audit or credentials.

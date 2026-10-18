@@ -21,7 +21,7 @@ workspace. This is an operator runbook, not a stateful backup/restore procedure.
 | Pipeline/Notebook/Library/Report/Semantic Model definitions | Yes, `fabric/` | Import definitions, then rebind environment |
 | Control/Audit SQL schema, procedures, monitoring views | Yes, `fabric/...` and `scripts/` | Create fresh empty database schema |
 | Demo ingestion configs, sample source generators, static CSVs | Yes | Recreate DEV fixtures and *initial* watermarks |
-| EC2 SQL Server + SFTP service configuration | Yes, `infrastructure/source/` | Provision a fresh host and recreate demo data |
+| EC2 SQL Server + SFTP service configuration | Yes, `infra/source/` | Provision a fresh host and recreate demo data |
 | Cloud Connections, credentials, permissions, live Fabric item IDs | **No** | Recreate/re-authorize manually |
 | Historic `control.pipeline_watermarks`, `audit.ingestion_log` | **No** | **Not recovered** without separately verified backup |
 | Existing Bronze Delta rows and Lakehouse Files | **No** | **Not recovered** by Git sync |
@@ -73,7 +73,7 @@ If the EC2 demo is being rebuilt from scratch:
    SQL Server Developer. Install Docker Engine + Compose Plugin; configure
    security groups to allow only approved source CIDRs on SSH (22), SQL Server
    (1433), and SFTP (2222). Avoid blanket `0.0.0.0/0`.
-2. Follow [infrastructure/source/README.md](../../infrastructure/source/README.md)
+2. Follow [infra/source/README.md](../../infra/source/README.md)
    **Fresh host setup**. Create the named volume
    `fabric_sqlserver_data`, run `init-sftp-host.sh`, create a private
    `/home/ubuntu/.env` from `.env.example` (strong *new* secrets), copy the
@@ -96,7 +96,7 @@ If the EC2 demo is being rebuilt from scratch:
    `scripts/source/sftp/outbound/inventory/` to the new host under
    `/outbound/inventory/`. Keep the `movements/YYYY/MM/` structure.
    See the exact upload commands in the
-   [source setup](../../infrastructure/source/README.md). For FILE incremental,
+   [source setup](../../infra/source/README.md). For FILE incremental,
    note that the **remote file last-modified time**, not the CSV event time
    or filename, establishes the watermark comparison.
 5. Verify SQL row counts, SQL reader credentials, remote SFTP listing and
@@ -109,7 +109,7 @@ host key, overwrite the existing `.env`, or run `docker compose down -v`.
 ## D. Create the Fabric workspace and import definitions
 
 1. Create/connect the fresh workspace and configure **Settings > Git integration**
-   for repository `getnkit/fabric-metadata-driven-ingestion`, the desired
+   for repository `getnkit/fabric-metadata-driven-pipelines` (after the GitHub rename), the desired
    branch, and **Git folder `fabric`**. Do **not** leave the folder blank:
    the Fabric item definitions live under `fabric/`, not the repository root.
    Prefer a dedicated `rebuild/<environment>` branch based on the selected
@@ -364,7 +364,7 @@ checks succeed. A document/Git review alone is **not** a tested recovery.
 
 - [Starter Kit baseline](../../scripts/RUN_ORDER.md) — existing detailed
   install semantics and optional benchmark.
-- [Source infrastructure](../../infrastructure/source/README.md) — fresh EC2,
+- [Source infrastructure](../../infra/source/README.md) — fresh EC2,
   existing host, SSH/upload/SFTP particulars.
 - [Variable Library](variable-library-environment-binding.md) — exact runtime
   connection-variable contract.

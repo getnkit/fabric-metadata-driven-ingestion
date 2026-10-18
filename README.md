@@ -86,7 +86,7 @@ p_source_system = "LOGISTICS_VENDOR"
 
 The orchestrator selects the objects and invokes the child pipelines for you. After a run, check its activities in **Fabric Monitor**, then inspect `audit.ingestion_log` and the **Power BI Operations Report** for recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) shows how to compare Landing, Bronze, and watermark state.
 
-If you need demo source services, [the optional EC2/Docker Compose setup](infrastructure/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
+If you need demo source services, [the optional EC2/Docker Compose setup](infra/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
 
 **Note:** The implemented source adapters cover SQL Server and SFTP. Other connectors and broader scheduling or concurrency policies would need additional design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
