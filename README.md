@@ -1,6 +1,25 @@
-# Metadata-Driven Pipelines in Microsoft Fabric
+<h1 align="center">Metadata-Driven Pipelines in Microsoft Fabric</h1>
 
-Building a separate pipeline for each table works well when the number of sources is small and requirements are stable. As more tables and source systems are added, however, repeating the same ingestion logic across many pipelines makes changes and maintenance harder.
+<p align="center">
+  <strong>Configuration-driven batch ingestion with guarded checkpoints, auditable runs, and failure-aware recovery.</strong>
+</p>
+
+<p align="center">
+  <img alt="Microsoft Fabric Data Pipelines" src="https://img.shields.io/badge/Microsoft%20Fabric-Data%20Pipelines-5B4B91?style=flat-square" />
+  <img alt="Fabric SQL Database" src="https://img.shields.io/badge/Control-Fabric%20SQL%20Database-4C6487?style=flat-square" />
+  <img alt="SQL Server and SFTP sources" src="https://img.shields.io/badge/Sources-SQL%20Server%20%2B%20SFTP-526B82?style=flat-square" />
+  <img alt="Lakehouse Delta destination" src="https://img.shields.io/badge/Target-Lakehouse%20Delta-397E78?style=flat-square" />
+</p>
+
+<p align="center">
+  <a href="#architecture">Architecture</a> ·
+  <a href="#design-highlights">Design highlights</a> ·
+  <a href="#how-the-framework-works">How it works</a> ·
+  <a href="#explore-the-implementation">Documentation</a> ·
+  <a href="#run-the-example">Run the example</a>
+</p>
+
+Separate pipelines work well for a few source objects. As the number of objects grows, however, duplicated routing, checkpoint, and recovery logic becomes harder to maintain consistently.
 
 This repository implements **metadata-driven batch ingestion using Microsoft Fabric Data Pipelines**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic while keeping checkpoint management, auditing, and failure recovery consistent across objects.
 
@@ -10,11 +29,18 @@ The implementation uses **SQL Server tables and CSV files from SFTP** as example
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores configuration and checkpoints; shared pipelines select, dispatch, and route objects to Database or File ingestion. Both paths support FULL and INCREMENTAL loads, with SQL Server copying directly to Bronze and SFTP loading CSV files through Landing and a Notebook.](docs/assets/architecture-overview.svg)
 
-*Architecture overview: the orchestrator selects ingestion requests and paginates active configurations when needed. The dispatcher uses ForEach to process selected objects, while the Object Controller reads configuration and routes each object to Database or File ingestion. Both paths support FULL and INCREMENTAL loads.*
+*One shared orchestration flow selects and routes ingestion requests to Database or File adapters. Both paths support FULL and INCREMENTAL loads: SQL Server copies directly into Bronze; SFTP stages CSV files in Landing for Notebook parsing before the Bronze append.*
 
 Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram keeps audit updates, guarded checkpoint changes, and failure recovery at a conceptual level rather than showing every activity or failure branch.
 
 See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the full pipeline structure, design choices, and trade-offs.
+
+## Design highlights
+
+- **Metadata-backed routing.** SQL configuration selects source objects and load strategies; shared pipelines dispatch each request to a source-specific adapter rather than duplicating a pipeline per object.
+- **Guarded incremental state.** Operational watermarks advance only after eligible, successfully finalized REGULAR incremental runs. BACKFILL and no-new-data SKIPPED runs do not advance the checkpoint.
+- **Failure-aware writes.** Cleanup is scoped to an individual object execution, while uncertain SQL finalization outcomes are reconciled before destructive recovery. Bronze and the SQL control database are not one distributed transaction.
+- **Inspectable operations.** Fabric Monitor shows pipeline execution; SQL audit records and the Power BI report show persisted object results, with explicit visibility limits.
 
 ## How the framework works
 
