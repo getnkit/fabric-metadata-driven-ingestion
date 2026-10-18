@@ -2,7 +2,7 @@
 
 ## Scope and decision
 
-The Personal metadata-driven ingestion framework uses one Fabric Variable Library:
+The framework uses one Fabric Variable Library:
 `vl_ingestion_connections` (same workspace as `pl_ingest_orchestrator`).
 
 It exposes **five String variables** holding environment-specific GUIDs:
@@ -61,7 +61,7 @@ own active Library bindings to execute.
 
 ## DEV setup
 
-1. Git sync `vl_ingestion_connections.VariableLibrary` into the Personal DEV
+1. Git sync `vl_ingestion_connections.VariableLibrary` into the DEV
    Fabric workspace **before syncing/validating the updated pipelines**.
 2. In the Variable Library UI, confirm all five types are `String`. Set their
    real environment-specific GUIDs in the active `Default` value set.
@@ -115,7 +115,8 @@ the Fabric designer rejects a dynamic Connection or a reference resolves to
 the wrong item. Record the exact validation message; do not silently hardcode
 a DEV GUID as a workaround.
 
-Reference implementation: the TGH framework's Variable Library pattern.
+Implementation references: [Variable Library definition](../../fabric/vl_ingestion_connections.VariableLibrary/variables.json) and [orchestrator Pipeline](../../fabric/pl_ingest_orchestrator.DataPipeline/pipeline-content.json).
+
 Fabric references:
 - https://learn.microsoft.com/en-us/fabric/data-factory/variable-library-integration-with-data-pipelines
 - https://learn.microsoft.com/en-us/fabric/cicd/variable-library/value-sets
