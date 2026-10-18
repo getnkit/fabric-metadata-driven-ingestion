@@ -4,7 +4,7 @@ Building a separate pipeline for each table works well when the number of source
 
 This repository implements **metadata-driven batch ingestion using Microsoft Fabric Data Pipelines**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic while keeping checkpoint management, auditing, and failure recovery consistent across objects.
 
-The implementation uses **SQL Server tables and CSV files from SFTP** as example sources, writing to **Bronze Delta tables in a Fabric Lakehouse**. It includes reusable orchestration, incremental state management, audit logging, and failure recovery. A Fabric Variable Library keeps key environment-specific runtime bindings separate from pipeline logic.
+The implementation uses **SQL Server tables and CSV files from SFTP** as example sources, writing to **Bronze Delta tables in a Fabric Lakehouse**. It includes reusable orchestration, incremental state management, audit logging, and failure recovery. A [Fabric Variable Library](docs/operations/variable-library-environment-binding.md) keeps key environment-specific runtime bindings separate from pipeline logic.
 
 ## Architecture
 
