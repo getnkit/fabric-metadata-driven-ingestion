@@ -22,7 +22,7 @@ Separate pipelines work well for a few source objects, but repeating the same lo
 
 This repository implements a **metadata-driven ingestion framework in Microsoft Fabric**. Instead of maintaining separate pipelines for individual source objects, the framework uses configuration tables to define what to ingest, how to process it, and where to write the results. Reusable orchestration routes each object through the appropriate ingestion path, with consistent watermark management and run auditing.
 
-The repository includes two end-to-end **batch ingestion examples**: one for SQL Server tables and one for SFTP CSV files. Both paths load data into **Bronze Delta tables in a Fabric Lakehouse** and support FULL and INCREMENTAL loads.
+The repository demonstrates the framework with end-to-end **batch ingestion examples** for SQL Server tables and CSV files from SFTP. Both paths support FULL and INCREMENTAL loads into **Bronze Delta tables in a Fabric Lakehouse**.
 
 ## Architecture
 
