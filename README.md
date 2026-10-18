@@ -1,7 +1,7 @@
 <h1 align="center">Metadata-Driven Pipelines in Microsoft Fabric</h1>
 
 <p align="center">
-  <strong>Configuration-driven batch ingestion with guarded checkpoints, auditable runs, and failure-aware recovery.</strong>
+  <strong>Configuration-driven ingestion with guarded checkpoints, auditable runs, and failure-aware recovery.</strong>
 </p>
 
 <p align="center">
@@ -88,6 +88,6 @@ The orchestrator selects the objects and invokes the child pipelines for you. Af
 
 If you need demo source services, [the optional EC2/Docker Compose setup](infrastructure/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
 
-**Note:** This example focuses on batch ingestion from SQL Server and SFTP. Other connectors and broader scheduling or concurrency policies would need additional design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
+**Note:** The implemented source adapters cover SQL Server and SFTP. Other connectors and broader scheduling or concurrency policies would need additional design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
 **License:** No license is currently included. Public access does not by itself grant reuse or redistribution rights.
