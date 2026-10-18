@@ -41,7 +41,7 @@ lkp_active_configs
 
 That pattern silently truncates once Lookup returns more than 5,000 rows.
 
-The production-safe pattern is:
+The bounded pagination pattern is:
 
 ```text
 pl_ingest_orchestrator
@@ -82,7 +82,7 @@ Allowed:
 1 <= p_config_page_size <= 5000
 ```
 
-The smaller default leaves headroom below both the row-count and output-size limits while remaining efficient for normal metadata volumes.
+The smaller default leaves headroom below the 5,000-row Lookup limit. **Pagination does not remove the separate 4 MB output limit**: even a page containing fewer than 5,000 rows can exceed it if the returned metadata is large. Keep page projections minimal and reduce `p_config_page_size` if output size requires it. This is a scaling guardrail, not a guarantee for arbitrary configuration volume.
 
 For acceptance testing, the page size can temporarily be set to a small value such as 2 so the multi-page path can be exercised without seeding thousands of configurations.
 
