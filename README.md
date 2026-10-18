@@ -34,8 +34,7 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 ## Design highlights
 
-- **Configuration-driven ingestion.** Source objects, ingestion patterns, and Bronze targets are defined in metadata tables.
-- **Full and incremental loads.** Both database and file sources support FULL and INCREMENTAL loading.
+- **Configuration-driven ingestion.** Source objects, ingestion patterns, load strategies, and Bronze targets are defined in metadata tables.
 - **Watermark management.** Watermarks advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged.
 - **Audit and monitoring.** Fabric Monitor tracks pipeline execution; SQL audit tables and Power BI show recorded ingestion results.
 
