@@ -138,7 +138,7 @@ The route key joins the uppercased connection type and load strategy with the pi
 
 The FILE Router first checks `if_supported_file_format`. At present, the accepted format is `DELIMITED_TEXT`. The SQL Server INCREMENTAL adapter adds a separate Loader pipeline for Copy execution and finalization. Each physical adapter is responsible for source-specific extraction, processing boundaries, and failure handling.
 
-See [SQL Server Database Ingestion](sql-server-database-ingestion.md), [Database Ingestion Extensibility](../architecture/database-ingestion-extensibility.md), and [SFTP File Ingestion](sftp-file-ingestion.md) for the next level of detail.
+See [SQL Server Database Ingestion](sql-server-database-ingestion.md), [Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary), and [SFTP File Ingestion](sftp-file-ingestion.md) for the next level of detail.
 
 ## 7. Trace a real run without guessing its result
 
@@ -182,7 +182,7 @@ For verification, compare the master run parameters and child activity outcomes 
 - [Control Plane](control-plane.md): the configuration and state each object reads.
 - [SFTP File Ingestion](sftp-file-ingestion.md): Binary Copy to Landing, Notebook parsing, Bronze append and audit.
 - [SQL Server Database Ingestion](sql-server-database-ingestion.md): a guided FULL and INCREMENTAL Copy example.
-- [Database Ingestion Extensibility](../architecture/database-ingestion-extensibility.md): connector routing and SQL Server adapters.
+- [Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary): framework versus SQL Server adapter ownership.
 - [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md): processing boundaries, SKIPPED, and state changes.
 - [Retry, Rerun, and Backfill](../operations/retry-rerun-backfill.md): execution intent versus data-loading strategy.
 

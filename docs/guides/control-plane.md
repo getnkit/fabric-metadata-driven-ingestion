@@ -17,6 +17,21 @@ For the execution path that reads this metadata, continue with [Pipeline Orchest
 
 These are SQL Control/Audit tables, not Bronze business tables. The sample SQL schema is defined in [01_create_control_schema.sql](../../scripts/control/01_create_control_schema.sql). The SQL Database Project under `fabric/sqldb_ingestion_control.SQLDatabase/` is the corresponding tracked schema definition.
 
+### SQL-enforced guardrails
+
+The **SQL Database Project** under `fabric/sqldb_ingestion_control.SQLDatabase/` is the physical schema source of truth. Key enforced constraints complement, rather than replace, pipeline validation:
+
+| SQL object | Invariant |
+| --- | --- |
+| `control.connection_settings` | Supported connection types, nonblank reference, JSON object-root settings |
+| `control.ingestion_config` | Nonblank core metadata; DATABASE requires `source_schema`, FILE requires `source_path`, `landing_path` and non-NULL `file_format`; INCREMENTAL requires `watermark_field`; optional JSON envelopes have object roots |
+| `control.pipeline_watermarks` | One checkpoint per `ingestion_config_id`, no automatic reset, optimistic advancement through finalization |
+| `audit.ingestion_log` | One terminal outcome per object Run ID, valid status/run type, nonnegative counts/duration, nonblank identity |
+| `control.usp_validate_run_requests` | Reject malformed/NULL explicit request envelopes, invalid types and duplicates |
+| `control.usp_finalize_ingestion_run` | Transactional audit and guarded watermark update; reject inconsistent repeated terminal outcomes |
+
+SQL CHECK constraints permit some future FILE format labels, but **only DELIMITED_TEXT** has an implemented File Router/reader. The non-destructive `scripts/control/01_create_control_schema.sql` bootstrap is **CREATE-IF-ABSENT**, not a schema migration. `scripts/control/99_verify_control_plane.sql` verifies keys, enabled/trusted CHECK/FK constraints, indexes, the view and two procedures; this is **not** a full column-by-column semantic schema diff. See [SQL Run Order](../../scripts/RUN_ORDER.md) and [Environment Rebuild](../operations/environment-rebuild.md) for safe installation, optional DEV seeds, and release checks.
+
 ## 2. How a configuration identifies one source object
 
 Run this **read-only** query in `sqldb_ingestion_control` after the DEV sample metadata has been installed:

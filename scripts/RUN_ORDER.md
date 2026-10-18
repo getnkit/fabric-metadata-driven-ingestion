@@ -198,7 +198,7 @@ More details:
 [FILE design](../docs/architecture/file-ingestion-design.md),
 [watermark semantics](../docs/architecture/generic-incremental-watermark.md),
 [retry/rerun/backfill](../docs/operations/retry-rerun-backfill.md),
-[SQL verification](../docs/operations/sql-control-plane-hardening.md).
+[SQL verification](../docs/guides/control-plane.md#sql-enforced-guardrails).
 
 ## F. Optional performance benchmark (separate)
 

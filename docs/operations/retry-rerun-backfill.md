@@ -85,6 +85,25 @@ BACKFILL + INCREMENTAL
 
 Processing-boundary fields are populated only when relevant to the selected scope. In the current V1 contract, BACKFILL + INCREMENTAL records requested LOW/HIGH while BACKFILL + FULL does not.
 
+## Retry policy by side effect
+
+Choose retries by **side effects and idempotency**, not activity type alone. A Copy or SQL finalizer may have committed durable state before the activity reports failure.
+
+| Activity / side effect | Retries | Rationale |
+| --- | ---: | --- |
+| Read-only Lookup | 2 | Safe to repeat on transient read/connection errors |
+| Validation stored procedure | 0 | Invalid requests or configurations are deterministic |
+| Audit-only finalizer (`advance_watermark = false`) | 2 | Idempotent by object `pipeline_run_id` when the terminal outcome matches |
+| State-mutating finalizer (may advance watermark) | 0 | Do not blind-retry an uncertain state mutation |
+| Idempotent cleanup Notebook | 1 | Narrow cleanup is repeatable, though Notebook startup is expensive |
+| Copy directly to Bronze/durable target | 0 | A prior attempt may have written data; reconcile/compensate first |
+| SFTP Binary Copy to isolated Landing | 2 | Retry within the same execution/`batch_id`, 30-second interval |
+| Invoke Pipeline | 0 | The invoked child owns its own retry and side-effect handling |
+
+The **SFTP exception** is safe because Binary Copy with PreserveHierarchy writes to an execution-scoped Landing path, and exhausted attempts trigger cleanup of the failed Landing batch. It is not a general recommendation to retry Copy into Bronze.
+
+`control.usp_finalize_ingestion_run` rejects a retry with the same `pipeline_run_id` but a different outcome (`FINALIZE_OUTCOME_MISMATCH`). If an incremental success-finalizer activity fails, inspect the committed audit through [Finalization Failure Recovery](bronze-compensating-cleanup.md#finalization-failure-recovery-incremental-database-and-file) rather than deleting Bronze or repeating the state write blindly.
+
 ## Platform execution recovery
 
 The supported operational entry point remains `pl_ingest_orchestrator`. Direct manual execution/retry of dispatcher, controller, router, adapter, or loader pipelines is not part of the supported contract.

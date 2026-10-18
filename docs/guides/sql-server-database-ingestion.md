@@ -187,6 +187,14 @@ An earlier isolated DEV experiment showed that explicitly setting `parallelCopie
 
 See [Database Copy Performance](../architecture/database-copy-performance.md) and [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the actual option contract and recorded test limitations.
 
+### Transfer consistency and type-conversion safety
+
+The implemented SQL Server 2022 Developer on EC2 to Lakehouse Bronze FULL and INCREMENTAL Copy branches enable **native Data Consistency Verification**. For that supported source-to-sink pair and execution mode, native verification is the transfer-consistency gate; do not add a second row-count check for the same transfer. A future connector must verify support for its actual pair and mode or implement a documented, pattern-appropriate fallback rather than silently skipping consistency checks.
+
+All four SQL Server Copy branches (FULL/INCREMENTAL and AUTO/TUNED) use automatic mapping with `TabularTranslator.typeConversion = true` and `typeConversionSettings.allowDataTruncation = false`. The fail-fast setting prevents silent truncation at the Copy type-conversion layer. It does **not** guarantee byte-for-byte equivalence or eliminate every lossy SQL Server → Fabric intermediate → Delta type mapping; verify real source-type compatibility during onboarding. No per-table hardcoded mappings are introduced.
+
+SFTP Binary Copy to Landing and Spark delimited-text parsing have separate consistency/type-handling behavior and do not use TabularTranslator.
+
 ## 6. Verify the results after a DEV run
 
 To execute one object through the supported entry point, first obtain the actual configuration ID. Then pass an explicit request to `pl_ingest_orchestrator`:

@@ -317,7 +317,7 @@ privately and capture screenshots only when useful.
 
 - [ ] Git/Fabric imported the **intended** items and matched target names;
       any Git sync warnings or unresolved references are cleared.
-- [ ] `01 -> 02 -> 99` passed; all three audit monitoring views query.
+- [ ] `01 -> 02 -> 99` passed (including trusted constraints, keys/indexes and two procedures); all three audit monitoring views query. On an existing environment, compare SQL Project schemas before upgrading: `01` does not migrate them.
 - [ ] Source SQL row counts and SFTP fixture listing are correct; all
       required Fabric Connections **Test connection** successfully.
 - [ ] All five active Library GUID values are from the **new** workspace;
@@ -342,7 +342,7 @@ privately and capture screenshots only when useful.
       Object History; compare SQL Audit if a visual result differs.
 - [ ] If Activator is used, rebind its pipeline job source and notification
       destination separately and verify delivery. Alerting is optional;
-      [its prior limitations](orchestrator-failure-alerting.md) still apply.
+      [the DEV alerting evidence and limitations](monitoring-report.md#pipeline-failure-notifications-activator-dev-experiment) still apply.
 
 **Release gate:** mark the fresh DEV rebuild verified only after runtime
 checks succeed. A document/Git review alone is **not** a tested recovery.
@@ -368,8 +368,7 @@ checks succeed. A document/Git review alone is **not** a tested recovery.
   existing host, SSH/upload/SFTP particulars.
 - [Variable Library](variable-library-environment-binding.md) — exact runtime
   connection-variable contract.
-- [SQL Control Plane](sql-control-plane-hardening.md) — current schema and
-  non-destructive install behavior.
+- [SQL Control Plane guardrails](../guides/control-plane.md#sql-enforced-guardrails) — enforced constraints and non-destructive install behavior.
 - [Operational monitoring](monitoring-report.md) — report limitations
   and metrics.
 - [Run request contract](run-request-examples.md) — REGULAR/BACKFILL,

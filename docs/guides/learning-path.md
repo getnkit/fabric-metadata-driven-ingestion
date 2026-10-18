@@ -62,8 +62,8 @@ single-object BACKFILL request. Why do they reach the same Dispatcher?
 
 ## 4 — Compare physical DATABASE and FILE adapters
 
-**DATABASE:** Start with [SQL Server Database Ingestion](sql-server-database-ingestion.md), then read [Database Extensibility](../architecture/database-ingestion-extensibility.md)
-and [Copy Strategy](../architecture/database-copy-performance.md) for the full connector and tuning contracts.
+**DATABASE:** Start with [SQL Server Database Ingestion](sql-server-database-ingestion.md), then read the [connector responsibility boundary](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary)
+and [Copy Strategy](../architecture/database-copy-performance.md) for the implemented connector and tuning contracts.
 SQL Server FULL/INCREMENTAL uses native **Query-mode Copy** to append to
 Lakehouse Bronze. Connector execution options include `NONE` or
 `DYNAMIC_RANGE` partitioning and an optional positive `parallel_copies`
@@ -95,7 +95,7 @@ REGULAR INCREMENTAL HIGH=LOW and a valid historical INCREMENTAL BACKFILL.
 ## 6 — Understand failure compensation versus Delta atomicity
 
 Read [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md)
-and [Retry Policy](../architecture/retry-policy.md). A single Delta write
+and the [side-effect-based retry matrix](../operations/retry-rerun-backfill.md#retry-policy-by-side-effect). A single Delta write
 has transaction atomicity, but the *whole pipeline* spans distinct
 storage and SQL finalization boundaries. A Copy/Notebook can fail
 after a Bronze commit; Finalization can also have an uncertain outcome.

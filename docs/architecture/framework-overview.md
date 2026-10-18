@@ -48,6 +48,26 @@ structure. The incremental finalize-recovery pipeline is called by both source p
 when success finalization needs reconciliation; FULL loads do not normally
 invoke it.
 
+### Pipeline roles and connector boundary
+
+The `pl_ingest_<scope>_<role>` names reflect distinct responsibilities in the implemented execution graph:
+
+| Role | Responsibility |
+| --- | --- |
+| Orchestrator | Only supported external entry point; chooses all-active, source-scoped, or explicit run requests |
+| Paginator | Resolves all-active metadata in bounded pages; an empty active scope fails rather than silently succeeding |
+| Dispatcher | Fans out a bounded collection of normalized object requests |
+| Object Controller | Validates one resolved object's metadata and Lakehouse target, then selects DATABASE or FILE |
+| Router | Selects connector and load strategy without owning vendor-specific extraction |
+| Adapter | Executes source-specific extraction, boundary handling, and physical loading |
+| Loader / Recovery | Optional boundaries for nested Copy execution or uncertain incremental finalization |
+
+The **framework** owns REGULAR/BACKFILL intent, watermark/no-new-data semantics, Bronze append, audit/finalization, and optimistic checkpoint protection. A **connector adapter** owns its connection, source SQL/predicates and identifier quoting, boundary capture, type compatibility, and native Copy settings. An adapter must not silently redefine the framework's state or finalization semantics.
+
+Only SQL Server FULL/INCREMENTAL DATABASE adapters are implemented. A future Oracle or PostgreSQL connector should be added behind the existing thin DATABASE router, but deeper shared orchestration should be extracted only after a second real implementation proves the common contract. Transfer verification and Copy options must be validated for each actual connector and execution mode; do not assume one vendor's behavior is universal.
+
+Fabric Pipelines handle orchestration and connector-native movement; Notebooks handle reusable Spark/Delta operations such as file parsing and scoped cleanup. The relational SQL Server path deliberately stays with native Copy instead of adding Spark just for uniformity.
+
 ## Control Plane versus Data Plane
 
 | Component | Responsibility |

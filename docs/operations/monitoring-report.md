@@ -80,6 +80,14 @@ Object History sorts `end_time` descending. All displayed timestamps
 are UTC with seconds. Slicer and Chart exclude blank Source System directly.
 No visual must depend on the names of the two demo sources.
 
+## Pipeline failure notifications (Activator DEV experiment)
+
+Failure notifications are **separate from the Power BI audit report**. The optional Fabric Activator approach watches Fabric pipeline job events for **`pl_ingest_orchestrator` = Failed**, then invokes an operator notification action (such as email or Teams), rather than embedding a notification activity in each child. Source-scoped and all-active runs use the same master pipeline item, but a FAILED run means a failure within **that run's scope**, not every configured source system.
+
+Scheduling and the recipient/channel are environment-specific and not provisioned in Git. To accept an alerting setup, verify the master FAILED event, a FAILED object audit *when an object/config was resolved*, and **actual recipient receipt**. A master failure before object resolution may create no object audit.
+
+**Observed in DEV (2026-10-04):** two master FAILED events were detected, and Activator rule/action activity was observed. **Delivery to the intended recipient inbox was not independently verified.** This proves event detection/action invocation only, not an end-to-end verified notification service.
+
 ## Acceptance and follow-up
 
 - DEV screenshot/visual evidence showed **2** Source Systems, **8** Objects,
@@ -98,9 +106,7 @@ No visual must depend on the names of the two demo sources.
 - When re-creating DEV, check SQL views, DirectQuery credentials, the
   Slicer interaction and metric counts, not only that PBIR files import.
   See [Environment Rebuild](environment-rebuild.md).
-- For operator notifications, see
-  [Orchestrator Failure Alerting](orchestrator-failure-alerting.md).
-  Alert behavior and delivery are **separate** from the Power BI Report.
+- For optional operator notifications and the still-unverified delivery evidence, see [Pipeline failure notifications](#pipeline-failure-notifications-activator-dev-experiment).
 
 ### Source of truth
 
