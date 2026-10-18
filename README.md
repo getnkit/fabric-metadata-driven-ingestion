@@ -4,13 +4,13 @@ Building a separate pipeline for each table works well when the number of source
 
 This repository implements **metadata-driven batch ingestion using Microsoft Fabric Data Pipelines**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic while keeping checkpoint management, auditing, and failure recovery consistent across objects.
 
-The working implementation ingests **SQL Server tables and CSV files from SFTP** into **Bronze Delta tables in a Fabric Lakehouse**. It applies **production-oriented design patterns** to state management, run auditing, and failure recovery. The framework has been developed and tested in DEV; production use requires further validation and operational controls.
+The implementation uses **SQL Server tables and CSV files from SFTP** as example sources, writing to **Bronze Delta tables in a Fabric Lakehouse**. It includes reusable orchestration, incremental state management, audit logging, and failure recovery. A Fabric Variable Library keeps key environment-specific runtime bindings separate from pipeline logic.
 
 ## Architecture
 
-![Metadata-driven batch ingestion architecture: Fabric SQL Database manages configuration and run state; shared Fabric pipelines select and dispatch objects through ForEach and routing; SQL Server tables and SFTP CSV files follow separate Copy paths into Lakehouse Bronze, with the SFTP path using Landing and a Notebook.](docs/assets/architecture-overview.svg)
+![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores configuration and checkpoints; shared pipelines select, dispatch, and route objects to Database or File ingestion. Both paths support FULL and INCREMENTAL loads, with SQL Server copying directly to Bronze and SFTP loading CSV files through Landing and a Notebook.](docs/assets/architecture-overview.svg)
 
-*Architecture overview: a shared orchestrator selects ingestion requests, optionally paginates configurations, and uses ForEach to dispatch objects to source-specific adapters. SQL Server data goes directly to Bronze through a Copy activity; SFTP CSV files are copied to Landing and parsed by a Notebook before reaching Bronze.*
+*Architecture overview: the orchestrator selects ingestion requests and paginates active configurations when needed. The dispatcher uses ForEach to process selected objects, while the Object Controller reads configuration and routes each object to Database or File ingestion. Both paths support FULL and INCREMENTAL loads.*
 
 Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram keeps audit updates, guarded checkpoint changes, and failure recovery at a conceptual level rather than showing every activity or failure branch.
 
@@ -45,9 +45,9 @@ You can read the design and code without setting up a Fabric workspace. For a gu
 
 The `fabric/` directory contains the tracked Fabric pipeline, Notebook, SQL Database, Lakehouse, and Power BI item definitions. The `scripts/` directory contains SQL setup scripts and sample data.
 
-## Try the DEV example
+## Run the example
 
-Start with [setting up a fresh DEV environment](docs/operations/environment-rebuild.md), then follow the [SQL setup and demo data order](scripts/RUN_ORDER.md). A new workspace needs its own connections, permissions, and environment-specific IDs; importing definitions from Git alone is not enough.
+To reproduce the sample, follow the [fresh DEV workspace setup guide](docs/operations/environment-rebuild.md) and [SQL setup and sample data order](scripts/RUN_ORDER.md). The runbook targets a new, empty DEV workspace. Deployments to other environments require their own connections, permissions, item bindings, and validation; importing Git definitions alone is not sufficient.
 
 Once the sources and Fabric items are configured, start `pl_ingest_orchestrator`. For example, to select the active SFTP example objects:
 
