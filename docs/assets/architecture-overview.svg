@@ -32,8 +32,8 @@
 <path d="M711 166 H738" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
 <path d="M1049 166 H1076" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
 <path d="M1275 239 V293 H411" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
-<path d="M411 293 V374" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
-<path d="M1119 293 V374" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
+<path d="M411 293 V398" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
+<path d="M1119 293 V398" stroke="#70849B" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" fill="none" marker-end="url(#arrow)"/>
 <rect x="54" y="382" width="688" height="270" rx="11" fill="#FAFBFE" stroke="#E5EBF2" stroke-width="1.25"/>
 <rect x="778" y="382" width="688" height="270" rx="11" fill="#FAFBFE" stroke="#E5EBF2" stroke-width="1.25"/>
 <text x="76" y="419" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="650" fill="#243246">Database ingestion</text>
