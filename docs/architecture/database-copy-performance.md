@@ -55,7 +55,7 @@ Dynamic range example:
 }
 ```
 
-Optional benchmark-backed override:
+Optional explicit override (illustrative, not a benchmark-derived recommendation):
 
 ```json
 {
@@ -64,6 +64,8 @@ Optional benchmark-backed override:
   "parallel_copies": 8
 }
 ```
+
+The value `8` above illustrates the configuration syntax; the recorded DEV measurements do not establish it as an optimal setting for this workload. See [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the observed results and outstanding comparisons.
 
 Current SQL Server 2022 Developer on EC2 support (FULL and INCREMENTAL):
 
