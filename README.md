@@ -8,30 +8,11 @@ The working implementation ingests **SQL Server tables and CSV files from SFTP**
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    CONTROL["Fabric SQL Database<br/>Configuration · Watermarks · Run results"]
-    ORCH["Fabric Data Pipelines<br/>Orchestration · Routing"]
-    SQL["SQL Server tables"]
-    SFTP["SFTP · CSV files"]
-    SQL_COPY["Copy activity<br/>SQL query"]
-    SFTP_COPY["Copy activity<br/>Binary file transfer"]
-    LANDING["Lakehouse Files<br/>Landing"]
-    NOTEBOOK["Notebook<br/>Parse CSV files"]
-    BRONZE[("Fabric Lakehouse<br/>Bronze Delta tables")]
+![Metadata-driven batch ingestion architecture: Fabric SQL Database manages configuration and run state; shared Fabric pipelines select and dispatch objects through ForEach and routing; SQL Server tables and SFTP CSV files follow separate Copy paths into Lakehouse Bronze, with the SFTP path using Landing and a Notebook.](docs/assets/architecture-overview.svg)
 
-    CONTROL --> ORCH
-    ORCH --> SQL_COPY
-    ORCH --> SFTP_COPY
-    SQL --> SQL_COPY
-    SFTP --> SFTP_COPY
-    SQL_COPY --> BRONZE
-    SFTP_COPY --> LANDING --> NOTEBOOK --> BRONZE
-```
+*Architecture overview: a shared orchestrator selects ingestion requests, optionally paginates configurations, and uses ForEach to dispatch objects to source-specific adapters. SQL Server data goes directly to Bronze through a Copy activity; SFTP CSV files are copied to Landing and parsed by a Notebook before reaching Bronze.*
 
-*Simplified flow: Fabric Data Pipelines route each object to its ingestion path. SQL Server tables are read through a Copy activity into Bronze; SFTP CSV files are copied to Lakehouse Files (Landing), then parsed by a Notebook and written to Bronze.*
-
-Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram shows the main data paths, not the separate steps that record run results, update watermarks, or handle failures.
+Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram keeps audit updates, guarded checkpoint changes, and failure recovery at a conceptual level rather than showing every activity or failure branch.
 
 See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the full pipeline structure, design choices, and trade-offs.
 
