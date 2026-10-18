@@ -85,6 +85,6 @@ The orchestrator selects matching objects and invokes the required child pipelin
 
 To set up the optional SQL Server and SFTP demo environment, see the [EC2/Docker Compose setup](infra/source/README.md). This environment is not required to explore the repository; review its configuration and security notes before deploying it.
 
-**Scope:** This repository implements SQL Server and SFTP adapters. Additional connectors, advanced scheduling, and cross-run concurrency controls are outside its scope; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
+## License
 
-**License:** No license is currently included. Public access does not by itself grant reuse or redistribution rights.
+No license is currently included. Public access does not by itself grant reuse or redistribution rights.
