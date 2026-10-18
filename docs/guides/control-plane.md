@@ -60,7 +60,7 @@ ORDER BY connection_ref;
 
 For the standard demo, `SQL_SERVER_ECOMMERCE` is a SQL Server source, `SFTP_LOGISTICS_VENDOR` is an SFTP source, and `LH_ECOMMERCE_BRONZE` is the Lakehouse target. Their physical connection and Lakehouse identifiers are stored in `connection_settings` and resolved by `lkp_ingestion_config` in the Object Controller.
 
-The shared Fabric Pipeline runtime has another set of bindings, stored in `vl_ingestion_connections`, for its Control SQL, Invoke Pipeline, and Notebook activities. Those Library values are **not** the same as the per-source `control.connection_settings` rows. For the actual binding contract, see [Variable Library configuration](../operations/variable-library-environment-binding.md).
+Fabric Pipeline activities use a separate set of runtime bindings, stored in `vl_ingestion_connections`, for Control SQL, Invoke Pipeline, and Notebook execution. Those Library values are **not** the same as the per-source `control.connection_settings` rows. For the actual binding contract, see [Variable Library configuration](../operations/variable-library-environment-binding.md).
 
 ## 3. What changes between DATABASE and FILE?
 

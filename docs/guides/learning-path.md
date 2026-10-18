@@ -1,4 +1,4 @@
-# Technical Learning Path — Metadata-Driven Batch Ingestion
+# Technical Learning Path — Metadata-Driven Ingestion
 
 This reading guide starts with the framework architecture and metadata, then follows one run through orchestration and the source-specific adapters. Each section links to the SQL scripts, Pipeline definitions, or Notebooks that implement the behavior.
 
@@ -37,7 +37,7 @@ and `audit.ingestion_log`. Understand `ingestion_pattern`,
 
 The demo has six E-commerce DATABASE and two Logistics FILE
 configurations. The source-specific execution contract lives in metadata;
-the underlying executable Pipelines are shared.
+the same pipeline definitions handle multiple configured source objects.
 
 **Exercise:** Find the FULL objects and INCREMENTAL objects. Explain why
 FULL configs have no Watermark checkpoint.

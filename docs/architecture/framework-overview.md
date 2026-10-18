@@ -44,9 +44,9 @@ The supporting Notebooks are:
 The graph is intentionally not fully flattened. The incremental SQL adapter
 owns watermark/no-new-data decisions; the separate loader keeps the nested
 AUTO/TUNED Copy execution branch compatible with current Fabric Pipeline
-structure. The shared incremental finalize-recovery pipeline is invoked
-when success finalization needs reconciliation, rather than for every FULL
-load by default.
+structure. The incremental finalize-recovery pipeline is called by both source paths
+when success finalization needs reconciliation; FULL loads do not normally
+invoke it.
 
 ## Control Plane versus Data Plane
 
@@ -157,7 +157,7 @@ for the actual activity branches, audit codes, and verification steps.
 
 ## Scaling and extension considerations
 
-The current framework uses a shared orchestration entry point and bounded parallelism. These choices provide basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational requirements may need additional coordination:
+The current framework has one supported orchestration entry point and bounded parallelism. These choices provide basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational requirements may need additional coordination:
 
 - **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object outcomes.
 - **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations **within one run**. This is not a database-connection limit: one object execution can use multiple connections, and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency policies or a shared per-source execution budget.

@@ -4,7 +4,7 @@ The current DATABASE implementation reads SQL Server 2022 Developer tables throu
 
 This guide compares FULL and INCREMENTAL execution, explains how the framework builds the source query, and shows where to check the resulting audit and watermark. The source SQL Server is separate from the Fabric SQL Database that stores pipeline configuration and state.
 
-Start with [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md) if you have not yet followed the shared configuration and dispatch flow.
+Start with [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md) if you have not yet traced the configuration and request-dispatch flow.
 
 ## 1. Choose two database configurations
 
