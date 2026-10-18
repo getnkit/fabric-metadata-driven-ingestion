@@ -1,87 +1,80 @@
-# Fabric Metadata-Driven Batch Ingestion
+# Metadata-Driven Data Pipelines in Microsoft Fabric
 
-Building a separate pipeline for each source table can be a sensible choice when the requirements are simple and stable. But as more tables and source systems are added, maintaining the same ingestion logic across many pipelines takes more effort.
+Building a separate pipeline for each table works well when the number of sources is small and requirements are stable. As more tables and source systems are added, however, repeating the same ingestion logic across many pipelines makes changes and maintenance harder.
 
-This project explores a **metadata-driven approach to batch ingestion using Microsoft Fabric Data Pipelines**. Rather than creating a new pipeline for every source object, a shared framework reads configuration tables to decide what to ingest, how to load it, and where to store it. The goal is to reduce repetitive pipeline development while keeping control over incremental state, audit logging, and failure handling.
+This repository explores **metadata-driven data pipelines in Microsoft Fabric**. Shared pipelines read configuration tables to decide which source objects to ingest, how to process them, and where to write the results. This reduces repeated pipeline logic, but also requires consistent handling of checkpoints, failures, and run history.
 
-The implementation uses **SQL Server and SFTP** as example sources and writes to **append-only Bronze Delta tables** in a Fabric Lakehouse.
+The working example ingests **SQL Server tables and CSV files from SFTP** into **Bronze Delta tables in a Fabric Lakehouse**. It is a **DEV reference implementation** for studying the design and trying it out, not a production-ready deployment.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph SOURCES["Example sources"]
-        SQL["SQL Server 2022"]
-        SFTP["SFTP · CSV / TSV"]
-    end
-    subgraph FABRIC["Microsoft Fabric"]
-        CTRL[("Fabric SQL Database<br/>Configurations · Watermarks · Audit")]
-        PIPE["Fabric Data Pipelines<br/>Select · Validate · Dispatch"]
-        DB["Query-mode Copy<br/>FULL / INCREMENTAL"]
-        FILE["SFTP Binary Copy"]
-        LAND["Lakehouse Files<br/>Landing"]
-        NB["Notebook<br/>Parse files"]
-        BRONZE[("Lakehouse Bronze<br/>Delta tables")]
-        REPORT["SQL monitoring views<br/>Power BI report"]
-    end
-    CTRL -->|"configuration / state"| PIPE
-    PIPE --> DB
-    PIPE --> FILE
-    SQL --> DB --> BRONZE
-    SFTP --> FILE --> LAND --> NB --> BRONZE
-    PIPE -.->|"audit / guarded checkpoint update"| CTRL
-    CTRL --> REPORT
+flowchart TB
+    CONTROL["Fabric SQL Database<br/>Configuration · Watermarks · Run results"]
+    ORCH["Fabric Data Pipelines<br/>Shared orchestration and routing"]
+    SQL["SQL Server<br/>Read with Copy activity"]
+    SFTP["SFTP · CSV files<br/>Copy to Lakehouse Landing"]
+    NOTEBOOK["Notebook<br/>Read CSV files"]
+    BRONZE[("Fabric Lakehouse<br/>Bronze Delta tables")]
+
+    CONTROL --> ORCH
+    ORCH --> SQL
+    ORCH --> SFTP
+    SQL --> BRONZE
+    SFTP --> NOTEBOOK
+    NOTEBOOK --> BRONZE
 ```
 
-The framework separates **control and state** from **data movement**. Fabric SQL Database stores ingestion configurations, connection references, watermarks, and terminal object audits. Fabric pipelines handle request selection and routing. SQL Server data is copied directly to Bronze; SFTP files are preserved in Landing before a Notebook reads and appends them to Bronze.
+*Simplified flow: SQL Server data goes directly to Bronze through a Copy activity. SFTP files first land in Lakehouse Files, then a Notebook reads the CSV data and writes to Bronze.*
 
-For the decisions behind this design, see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
+Fabric SQL Database is the **control layer**: it holds source configurations, the last saved checkpoint for incremental loads (a **watermark**), and the results recorded for completed object runs. The diagram leaves out audit updates and failure branches so the two data paths remain easy to follow.
 
-## How it works
+See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the full pipeline structure, design choices, and trade-offs.
 
-| Part | What it does |
+## How the framework works
+
+| Step | What happens |
 | --- | --- |
-| **Shared orchestration** | `pl_ingest_orchestrator` runs all active configurations, one source-system subset, or an explicit list of requests. |
-| **Metadata-driven routing** | `control.ingestion_config` and `control.connection_settings` identify source objects, supported loading patterns, and targets. |
-| **SQL Server ingestion** | FULL or timestamp-based INCREMENTAL loads use query-mode Copy into Bronze. |
-| **SFTP ingestion** | FULL or Last Modified INCREMENTAL loads use Binary Copy to Landing, followed by CSV/TSV parsing in a Notebook. |
-| **Incremental state** | A successful eligible `REGULAR` run can advance the watermark. `BACKFILL` and no-new-data `SKIPPED` runs do not advance it. |
-| **Failure handling and monitoring** | SQL finalization guards checkpoint updates; execution-scoped cleanup handles supported failure paths, and audit records feed the Power BI Operations Report. |
+| **1. Configure sources** | `control.ingestion_config` defines each source object, its DATABASE or FILE ingestion pattern, FULL or INCREMENTAL load strategy, and Bronze target. `control.connection_settings` maps logical connection references. |
+| **2. Select and dispatch** | `pl_ingest_orchestrator` selects all active configurations, one source system, or explicit object requests. A paginator and dispatcher pass the selected objects into the shared processing flow. |
+| **3. Route each object** | `pl_ingest_object_controller` reads the configuration. The DATABASE or FILE router then calls the matching SQL Server or SFTP adapter. The same orchestration structure serves different objects. |
+| **4. Load into Bronze** | For SQL Server, a Fabric Copy activity reads a SQL query for a full table load or a timestamp-based incremental window. For SFTP, Binary Copy moves CSV files to Landing before a Notebook parses them and appends Delta rows. |
+| **5. Record results and recover** | The framework records each completed object's outcome in `audit.ingestion_log`. Successful regular incremental runs can safely update their watermark; backfills and no-new-data runs do not. Selected failure paths remove data written by the affected execution without deleting other successful batches. |
+| **6. Inspect runs** | **Fabric Monitor** shows pipeline activity and failures. The **Power BI Operations Report** summarizes recorded object results from SQL audit data; it does not replace Fabric Monitor for in-progress runs or failures before an object audit exists. |
 
-**Why not one pipeline per table?** Separate pipelines may be simpler for a small, fixed set of sources or for objects that require very different logic. A metadata-driven framework adds setup and maintenance responsibilities, but becomes useful when many objects follow the same ingestion pattern and onboarding is frequent.
+**Why use shared pipelines?** Separate pipelines are still a good choice for small or highly specialized workloads. Metadata-driven orchestration becomes more useful when many objects follow similar ingestion rules, but the shared framework itself needs careful design and maintenance.
 
-## Follow the implementation
+## Explore the implementation
 
-You can explore the design without deploying anything. Start with the [Technical Learning Path](docs/guides/learning-path.md), or go directly to the topic you want to understand:
+You can read the design and code without setting up a Fabric workspace. For a guided route through the project, start with the [step-by-step learning guide](docs/guides/learning-path.md). Or choose a topic:
 
-| Topic | Documentation |
+| What you want to understand | Where to start |
 | --- | --- |
-| Configuration and orchestration | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
-| SQL Server ingestion | [Database Ingestion Guide](docs/guides/sql-server-database-ingestion.md) |
-| SFTP ingestion | [File Ingestion Guide](docs/guides/sftp-file-ingestion.md) |
-| Incremental windows and backfill | [Generic Incremental Watermark](docs/architecture/generic-incremental-watermark.md) |
-| Finalization and cleanup | [Bronze Compensating Cleanup](docs/operations/bronze-compensating-cleanup.md) |
-| Audit and monitoring | [Monitoring Report](docs/operations/monitoring-report.md) |
+| Why the architecture is structured this way | [Architecture & Design Decisions](docs/architecture/framework-overview.md) |
+| How source configuration and orchestration work | [Control Plane](docs/guides/control-plane.md) · [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
+| How a SQL Server table reaches Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
+| How SFTP files move through Landing and Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
+| How incremental checkpoints and recovery work | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) · [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
+| What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
+| What was observed in DEV performance experiments | [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md) |
 
-The `fabric/` directory contains Fabric item definitions. `scripts/` contains SQL setup and demo fixtures; `infrastructure/source/` contains the optional demo-source setup.
+The `fabric/` directory contains the tracked Fabric pipeline, Notebook, SQL Database, Lakehouse, and Power BI item definitions. The `scripts/` directory contains SQL setup scripts and sample data.
 
 ## Try the DEV example
 
-To run the framework in a new DEV environment, follow the [Environment Rebuild Guide](docs/operations/environment-rebuild.md) and [SQL/source setup order](scripts/RUN_ORDER.md). A fresh workspace needs its own Fabric connections, permissions, and environment-specific bindings.
+Start with [setting up a fresh DEV environment](docs/operations/environment-rebuild.md), then follow the [SQL setup and demo data order](scripts/RUN_ORDER.md). A new workspace needs its own connections, permissions, and environment-specific IDs; importing definitions from Git alone is not enough.
 
-After setup, run **`pl_ingest_orchestrator`**. For example, to select the active SFTP configurations:
+Once the sources and Fabric items are configured, start `pl_ingest_orchestrator`. For example, to select the active SFTP example objects:
 
 ```text
 p_run_requests = []
 p_source_system = "LOGISTICS_VENDOR"
 ```
 
-Use Fabric Monitor and `audit.ingestion_log` to inspect the actual object outcomes. The [SFTP guide](docs/guides/sftp-file-ingestion.md) shows how to follow the run through Landing, Bronze, and the checkpoint. Child pipelines are internal components, not standalone entry points.
+The orchestrator selects the objects and invokes the child pipelines for you. After a run, check its activities in **Fabric Monitor**, then inspect `audit.ingestion_log` and the **Power BI Operations Report** for recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) shows how to compare Landing, Bronze, and watermark state.
 
-## Scope
+If you need demo source services, [the optional EC2/Docker Compose setup](infrastructure/source/README.md) describes the SQL Server and SFTP environment used for development. Review its environment-specific settings and safety notes before reusing it; it is not a one-command setup requirement for reading this project.
 
-This is a **batch-only DEV reference implementation** covering SQL Server and SFTP. File parsing currently supports **delimited text (CSV/TSV)**. It does not implement CDC, streaming, API ingestion, or Silver/Gold transformations. Fabric SQL Database and Delta Lakehouse writes are **not one distributed transaction**. It does not claim production operations or SLA guarantees.
+**Note:** This example focuses on batch ingestion from SQL Server and SFTP. Other connectors and broader scheduling or concurrency policies would need additional design; see [Architecture & Design Decisions](docs/architecture/framework-overview.md).
 
-The implementation and its limitations can be inspected in the linked definitions and guides. For recorded performance experiments, see [Benchmark Evidence](docs/benchmarks/evidence-and-test-plan.md).
-
-**License:** No license is currently included; public availability does not grant permission to reuse or redistribute the code.
+**License:** No license is currently included. Public access does not by itself grant reuse or redistribution rights.
