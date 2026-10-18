@@ -1,4 +1,4 @@
-# Metadata-Driven Data Pipelines in Microsoft Fabric
+# Metadata-Driven Pipelines in Microsoft Fabric
 
 Building a separate pipeline for each table works well when the number of sources is small and requirements are stable. As more tables and source systems are added, however, repeating the same ingestion logic across many pipelines makes changes and maintenance harder.
 
