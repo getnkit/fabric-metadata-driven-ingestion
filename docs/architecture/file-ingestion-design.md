@@ -15,23 +15,7 @@ SFTP FULL and INCREMENTAL ingestion share the FILE routing design and the framew
 
 `control.ingestion_config` remains the single ingestion configuration table.
 
-The generic columns continue to own routing and execution metadata:
-
-- `source_system`
-- `source_conn_ref`
-- `source_schema`
-- `source_object`
-- `source_path`
-- `ingestion_pattern`
-- `file_format`
-- `source_options`
-- `copy_options`
-- `landing_path`
-- `target_conn_ref`
-- `target_schema`
-- `target_table`
-- `load_strategy`
-- `watermark_field`
+Routing and execution fields remain in the shared `control.ingestion_config`; the FILE-specific design hinges on `source_path`, `file_format`, `source_options`, and `landing_path`. The full column contract and actual sample rows belong to the [Control Plane guide](../guides/control-plane.md) and [SQL metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql).
 
 Path semantics:
 
@@ -192,65 +176,11 @@ The source inventory rows use the same SKU convention as the ECOMMERCE catalog
 (`SKU000001`, `SKU000002`, and so on), which gives the demo a realistic
 cross-source relationship without duplicating the SQL Server source tables.
 
-## SFTP FULL fixture
+## SFTP FULL sample and configuration
 
-Repository fixture:
+The active `LOGISTICS_VENDOR` FULL example reads `inventory_snapshot.csv` from `/outbound/inventory/` into `fulfillment.inventory_snapshots`. It matches the exact source filename rather than sweeping historical movement files and has **no watermark**. The raw columns and CSV contents are in the [tracked fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv).
 
-```text
-scripts/source/sftp/outbound/inventory/inventory_snapshot.csv
-```
-
-Source SFTP path and file pattern:
-
-```text
-source_path       = /outbound/inventory/
-file_name_pattern = inventory_snapshot.csv
-```
-
-Fixture columns:
-
-```text
-warehouse_code
-sku
-on_hand_qty
-reserved_qty
-available_qty
-inventory_status
-snapshot_at
-```
-
-## SFTP FULL configuration
-
-```text
-source_system      = LOGISTICS_VENDOR
-source_conn_ref    = SFTP_LOGISTICS_VENDOR
-source_schema      = NULL
-source_object      = inventory_snapshot
-source_path        = /outbound/inventory/
-ingestion_pattern  = FILE
-file_format        = DELIMITED_TEXT
-landing_path       = landing/logistics_vendor/inventory_snapshot/
-target_conn_ref    = LH_ECOMMERCE_BRONZE
-target_schema      = fulfillment
-target_table       = inventory_snapshots
-load_strategy      = FULL
-watermark_field    = NULL
-```
-
-`source_options`:
-
-```json
-{
-  "file_name_pattern": "inventory_snapshot.csv",
-  "delimiter": ",",
-  "has_header": true,
-  "encoding": "UTF-8",
-  "quote": "\"",
-  "escape": "\\"
-}
-```
-
-The SFTP FILE/FULL config is active in the DEV seed.
+For the complete `source_options` JSON, logical connections, paths, and target settings, inspect the [DEV metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql). To follow the execution through Landing, Bronze and audit, use the [SFTP walkthrough](../guides/sftp-file-ingestion.md). Keeping the sample values in their source files avoids a second configuration specification here.
 
 ## SFTP account boundary (current DEV)
 
@@ -437,35 +367,6 @@ that reflects delivery/update time. A source that preserves stale timestamps
 during late delivery or requires strict per-file receipt tracking would need a
 different policy such as a manifest/receipt state model.
 
-The file config's normal REGULAR strategy is INCREMENTAL:
-
-```text
-REGULAR
-LOW  = committed last_modified_time watermark
-HIGH = ingestion run start time
-advance operational watermark = yes
-```
-
-For the current INCREMENTAL FILE config, BACKFILL uses:
-
-```text
-BACKFILL + INCREMENTAL
-LOW  = requested lower_bound
-HIGH = requested upper_bound
-advance operational watermark = no
-```
-
-For a FULL FILE config, BACKFILL uses no LOW/HIGH and rereads the configured
-full current source scope. A future historical FULL-snapshot requirement would
-need an explicit selector such as data_date, snapshot ID, source version, or a
-historical file reference.
-
-The current SFTP INCREMENTAL implementation applies LOW/HIGH to source-file Last
-Modified time. Sources that preserve stale timestamps during late delivery or
-require strict per-file receipt tracking still need a different policy such as
-a manifest/receipt state model.
-
-
 ## Format-routing boundary
 
 `source_connection_type` and `file_format` answer different questions:
@@ -490,16 +391,4 @@ SFTP
 
 The **FILE Router** performs the single framework-level supported-format guard before connector/strategy routing; SFTP FULL and INCREMENTAL do not repeat that check. It does not route to a different pipeline branch per file format. Reader selection lives inside the reusable notebook so future `PARQUET` or `JSON` support can reuse the same Landing, lineage, Bronze-write, row-count, and recovery behavior. When additional connector adapters support different subsets of formats, revisit the Router guard as an explicit route/adapter capability policy rather than assuming one global list fits every adapter.
 
-## Generating new incremental SFTP fixtures for DEV tests
-
-The three checked-in `inventory_movement_*.csv` files are static reproducible
-fixtures. To simulate new provider deliveries, run the [local Python movement
-generator](../../scripts/source/sftp/README.md): one new 6-row CSV, no arguments,
-UTC `YYYY/MM/` subfolder, unique UTC-stamped filename and movement IDs.
-Upload with the vendor/producer account to `/outbound/inventory/movements/YYYY/MM/`;
-the generator does not automate SFTP upload or modify Fabric state.
-
-For end-to-end incremental acceptance, observe **remote SFTP Last Modified**
-time after upload, then verify REGULAR ingestion and watermark behavior.
-The generated filename and row-level `occurred_at` are not used for FILE
-watermark selection.
+For reproducible/new movement-file fixtures and upload testing, see the [SFTP fixture instructions](../../scripts/source/sftp/README.md). The generator does not upload files or modify Fabric state.

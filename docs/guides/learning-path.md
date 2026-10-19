@@ -1,146 +1,82 @@
 # Technical Learning Path — Metadata-Driven Ingestion
 
-This reading guide starts with the framework architecture and metadata, then follows one run through orchestration and the source-specific adapters. Each section links to the SQL scripts, Pipeline definitions, or Notebooks that implement the behavior.
+You can understand the framework without provisioning Fabric. Choose a route below, then follow the numbered walkthrough only as far as you need. Each step points to the canonical explanation and, when useful, the checked-in implementation.
 
-**Platform scope:** Microsoft Fabric Data Pipelines, Fabric SQL Database and
-Lakehouse Bronze. Many design principles are relevant to Azure Data Factory,
-but its deployment formats and some activity features differ. The repo does
-not claim to contain deployable ADF assets.
+**Scope:** Microsoft Fabric Data Pipelines, Fabric SQL Database, Lakehouse Bronze; implemented batch sources are SQL Server and SFTP. The repository does **not** contain deployable Azure Data Factory assets or working Oracle/PostgreSQL/API/CDC/streaming adapters.
+
+## Choose a reading route
+
+| Goal | Read |
+| --- | --- |
+| **Portfolio / architecture scan** | [Architecture](../architecture/framework-overview.md) → [Evidence & limitations](../benchmarks/evidence-and-test-plan.md) |
+| **Follow an actual ingestion request** | Steps **1–4** below; choose SQL Server or SFTP |
+| **Understand production-style safety decisions** | Steps **5–7**: watermark, retry/compensation, audit visibility |
+| **Reproduce the DEV demo** | Step **8**, then follow the operator runbooks (not the design documents) |
 
 ## 1 — Understand the architectural problem
 
-Start with [Architecture & Design Decisions](../architecture/framework-overview.md).
-Without metadata-driven orchestration, a per-table/per-file ingestion estate
-duplicates routing, watermark decisions, audit and recovery mechanics.
+**Read:** [Architecture & Design Decisions](../architecture/framework-overview.md).
 
-Trace three boundaries: **Control Plane** (config/state/audit),
-**Orchestration Plane** (routing/validation/dispatch), and **Data Plane**
-(source -> Landing/Bronze). They have different responsibilities and do not
-share an end-to-end distributed transaction.
+Focus on **Control Plane** (config/state/audit), **Orchestration Plane** (selection/validation/routing), and **Data Plane** (source → Landing/Bronze). The Bronze write and Control SQL finalization are not one distributed transaction.
 
-**Exercise:** Explain why SQL Database state should not be confused with
-Delta rows, and what can happen between Bronze Commit and SQL Finalization.
+**Check yourself:** What can happen between a Bronze commit and SQL finalization?
 
-## 2 — Build a mental model of metadata
+## 2 — Inspect the metadata
 
-Begin with [Control Plane and Ingestion Configuration](control-plane.md).
-It explains the four SQL Control/Audit tables with read-only queries against the DEV example.
-For the exact schema and seed statements, read [Control schema bootstrap](../../scripts/control/01_create_control_schema.sql),
-[connection metadata seed](../../scripts/control/03_seed_connection_settings.sql),
-and [ingestion metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql).
+**Read:** [Control Plane](control-plane.md). Inspect the read-only example queries for `control.connection_settings`, `control.ingestion_config`, `control.pipeline_watermarks`, and `audit.ingestion_log`.
 
-Identify the purpose of `control.connection_settings`,
-`control.ingestion_config`, `control.pipeline_watermarks`,
-and `audit.ingestion_log`. Understand `ingestion_pattern`,
-`load_strategy`, `source_conn_ref`, `target_conn_ref`,
-`watermark_field`, `source_options` and `copy_options`.
+**Source of truth:** [Control schema](../../scripts/control/01_create_control_schema.sql), [connection seed](../../scripts/control/03_seed_connection_settings.sql), and [ingestion seed](../../scripts/control/04_seed_ingestion_metadata.sql). The demo defines six E-commerce DATABASE objects and two Logistics FILE objects.
 
-The demo has six E-commerce DATABASE and two Logistics FILE
-configurations. The source-specific execution contract lives in metadata;
-the same pipeline definitions handle multiple configured source objects.
+**Check yourself:** Which configs are FULL versus INCREMENTAL, and why does FULL have no persistent checkpoint?
 
-**Exercise:** Find the FULL objects and INCREMENTAL objects. Explain why
-FULL configs have no Watermark checkpoint.
+## 3 — Trace the request through orchestration
 
-## 3 — Follow the request through orchestration
+**Read:** [Pipeline Orchestration](pipeline-orchestration.md) and [Run Request Examples](../operations/run-request-examples.md).
 
-Read [Pipeline Orchestration and Run Requests](pipeline-orchestration.md) to follow the master run, Paginator, Dispatcher, Object Controller, and Routers. Then open the actual JSON definitions under:
-- `fabric/pl_ingest_orchestrator.DataPipeline/`
-- `fabric/pl_ingest_config_paginator.DataPipeline/`
-- `fabric/pl_ingest_config_dispatcher.DataPipeline/`
-- `fabric/pl_ingest_object_controller.DataPipeline/`
-- `fabric/pl_ingest_database_router.DataPipeline/`
-- `fabric/pl_ingest_file_router.DataPipeline/`
+Inspect `fabric/pl_ingest_orchestrator.DataPipeline/`, `pl_ingest_config_paginator.DataPipeline/`, `pl_ingest_config_dispatcher.DataPipeline/`, `pl_ingest_object_controller.DataPipeline/`, and the DATABASE/FILE router definitions under `fabric/`. Only the top-level Orchestrator is a supported external entry point.
 
-Use [Run Request Examples](../operations/run-request-examples.md).
-There are three entry shapes: all active configs, active configs scoped to
-one source system, or an explicit list of configs with run types.
-Only the **top-level Orchestrator** is the supported external entry point.
+**Check yourself:** Why do explicit requests and source-scoped all-active requests reach the same Dispatcher?
 
-**Exercise:** Trace a source-system-scoped request, then trace an explicit
-single-object BACKFILL request. Why do they reach the same Dispatcher?
+## 4 — Follow one physical ingestion path
 
-## 4 — Compare physical DATABASE and FILE adapters
+**DATABASE:** [SQL Server Guide](sql-server-database-ingestion.md) explains Query-mode Copy for FULL and timestamp INCREMENTAL; [Copy Performance](../architecture/database-copy-performance.md) explains supported `NONE`/`DYNAMIC_RANGE` partition settings and benchmark limits.
 
-**DATABASE:** Start with [SQL Server Database Ingestion](sql-server-database-ingestion.md), then read the [connector responsibility boundary](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary)
-and [Copy Strategy](../architecture/database-copy-performance.md) for the implemented connector and tuning contracts.
-SQL Server FULL/INCREMENTAL uses native **Query-mode Copy** to append to
-Lakehouse Bronze. Connector execution options include `NONE` or
-`DYNAMIC_RANGE` partitioning and an optional positive `parallel_copies`
-override.
+**FILE:** [SFTP Guide](sftp-file-ingestion.md) traces Binary Copy into execution-scoped Landing and the `nb_load_file_landing_to_bronze` Notebook; [FILE Design](../architecture/file-ingestion-design.md) records the connector and parsing decisions. Only `DELIMITED_TEXT` is implemented.
 
-**FILE:** Start with the [SFTP File Ingestion Guide](sftp-file-ingestion.md),
-then read [File Ingestion](../architecture/file-ingestion-design.md) for more detail.
-SFTP files are copied in Binary mode to execution-scoped Lakehouse Files
-Landing. `nb_load_file_landing_to_bronze.Notebook` parses and appends
-**DELIMITED_TEXT only**. JSON/Parquet file ingestion is not implemented.
+**Check yourself:** Why is the SQL Server path direct-to-Bronze while SFTP keeps a raw Landing copy?
 
-**Exercise:** Why is the relational Copy path separate from Notebook-based
-Landing parsing, and what data does the Landing layer preserve?
+## 5 — Reason about incremental state
 
-## 5 — Reason about incremental state and BACKFILL
+**Read:** [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) and [Retry/Rerun/Backfill](../operations/retry-rerun-backfill.md).
 
-Read [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md)
-and [Retry/Rerun/Backfill](../operations/retry-rerun-backfill.md).
-A durable LOW and an execution HIGH define the processing boundary.
-On eligible REGULAR/INCREMENTAL success, the SQL Finalizer can advance
-the Watermark with optimistic protection. BACKFILL does **not** advance
-the operational checkpoint; no-new-data SKIPPED does **not** advance it.
+Inspect [the SQL finalizer procedure](../../fabric/sqldb_ingestion_control.SQLDatabase/control/StoredProcedures/usp_finalize_ingestion_run.sql). A normal incremental run derives a LOW/HIGH boundary; an eligible successful REGULAR run may advance the checkpoint with optimistic protection. BACKFILL and no-new-data SKIPPED do not advance it.
 
-Inspect the [Finalizer procedure](../../fabric/sqldb_ingestion_control.SQLDatabase/control/StoredProcedures/usp_finalize_ingestion_run.sql).
+**Check yourself:** Predict audit and watermark behavior for DATABASE REGULAR INCREMENTAL with HIGH = LOW, and for an incremental historical BACKFILL.
 
-**Exercise:** Predict Audit Status and Watermark behavior for DATABASE
-REGULAR INCREMENTAL HIGH=LOW and a valid historical INCREMENTAL BACKFILL.
+## 6 — Inspect failure compensation and retries
 
-## 6 — Understand failure compensation versus Delta atomicity
+**Read:** [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) and the [retry matrix](../operations/retry-rerun-backfill.md#retry-policy-by-side-effect).
 
-Read [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md)
-and the [side-effect-based retry matrix](../operations/retry-rerun-backfill.md#retry-policy-by-side-effect). A single Delta write
-has transaction atomicity, but the *whole pipeline* spans distinct
-storage and SQL finalization boundaries. A Copy/Notebook can fail
-after a Bronze commit; Finalization can also have an uncertain outcome.
+Inspect `nb_cleanup_bronze_batch_rows.Notebook`, `nb_cleanup_landing_batch_files.Notebook`, and `pl_ingest_incremental_finalize_recovery.DataPipeline` in `fabric/`. A failed Copy/Notebook or Finalizer activity does not prove whether a durable write committed.
 
-Find the three corresponding implementations in `fabric/`:
-`nb_cleanup_bronze_batch_rows.Notebook`,
-`nb_cleanup_landing_batch_files.Notebook`, and
-`pl_ingest_incremental_finalize_recovery.DataPipeline`.
+**Check yourself:** Why does cleanup match both `_batch_id` and `_pipeline_run_id`, and why is blind cleanup unsafe after a failed success Finalizer?
 
-**Exercise:** Why does Bronze Cleanup use both `_batch_id` and
-`_pipeline_run_id`? Why must a failed `sp_finalize_success` not trigger
-a blind deletion without checking durable finalization?
+## 7 — Understand what monitoring proves
 
-## 7 — Monitor only what the Audit Plane can observe
+**Read:** [Operations Monitoring](../operations/monitoring-report.md) and [SQL monitoring views](../../scripts/monitoring/01_create_monitoring_views.sql).
 
-Read [Operational Monitoring](../operations/monitoring-report.md) and
-[monitoring SQL views](../../scripts/monitoring/01_create_monitoring_views.sql).
-The official Power BI Report and Semantic Model are under `fabric/`.
-They use DirectQuery over **terminal object audit**, not an all-knowing live
-master-pipeline status service.
+The checked-in Power BI report/semantic model use DirectQuery over terminal **object-level audit**. They cannot show in-progress runs or failures before an object audit. Optional Activator alert delivery has not been independently verified.
 
-**Exercise:** Will a master failure *before any object audit* appear in the
-Power BI Object History? Why or why not?
+**Check yourself:** Would an early master-pipeline failure appear in Power BI Object History?
 
-## 8 — Try a fresh DEV install when appropriate
+## 8 — Rebuild or benchmark when needed
 
-Use the [Environment Rebuild Runbook](../operations/environment-rebuild.md),
-[SQL Run Order](../../scripts/RUN_ORDER.md), and
-[EC2 source setup](../../infra/source/README.md).
-Cloud Connections, Fabric IDs, permissions and Power BI SQL endpoints must
-be rebound for a new workspace. Git is not a backup of prior Bronze rows,
-watermarks, historical audit or credentials.
+**For operators:** [Environment Rebuild](../operations/environment-rebuild.md) covers new-workspace bindings and verification; [SQL Run Order](../../scripts/RUN_ORDER.md) covers the executable Control SQL / demo seed sequence; [EC2/SFTP source setup](../../infra/source/README.md) handles optional source services. Do not treat Git as a backup of historic Bronze rows, watermarks, audits, or secrets.
 
-For factual DEV observations and a reproducible benchmark design, read
-[Benchmark Evidence & Test Plan](../benchmarks/evidence-and-test-plan.md).
+**For reviewers:** [Evidence & Benchmark Plan](../benchmarks/evidence-and-test-plan.md) distinguishes observed DEV behavior from outstanding tests. [Fabric Data Factory Limits](../architecture/fabric-data-factory-limits.md) documents platform guardrails; [Variable Library Bindings](../operations/variable-library-environment-binding.md) documents environment-specific IDs.
 
-## How to use this material
+**Check yourself:** Which claims can be confirmed from Git definitions, and which require a live DEV execution or recipient-delivery check?
 
-| Your goal | Suggested steps |
-| --- | --- |
-| Understand metadata design and orchestration | 1–3, including the Control Plane and Pipeline Orchestration guides |
-| Implement SQL Server or SFTP batch adapters | 2–4 |
-| Reason about Watermark, SKIPPED and BACKFILL | 2, 5 |
-| Handle failures across Bronze/SQL | 5–6 |
-| Build audit-backed operations visibility | 7 |
-| Set up the demo / evaluate benchmark evidence | 8 |
+---
 
-The diagrams explain the intended design. For actual DEV outcomes, use the verification queries in each guide and the [recorded experimental evidence](../benchmarks/evidence-and-test-plan.md). Do not treat a diagram as proof of a completed run.
+**Use this as a navigation guide, not another implementation specification.** For details, use the linked topic guide; for exact behavior, inspect the corresponding Fabric/SQL definitions and runtime evidence. Diagrams alone do not establish test completion.

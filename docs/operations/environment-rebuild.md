@@ -67,44 +67,13 @@ Do not reuse IDs from the previous DEV workspace even if the names match.
 
 ## C. Create optional demo source infrastructure
 
-If the EC2 demo is being rebuilt from scratch:
+**If rebuilding the demo sources:** provision an adequately sized Ubuntu EC2 host with Docker/Compose and tightly scoped security-group access (SSH 22, SQL Server 1433, SFTP 2222 as applicable; no blanket `0.0.0.0/0`). Follow the [source infrastructure runbook](../../infra/source/README.md) for fresh-host setup, the named `fabric_sqlserver_data` volume, SFTP host key, private `.env`, Compose commands and fixture uploads. Use new secrets; do not commit them.
 
-1. Provision a suitable Ubuntu host/EC2 instance with enough RAM and disk for
-   SQL Server Developer. Install Docker Engine + Compose Plugin; configure
-   security groups to allow only approved source CIDRs on SSH (22), SQL Server
-   (1433), and SFTP (2222). Avoid blanket `0.0.0.0/0`.
-2. Follow [infra/source/README.md](../../infra/source/README.md)
-   **Fresh host setup**. Create the named volume
-   `fabric_sqlserver_data`, run `init-sftp-host.sh`, create a private
-   `/home/ubuntu/.env` from `.env.example` (strong *new* secrets), copy the
-   repo's `docker-compose.yaml` to `/home/ubuntu/compose.yaml`,
-   and run `sudo docker compose config --quiet && sudo docker compose up -d`.
-   Preserve that host key and SQL volume on *subsequent* restarts.
-3. From a SQL client with admin permission, create `sql_ecommerce_db`.
-   Execute, against the indicated SQL Server database/context, in order:
+Then follow [RUN_ORDER section C](../../scripts/RUN_ORDER.md#c-optional-dev-demo-source) to create `sql_ecommerce_db`, execute the three source SQL scripts with the correct SQL client/`GO` behavior, and check expected row counts. Upload the CSV fixtures while preserving `movements/YYYY/MM/` subfolders; FILE incremental selection uses the **remote SFTP Last Modified** timestamp, not a filename or CSV event timestamp.
 
-   ```text
-   scripts/source/ecommerce-db/01_create_schema.sql
-   scripts/source/ecommerce-db/02_generate_data.sql
-   scripts/source/ecommerce-db/03_grant_reader.sql
-   ```
+**If retaining an existing EC2 host:** follow the infrastructure README's **Existing DEV instance** procedure. Do not replace its `.env`, regenerate the SFTP host key, overwrite existing SQL volumes, or run `docker compose down -v`.
 
-   Read the reader script's login/permission requirements first; substitute
-   its password placeholder only in a private execution copy. `GO` is a
-   **client-side batch delimiter**, so use your client's *Execute SQL Script*.
-4. Upload tracked SFTP CSVs from
-   `scripts/source/sftp/outbound/inventory/` to the new host under
-   `/outbound/inventory/`. Keep the `movements/YYYY/MM/` structure.
-   See the exact upload commands in the
-   [source setup](../../infra/source/README.md). For FILE incremental,
-   note that the **remote file last-modified time**, not the CSV event time
-   or filename, establishes the watermark comparison.
-5. Verify SQL row counts, SQL reader credentials, remote SFTP listing and
-   server host-key fingerprint *before* building Fabric connections.
-
-**If the old EC2 source is still available:** use the **Existing DEV instance**
-section of the infrastructure README instead. Do not regenerate the SFTP
-host key, overwrite the existing `.env`, or run `docker compose down -v`.
+Before creating Fabric connections, verify source SQL read-only access, row counts, remote SFTP file listing and the SFTP host-key fingerprint.
 
 ## D. Create the Fabric workspace and import definitions
 
@@ -215,49 +184,15 @@ individual pipeline parameters. See
 
 ### F2. Check pipeline/notebook graph
 
-The supported graph is:
+Use the canonical [architecture graph](../architecture/framework-overview.md#orchestration-and-routing) rather than maintaining another copy of the hierarchy here. The restored workspace should contain **12 pipelines and 3 notebooks**. Inspect **every** Invoke Pipeline and Notebook target in Fabric: names must resolve in the new workspace. Specifically confirm that the SQL Server INCREMENTAL adapter invokes its Loader and that incremental success-finalization failure (not FULL) can invoke `pl_ingest_incremental_finalize_recovery`.
 
-```text
-pl_ingest_orchestrator
-  -> pl_ingest_config_paginator / pl_ingest_config_dispatcher
-  -> pl_ingest_object_controller
-  -> pl_ingest_database_router OR pl_ingest_file_router
-  -> SQL Server FULL / SQL Server INCREMENTAL adapter + loader
-     OR SFTP FULL / SFTP INCREMENTAL adapter
-  -> (when needed) pl_ingest_incremental_finalize_recovery
-  -> Notebook execution (file Bronze loader, Bronze/landing compensation)
-```
-
-The folder contains **12 pipelines and 3 notebooks**. Inspect every
-**Invoke Pipeline target** and every **Notebook target** in the designer;
-their names must resolve to items in this workspace. In particular, verify
-`pl_ingest_sql_server_incremental_adapter` invokes
-`pl_ingest_sql_server_incremental_loader`, and only incremental
-finalization-failure recovery calls
-`pl_ingest_incremental_finalize_recovery`. Check all three Notebook
-targets: `nb_load_file_landing_to_bronze`,
-`nb_cleanup_bronze_batch_rows` and
-`nb_cleanup_landing_batch_files`.
-
-Also validate source/target Copy Connections via SQL metadata, target
-Lakehouse workspace/item mapping, and any Notebook/Lakehouse attachments.
-**Library values alone do not rebind** Copy targets or report SQL sources.
+Verify all three Notebook targets: `nb_load_file_landing_to_bronze`, `nb_cleanup_bronze_batch_rows`, and `nb_cleanup_landing_batch_files`. Also check Copy Connections, SQL metadata's Lakehouse workspace/item references, and Notebook/Lakehouse attachments. **Rebinding Variable Library values alone is not enough** to fix these targets or Power BI's SQL source.
 
 ### F3. Seed fresh DEV logical connection settings
 
-In a **local execution copy**, set the five required non-NULL values at
-the top of `scripts/control/03_seed_connection_settings.sql`:
+Use a **local execution copy** of `scripts/control/03_seed_connection_settings.sql` and supply all five required, non-NULL **new-workspace** source/target Connection and Lakehouse IDs. [RUN_ORDER section D](../../scripts/RUN_ORDER.md#d-optional-dev-demo-control-metadata) is the canonical list of seed input variable names, logical references, and seed safety rules. Keep the optional benchmark Connection ID `NULL` unless testing the benchmark.
 
-- `@EcommerceSourceConnectionId` — source SQL Server Fabric Connection
-- `@LogisticsSftpConnectionId` — source SFTP Fabric Connection
-- `@BronzeLakehouseConnectionId` — Bronze Lakehouse Fabric Connection
-- `@BronzeLakehouseWorkspaceId` — **new** Bronze workspace ID
-- `@BronzeLakehouseItemId` — **new** Bronze Lakehouse item ID
-
-Keep `@BenchmarkSourceConnectionId = NULL` unless separately setting
-up the benchmark. **Do not commit** local GUID substitutions or passwords.
-
-Then execute, in the new Control SQL Database:
+Run in the new Control SQL Database:
 
 ```text
 scripts/control/03_seed_connection_settings.sql
@@ -265,16 +200,7 @@ scripts/control/04_seed_ingestion_metadata.sql
 scripts/control/99_verify_control_plane.sql
 ```
 
-Seed `04` creates **6 ECOMMERCE + 2 LOGISTICS_VENDOR** active demo
-configs and initial `1900-01-01T00:00:00Z` state for incremental
-ones. FULL configs do not have Watermark rows. Inspect all config IDs and
-source/target metadata before running. Re-running seeds into a populated
-environment is **not** a substitute for restoring historic watermarks.
-
-If you want the optional benchmark, follow
-[RUN_ORDER section F](../../scripts/RUN_ORDER.md) and the
-[benchmark fixture instructions](../../scripts/source/benchmark-db/README.md)
-*after* the basic demo works.
+Expect six active E-commerce and two active Logistics configs; FULL has no incremental checkpoint. Verify config IDs, connections and initial state before starting any pipelines. **Never commit private GUID/password substitutions.** Re-running demo seeds into a populated environment does **not** restore historic watermarks/audits; review its possible configuration updates first. Optional benchmark installation is documented in [RUN_ORDER section F](../../scripts/RUN_ORDER.md#f-optional-performance-benchmark-separate).
 
 ## G. Rebind operational Power BI
 

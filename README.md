@@ -14,7 +14,7 @@
   <a href="#architecture">Architecture</a> ·
   <a href="#design-highlights">Design highlights</a> ·
   <a href="#how-the-framework-works">How it works</a> ·
-  <a href="#explore-the-implementation">Documentation</a> ·
+  <a href="#start-here">Start here</a> ·
   <a href="#run-the-example">Run the example</a>
 </p>
 
@@ -34,41 +34,36 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 ## Design highlights
 
-- **Configuration-driven ingestion.** Source objects, ingestion patterns, load strategies, and Bronze targets are defined in metadata tables.
-- **Watermark management.** Watermarks advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged.
-- **Audit and monitoring.** Fabric Monitor tracks pipeline execution; SQL audit tables and Power BI show recorded ingestion results.
+- **Metadata-driven, reusable orchestration.** One Control Plane configures objects, connection references, FULL/INCREMENTAL strategy, and Bronze targets without a pipeline per table.
+- **Safe checkpoint semantics.** Only an eligible successful REGULAR incremental run advances its watermark. BACKFILL and no-new-data SKIPPED leave the checkpoint unchanged.
+- **Explicit failure boundaries.** Failed Bronze writes use execution-scoped compensation; an uncertain SQL finalizer result is reconciled before any cleanup.
+- **Honest operations visibility.** Fabric Monitor shows pipeline execution; SQL audits and Power BI report **recorded terminal object outcomes**, not live master status.
+
+The implemented examples are **SQL Server and SFTP batch ingestion only**. Other database vendors, file readers beyond `DELIMITED_TEXT`, CDC, and streaming are not implemented in this repository.
 
 ## How the framework works
 
-| Step | What happens |
+| Stage | What happens |
 | --- | --- |
-| **1. Configure sources** | `control.ingestion_config` defines each source object, its DATABASE or FILE ingestion pattern, FULL or INCREMENTAL load strategy, and Bronze target. `control.connection_settings` maps logical references to source and target connections. |
-| **2. Select and dispatch** | The orchestrator accepts explicit object requests or selects active configurations, optionally filtered by source system. A paginator reads active configurations in pages; the dispatcher passes each request to the controller. |
-| **3. Route each object** | The controller checks each object's configuration and selects the DATABASE or FILE path. The router then invokes the adapter based on source connection type and load strategy. |
-| **4. Load into Bronze** | For SQL Server, a Copy activity loads rows directly into Bronze using a full-table query or a timestamp-based incremental window. For SFTP, Binary Copy stages CSV files in Landing; a Notebook then parses and appends the rows to Bronze. |
-| **5. Record results and update watermarks** | The framework records object-run outcomes in `audit.ingestion_log`. `control.pipeline_watermarks` stores incremental checkpoints, which advance only after successful REGULAR incremental loads. BACKFILL and no-new-data SKIPPED runs leave them unchanged. |
-| **6. Inspect runs** | **Fabric Monitor** shows pipeline execution. The **Power BI Operations Report** summarizes recorded ingestion results from SQL audit data. |
+| **Configure** | Fabric SQL Database holds `control.ingestion_config`, logical connections, incremental watermarks, and terminal object audits. |
+| **Select and route** | `pl_ingest_orchestrator` accepts explicit requests or chooses active configurations (optionally source-scoped); a paginator, dispatcher, controller, and routers select the appropriate adapter. |
+| **Load Bronze** | SQL Server uses query-mode Copy directly to Delta; SFTP uses Binary Copy into execution-scoped Lakehouse Files Landing, then a Notebook parses and appends Delta rows. |
+| **Finalize and inspect** | The framework audits each object run and conditionally advances its watermark. Fabric Monitor shows execution; the SQL-backed Power BI report summarizes completed object audits. |
 
-## Explore the implementation
+## Start here
 
-You can explore the design and code without setting up a Fabric workspace. Follow the [technical learning path](docs/guides/learning-path.md) for a guided walkthrough, or go straight to a topic below:
+You do **not** need a Fabric workspace to review the architecture and code. Choose a route rather than reading every document in order:
 
-| What you want to understand | Where to start |
+| Your goal | Recommended entry |
 | --- | --- |
-| Why the architecture is structured this way | [Architecture & Design Decisions](docs/architecture/framework-overview.md) |
-| How source configurations are managed | [Control Plane](docs/guides/control-plane.md) |
-| How ingestion requests are orchestrated and routed | [Pipeline Orchestration](docs/guides/pipeline-orchestration.md) |
-| How SQL Server data is loaded into Bronze | [SQL Server Ingestion](docs/guides/sql-server-database-ingestion.md) |
-| How SFTP files are staged in Landing and loaded into Bronze | [SFTP Ingestion](docs/guides/sftp-file-ingestion.md) |
-| How SQL Server Copy partitioning and parallelism are designed | [Copy Performance Strategy](docs/architecture/database-copy-performance.md) |
-| Fabric Data Factory limits and their impact on pipeline design | [Fabric Limits](docs/architecture/fabric-data-factory-limits.md) |
-| How to configure connections across environments | [Environment Bindings](docs/operations/variable-library-environment-binding.md) |
-| How incremental watermarks are managed | [Incremental Watermarks](docs/architecture/generic-incremental-watermark.md) |
-| How failed ingestion writes are handled | [Failure Cleanup](docs/operations/bronze-compensating-cleanup.md) |
-| What the monitoring report can show | [Operations Monitoring](docs/operations/monitoring-report.md) |
-| What was tested in DEV and what remains unverified | [DEV Tests & Benchmarks](docs/benchmarks/evidence-and-test-plan.md) |
+| **Get the design in one pass** | [Architecture & Design Decisions](docs/architecture/framework-overview.md) — orchestration, state, and trade-offs |
+| **Understand how it works in code** | [Technical Learning Path](docs/guides/learning-path.md) — guided SQL Server/SFTP walkthroughs, then deeper references |
+| **Rebuild a working DEV demo** | [Environment Rebuild](docs/operations/environment-rebuild.md) — new-workspace checklist, with the [SQL run order](scripts/RUN_ORDER.md) |
+| **Check what was actually tested** | [DEV Evidence & Benchmark Plan](docs/benchmarks/evidence-and-test-plan.md) — observations versus outstanding validation |
 
-The `fabric/` directory contains Git-tracked Fabric item definitions, including pipelines, notebooks, SQL Database, Lakehouse, Variable Library, and Power BI assets. The `scripts/` directory contains SQL setup scripts and sample data. The `infra/` directory provides an optional EC2/Docker Compose setup for the SQL Server and SFTP example sources.
+The learning path also indexes the focused guides for Control Plane, pipeline routing, incremental processing, Copy tuning, failure recovery, and monitoring.
+
+**Repository layout:** `fabric/` tracks Fabric Pipeline, Notebook, SQL Database, Lakehouse, Variable Library, and Power BI definitions; `scripts/` contains SQL setup and demo fixtures; `infra/` is the optional EC2/Docker Compose source environment. Git-tracked definitions are not a backup of Bronze rows, audit history, watermarks, or credentials.
 
 ## Run the example
 
