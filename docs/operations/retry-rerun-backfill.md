@@ -93,14 +93,17 @@ Choose retries by **side effects and idempotency**, not activity type alone. A C
 | --- | ---: | --- |
 | Read-only Lookup | 2 | Safe to repeat on transient read/connection errors |
 | Validation stored procedure | 0 | Invalid requests or configurations are deterministic |
-| Audit-only finalizer (`advance_watermark = false`) | 2 | Idempotent by object `pipeline_run_id` when the terminal outcome matches |
+| Audit-only finalizer (most branches, `advance_watermark = false`) | 2 | Idempotent by object `pipeline_run_id` when the terminal outcome matches |
+| SFTP INCREMENTAL `sp_finalize_no_new_data_skipped` | 0 | Checked-in exception: this branch is audit-only, but its activity policy currently disables retry |
 | State-mutating finalizer (may advance watermark) | 0 | Do not blind-retry an uncertain state mutation |
 | Idempotent cleanup Notebook | 1 | Narrow cleanup is repeatable, though Notebook startup is expensive |
 | Copy directly to Bronze/durable target | 0 | A prior attempt may have written data; reconcile/compensate first |
 | SFTP Binary Copy to isolated Landing | 2 | Retry within the same execution/`batch_id`, 30-second interval |
 | Invoke Pipeline | 0 | The invoked child owns its own retry and side-effect handling |
 
-The **SFTP exception** is safe because Binary Copy with PreserveHierarchy writes to an execution-scoped Landing path, and exhausted attempts trigger cleanup of the failed Landing batch. It is not a general recommendation to retry Copy into Bronze.
+The SFTP no-new-data finalizer's `retry = 0` was verified against the checked-in pipeline JSON. It differs from the general audit-only retry policy and the SQL Server no-new-data finalizer (`retry = 2`). This note records the current implementation, **not** a decision that these branches must differ; review the discrepancy separately before changing runtime behavior.
+
+The **SFTP Copy exception** is safe because Binary Copy with PreserveHierarchy writes to an execution-scoped Landing path, and exhausted attempts trigger cleanup of the failed Landing batch. It is not a general recommendation to retry Copy into Bronze.
 
 `control.usp_finalize_ingestion_run` rejects a retry with the same `pipeline_run_id` but a different outcome (`FINALIZE_OUTCOME_MISMATCH`). If an incremental success-finalizer activity fails, inspect the committed audit through [Finalization Failure Recovery](bronze-compensating-cleanup.md#finalization-failure-recovery-incremental-database-and-file) rather than deleting Bronze or repeating the state write blindly.
 
