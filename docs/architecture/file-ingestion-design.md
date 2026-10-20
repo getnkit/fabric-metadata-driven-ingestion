@@ -13,7 +13,7 @@ SFTP FULL and INCREMENTAL ingestion share the FILE routing design and the framew
 
 ## Metadata model
 
-`control.ingestion_config` remains the single ingestion configuration table.
+`control.ingestion_config` remains the single ingestion configuration table. For FILE, `source_object` is a **stable logical feed name** (for example, `inventory_movement`), not a physical filename. The `source_path` and `source_options.file_name_pattern` determine which files are eligible for that configuration; a run can match multiple files. Checkpoints and terminal run audits belong to the configuration/run, not to separate per-file receipt records.
 
 Routing and execution fields remain in the shared `control.ingestion_config`; the FILE-specific design hinges on `source_path`, `file_format`, `source_options`, and `landing_path`. The full column contract and actual sample rows belong to the [Control Plane guide](../guides/control-plane.md) and [SQL metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql).
 

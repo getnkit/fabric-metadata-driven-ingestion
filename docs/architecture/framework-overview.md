@@ -57,7 +57,7 @@ The `pl_ingest_<scope>_<role>` names reflect distinct responsibilities in the im
 | Orchestrator | Only supported external entry point; chooses all-active, source-scoped, or explicit run requests |
 | Paginator | Resolves all-active metadata in bounded pages; an empty active scope fails rather than silently succeeding |
 | Dispatcher | Fans out a bounded collection of normalized object requests |
-| Object Controller | Validates one resolved object's metadata and Lakehouse target, then selects DATABASE or FILE |
+| Object Controller | Looks up and validates the chosen configuration and Lakehouse target, then selects DATABASE or FILE |
 | Router | Selects connector and load strategy without owning vendor-specific extraction |
 | Adapter | Executes source-specific extraction, boundary handling, and physical loading |
 | Loader / Recovery | Optional boundaries for nested Copy execution or uncertain incremental finalization |
@@ -68,7 +68,17 @@ Only SQL Server FULL/INCREMENTAL DATABASE adapters are implemented. A future Ora
 
 Fabric Pipelines handle orchestration and connector-native movement; Notebooks handle reusable Spark/Delta operations such as file parsing and scoped cleanup. The relational SQL Server path deliberately stays with native Copy instead of adding Spark just for uniformity.
 
-## Control Plane versus Data Plane
+## Logical planes and responsibilities
+
+The README architecture visual separates three **logical responsibility groups**. They are not three isolated Fabric systems: orchestration pipelines read Control SQL metadata, invoke data movement, and finalize audit/checkpoint state.
+
+| Logical plane | Responsibility |
+| --- | --- |
+| **Control & Audit** | Fabric SQL Database configuration, connection mappings, durable watermarks, terminal object audit, and transactional finalization |
+| **Orchestration** | Fabric Data Pipelines that select requests, paginate active configurations, dispatch, validate, and route to connector/load-strategy adapters |
+| **Data** | SQL Server query-mode Copy or SFTP Binary Landing + Notebook processing, writing to Lakehouse Bronze Delta |
+
+The main Control/Audit and data components are:
 
 | Component | Responsibility |
 | --- | --- |

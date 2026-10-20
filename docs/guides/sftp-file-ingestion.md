@@ -24,7 +24,7 @@ The DEV metadata seed defines two active objects for the `LOGISTICS_VENDOR` sour
 | `inventory_snapshot` | `inventory_snapshot.csv` | FULL | `fulfillment.inventory_snapshots` |
 | `inventory_movement` | `inventory_movement_*.csv` | INCREMENTAL | `fulfillment.inventory_movements` |
 
-The snapshot represents current inventory. The movement files represent separate change events delivered over time. Both are delimited text, but their processing boundaries differ.
+The snapshot represents current inventory. The movement files represent separate change events delivered over time. Both are delimited text, but their processing boundaries differ. Each configuration identifies a **logical feed**, not an individual physical file: the `inventory_movement` feed uses its `source_path` and `source_options.file_name_pattern` to select potentially multiple movement files in a run.
 
 Read the seed statements in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql). Inspect the [snapshot fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv) and the [SFTP sample directory](../../scripts/source/sftp/outbound/inventory/) to see the actual source layouts.
 

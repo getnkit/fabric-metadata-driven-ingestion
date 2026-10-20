@@ -17,7 +17,7 @@ You can understand the framework without provisioning Fabric. Choose a route bel
 
 **Read:** [Architecture & Design Decisions](../architecture/framework-overview.md).
 
-Focus on **Control Plane** (config/state/audit), **Orchestration Plane** (selection/validation/routing), and **Data Plane** (source → Landing/Bronze). The Bronze write and Control SQL finalization are not one distributed transaction.
+Focus on the **Control & Audit Plane** (config/state/terminal audit), **Orchestration Plane** (selection/validation/routing), and **Data Plane** (source → Landing/Bronze). These are logical responsibilities within one Fabric-based framework, not isolated deployed platforms. The Bronze write and Control SQL finalization are not one distributed transaction.
 
 **Check yourself:** What can happen between a Bronze commit and SQL finalization?
 

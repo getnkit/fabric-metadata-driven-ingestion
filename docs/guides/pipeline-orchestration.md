@@ -109,7 +109,7 @@ Do not confuse object parallelism with the master setting. The master Orchestrat
 
 This is an implemented DEV setting, not a general performance recommendation. The [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) documents the limited comparison used to choose it.
 
-## 5. The Object Controller resolves metadata
+## 5. The Object Controller looks up and validates configuration
 
 [`pl_ingest_object_controller`](../../fabric/pl_ingest_object_controller.DataPipeline/pipeline-content.json) is where the request becomes a particular source and target. Its `lkp_ingestion_config` activity reads the chosen `ingestion_config_id` from `control.ingestion_config` and joins the source/target references from `control.connection_settings`.
 

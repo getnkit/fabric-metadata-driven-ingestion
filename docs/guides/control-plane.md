@@ -34,6 +34,8 @@ SQL CHECK constraints permit some future FILE format labels, but **only DELIMITE
 
 ## 2. How a configuration identifies one source object
 
+A **source object** is one logical ingestion unit, not necessarily one physical file. For the implemented DATABASE pattern, `source_schema` and `source_object` identify a SQL Server table. For FILE, `source_object` is a non-NULL stable feed name (for example, `inventory_movement`), while `source_path` and `source_options.file_name_pattern` select eligible SFTP files. One FILE configuration can process multiple matching files in a run, with **one configuration-level watermark** rather than separate per-file checkpoints. This is the framework's logical naming contract, not a universal requirement imposed by Fabric.
+
 Run this **read-only** query in `sqldb_ingestion_control` after the DEV sample metadata has been installed:
 
 ```sql
