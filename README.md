@@ -28,7 +28,7 @@ The repository demonstrates the framework with end-to-end **batch ingestion exam
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks, and ingestion audit records; the orchestration layer routes requests through Database or File adapters, loading Bronze Delta tables.](docs/assets/architecture-overview.svg)
 
-**Source object:** A logical ingestion unit configured through metadata—for example, a SQL Server table or an SFTP file feed. One file feed may include multiple matching physical files.
+**Source object:** A logical unit of ingestion, such as a database table or a file feed identified by a source path and file pattern. For FILE ingestion, `source_object` is a stable logical name; one feed may include multiple physical files.
 
 Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. Fabric Data Pipelines use this metadata to select an ingestion path for each source object and coordinate loading into Bronze Delta tables in the Lakehouse.
 
