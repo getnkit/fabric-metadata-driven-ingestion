@@ -1,4 +1,6 @@
-# Top-level run request examples
+# Top-Level Run Request Examples
+
+Use these inputs only with the supported entry pipeline, `pl_ingest_orchestrator`. The examples show valid run scopes and explain which combinations the framework rejects.
 
 `pl_ingest_orchestrator` accepts:
 
@@ -131,7 +133,8 @@ Rules:
 - BACKFILL never advances an INCREMENTAL config's operational watermark/checkpoint.
 - Every successful REGULAR/BACKFILL execution appends a new Bronze batch.
 - An explicitly requested inactive configuration is recorded as `SKIPPED`; it does not move data or advance processing state.
-- Malformed envelope fields are rejected before Dispatcher fan-out: `config_id` must be a positive integer, `run_type` must be REGULAR/BACKFILL, and any supplied LOW/HIGH value must be a string or null.
+-  Malformed envelope fields are rejected before Dispatcher fan-out: `config_id` must be a positive integer,
+  `run_type` must be REGULAR/BACKFILL, and any supplied LOW/HIGH value must be a string or null.
 - Config-specific LOW/HIGH requirements are validated by the Object Controller after the ingestion configuration is resolved.
 - A given `config_id` may appear at most once in one `p_run_requests` array; duplicates are rejected before Dispatcher fan-out.
 - Source-system filtering is used only in the All Active paginator path; explicit requests never inherit or override the source-system filter.

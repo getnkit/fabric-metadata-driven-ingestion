@@ -1,4 +1,4 @@
-# Fabric Metadata-Driven Ingestion — Starter Kit Run Order
+# Metadata-Driven Pipelines in Microsoft Fabric — SQL Run Order
 
 This is the **current-baseline fresh-install** guide for the Personal
 Fabric ingestion framework. It is NOT a historical upgrade checklist.
@@ -61,7 +61,8 @@ Never run this script in UAT/PROD or as part of a normal installation.
 
 ## C. Optional DEV demo source
 
-On the Ubuntu EC2 host, connect to the SQL Server 2022 Developer container as the database administrator and run `CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
+On the Ubuntu EC2 host, connect to the SQL Server 2022 Developer container as the database administrator and run
+`CREATE DATABASE [sql_ecommerce_db];` once. Select that database in the SQL client. Then prepare the demo source:
 
 ```text
 scripts/source/ecommerce-db/01_create_schema.sql
@@ -69,9 +70,14 @@ scripts/source/ecommerce-db/02_generate_data.sql
 scripts/source/ecommerce-db/03_grant_reader.sql
 ```
 
-The SQL Server security script creates a server-level SQL LOGIN in `master`, maps a database USER in `sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit it. Run the script with a SQL Server administrator permitted to create logins.
+The SQL Server security script creates a server-level SQL LOGIN in `master` , maps a database USER in
+`sql_ecommerce_db` and grants least-privilege read access. Replace the password placeholder locally, never commit
+it. Run the script with a SQL Server administrator permitted to create logins.
 
-**DBeaver / SQL Server scripts:** choose the correct target database and use **Execute SQL Script** (macOS `Option+X`, or the editor menu), not `Select All → Execute SQL Statement`. The SQL `GO` lines are client-side batch separators, not T-SQL; verify DBeaver recognizes SQL Server's native `GO` delimiter in SQL Editor preferences. An error `Incorrect syntax near 'GO'` means the client sent `GO` to SQL Server instead of separating batches.
+**DBeaver / SQL Server scripts:** choose the correct target database and use **Execute SQL Script** (macOS
+`Option+X` , or the editor menu), not `Select All → Execute SQL Statement` . The SQL `GO` lines are client-side
+batch separators, not T-SQL; verify DBeaver recognizes SQL Server's native `GO` delimiter in SQL Editor preferences.
+An error `Incorrect syntax near 'GO'` means the client sent `GO` to SQL Server instead of separating batches.
 
 Expected initial demo row counts:
 
@@ -141,7 +147,11 @@ an ad hoc seed. There are no default API incremental state rows.
 
 ## E. Execute via Master and verify
 
-Create a Fabric **SQL Server** connection (`cn_sql_server_ecommerce`) with Basic authentication, the approved EC2 SQL Server host/port 1433, and database `sql_ecommerce_db`. Use the read-only login from the security script; test connectivity and TLS/network restrictions. Populate `@EcommerceSourceConnectionId` in seed `03` using **this** connector's ID. The source database is bound in the Fabric Connection; metadata JSON contains its `connectionId` only. Source SQL Server is separate from the Fabric Control SQL Database.
+Create a Fabric **SQL Server** connection (`cn_sql_server_ecommerce`) with Basic authentication, the approved EC2
+SQL Server host/port 1433, and database `sql_ecommerce_db` . Use the read-only login from the security script; test
+connectivity and TLS/network restrictions. Populate `@EcommerceSourceConnectionId` in seed `03` using **this**
+connector's ID. The source database is bound in the Fabric Connection; metadata JSON contains its `connectionId`
+only. Source SQL Server is separate from the Fabric Control SQL Database.
 
 Run only `pl_ingest_orchestrator` as the standard entry point:
 `p_run_requests = []` with blank `p_source_system` runs all active configs

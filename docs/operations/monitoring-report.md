@@ -2,7 +2,7 @@
 
 ## Purpose and limits
 
-The **official** Power BI Report `rpt_ingestion_operations` and Semantic
+The repository's Power BI Report `rpt_ingestion_operations` and Semantic
 Model `sm_ingestion_operations` are authored in Power BI Desktop and tracked
 in `fabric/` as PBIR/TMDL. The Report was subsequently synced back to Fabric
 and verified visually/operationally in DEV (2026-10-13).
@@ -82,11 +82,19 @@ No visual must depend on the names of the two demo sources.
 
 ## Pipeline failure notifications (Activator DEV experiment)
 
-Failure notifications are **separate from the Power BI audit report**. The optional Fabric Activator approach watches Fabric pipeline job events for **`pl_ingest_orchestrator` = Failed**, then invokes an operator notification action (such as email or Teams), rather than embedding a notification activity in each child. Source-scoped and all-active runs use the same master pipeline item, but a FAILED run means a failure within **that run's scope**, not every configured source system.
+Failure notifications are **separate from the Power BI audit report**. The optional Fabric Activator approach
+watches Fabric pipeline job events for **`pl_ingest_orchestrator` = Failed**, then invokes an operator notification
+action (such as email or Teams), rather than embedding a notification activity in each child. Source-scoped and
+all-active runs use the same master pipeline item, but a FAILED run means a failure within **that run's scope**, not
+every configured source system.
 
-Scheduling and the recipient/channel are environment-specific and not provisioned in Git. To accept an alerting setup, verify the master FAILED event, a FAILED object audit *when an object/config was resolved*, and **actual recipient receipt**. A master failure before object resolution may create no object audit.
+Scheduling and the recipient/channel are environment-specific and not provisioned in Git. To accept an alerting
+setup, verify the master FAILED event, a FAILED object audit *when an object/config was resolved*, and **actual
+recipient receipt**. A master failure before object resolution may create no object audit.
 
-**Observed in DEV (2026-10-04):** two master FAILED events were detected, and Activator rule/action activity was observed. **Delivery to the intended recipient inbox was not independently verified.** This proves event detection/action invocation only, not an end-to-end verified notification service.
+**Observed in DEV (2026-10-04):** two master FAILED events were detected, and Activator rule/action activity was
+observed. **Delivery to the intended recipient inbox was not independently verified.** This proves event
+detection/action invocation only, not an end-to-end verified notification service.
 
 ## Acceptance and follow-up
 

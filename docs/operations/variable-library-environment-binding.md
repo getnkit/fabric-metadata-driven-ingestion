@@ -1,5 +1,8 @@
 # Fabric Variable Library — Runtime Connection Management
 
+This runbook shows which environment-specific Fabric IDs must be rebound after deploying Git-tracked definitions.
+These bindings are distinct from logical source and target connection metadata stored in Control SQL.
+
 ## Scope and decision
 
 The framework uses one Fabric Variable Library:
@@ -19,7 +22,10 @@ A Connection GUID is **not** a workspace ID or SQL Database item ID. Record each
 one from the correct DEV/UAT/PROD workspace and connection, and verify that the
 workspace user has permission to use it. Do not paste display names instead of
 GUIDs. Set the workspace GUID and other runtime bindings in the active value set for each environment.
-The current Git-tracked Variable Library still contains **DEV-specific GUIDs** in its default values. These are not credentials but are **not portable** to a new workspace. Do not deploy/run in another environment before replacing and validating all five active values. See the [Environment Rebuild guide](environment-rebuild.md) for an explicit inventory and setup order. Do not commit passwords, tokens, or other credentials.
+The current Git-tracked Variable Library still contains **DEV-specific GUIDs** in its default values. These are not
+credentials but are **not portable** to a new workspace. Do not deploy/run in another environment before replacing
+and validating all five active values. See the [Environment Rebuild guide](environment-rebuild.md) for an explicit
+inventory and setup order. Do not commit passwords, tokens, or other credentials.
 
 Each of the twelve framework pipelines declares only the library variables it
 consumes under `properties.libraryVariables` and resolves them locally with
@@ -115,7 +121,9 @@ the Fabric designer rejects a dynamic Connection or a reference resolves to
 the wrong item. Record the exact validation message; do not silently hardcode
 a DEV GUID as a workaround.
 
-Implementation references: [Variable Library definition](../../fabric/vl_ingestion_connections.VariableLibrary/variables.json) and [orchestrator Pipeline](../../fabric/pl_ingest_orchestrator.DataPipeline/pipeline-content.json).
+Implementation references:
+[Variable Library definition](../../fabric/vl_ingestion_connections.VariableLibrary/variables.json) and
+[orchestrator Pipeline](../../fabric/pl_ingest_orchestrator.DataPipeline/pipeline-content.json) .
 
 Fabric references:
 - https://learn.microsoft.com/en-us/fabric/data-factory/variable-library-integration-with-data-pipelines

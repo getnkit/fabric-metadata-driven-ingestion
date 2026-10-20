@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This project is intended to represent a production-minded metadata-driven ingestion framework. Platform limits that can affect core orchestration are treated as architecture inputs rather than left as hidden runtime surprises.
+This document records Fabric Data Factory limits that constrain the current orchestration design. Treat these as
+inputs to sizing and validation, not as guarantees that the framework has been load-tested at each limit.
 
 Limits change over time. Recheck the Microsoft Fabric Data Factory limitations page before materially increasing scale.
 
@@ -68,7 +69,10 @@ configs (whether a source is specified or not), it fails `NO_ACTIVE_CONFIGS`
 before `fe_config_pages`, with no object-level ingestion audit record. The master rejects mixed explicit requests and
 nonblank source scope with `AMBIGUOUS_RUN_SCOPE` before fan-out.
 
-The paginator emits the minimal REGULAR request shape (`config_id`, `run_type`) for each active configuration. Optional LOW/HIGH fields are supplied only when a caller's execution semantics require them; the Dispatcher normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher mode-agnostic and removes unsupported nested control containers.
+The paginator emits the minimal REGULAR request shape (`config_id`, `run_type` ) for each active configuration.
+Optional LOW/HIGH fields are supplied only when a caller's execution semantics require them; the Dispatcher
+normalizes missing optional bounds to empty strings before invoking the Controller. This keeps the Dispatcher
+mode-agnostic and removes unsupported nested control containers.
 
 Default:
 
@@ -82,7 +86,10 @@ Allowed:
 1 <= p_config_page_size <= 5000
 ```
 
-The smaller default leaves headroom below the 5,000-row Lookup limit. **Pagination does not remove the separate 4 MB output limit**: even a page containing fewer than 5,000 rows can exceed it if the returned metadata is large. Keep page projections minimal and reduce `p_config_page_size` if output size requires it. This is a scaling guardrail, not a guarantee for arbitrary configuration volume.
+The smaller default leaves headroom below the 5,000-row Lookup limit. **Pagination does not remove the separate 4 MB
+output limit**: even a page containing fewer than 5,000 rows can exceed it if the returned metadata is large. Keep
+page projections minimal and reduce `p_config_page_size` if output size requires it. This is a scaling guardrail,
+not a guarantee for arbitrary configuration volume.
 
 For acceptance testing, the page size can temporarily be set to a small value such as 2 so the multi-page path can be exercised without seeding thousands of configurations.
 
@@ -90,7 +97,9 @@ For acceptance testing, the page size can temporarily be set to a small value su
 
 ### ForEach
 
-The framework avoids shared pipeline-variable mutation inside parallel ForEach loops. Variables are pipeline-scoped rather than iteration-scoped, so stateful per-item work belongs in the invoked child pipeline or should run sequentially.
+The framework avoids shared pipeline-variable mutation inside parallel ForEach loops. Variables are pipeline-scoped
+rather than iteration-scoped, so stateful per-item work belongs in the invoked child pipeline or should run
+sequentially.
 
 The paginator page loop is sequential to avoid multiplying concurrency by page count. Parallelism is applied inside the bounded request Dispatcher (`batchCount = 8` per run).
 With `concurrency = 1`, one master run is active at a time and its Dispatcher
@@ -107,7 +116,9 @@ throttling/errors, and equivalent non-SKIPPED workloads.
 
 The active ingestion framework no longer depends on Get Metadata for recursive SFTP discovery. The SFTP Copy connector performs recursive discovery natively.
 
-The equivalent Azure Data Factory orchestration documentation caps returned Get Metadata payload at 4 MB. The retained legacy pipeline may still contain Get Metadata, but it is intentionally excluded from active architecture refactoring and is not used for scalable source-tree enumeration.
+The equivalent Azure Data Factory orchestration documentation caps returned Get Metadata payload at 4 MB. The
+retained legacy pipeline may still contain Get Metadata, but it is intentionally excluded from active architecture
+refactoring and is not used for scalable source-tree enumeration.
 
 ### Copy
 
@@ -120,4 +131,7 @@ SFTP -> Landing
 
 Notebook is used only when Spark/Delta processing adds value, such as recursive Landing parsing, technical metadata enrichment, or compensating Delta cleanup.
 
-For SFTP incremental ingestion, Microsoft notes that Last Modified filtering can affect data-movement performance when a source contains very large numbers of files. This is a scale consideration rather than a hard correctness limit. If that becomes material, prefer source-side partitioning or a manifest/receipt-state pattern instead of rebuilding recursive traversal in pipeline control flow.
+For SFTP incremental ingestion, Microsoft notes that Last Modified filtering can affect data-movement performance
+when a source contains very large numbers of files. This is a scale consideration rather than a hard correctness
+limit. If that becomes material, prefer source-side partitioning or a manifest/receipt-state pattern instead of
+rebuilding recursive traversal in pipeline control flow.

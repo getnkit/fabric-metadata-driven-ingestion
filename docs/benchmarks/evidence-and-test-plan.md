@@ -1,9 +1,7 @@
 # Experimental Evidence & Benchmark Test Plan
 
-**Rule:** observed source logs/screenshots are different from estimates,
-controlled comparisons, and future tests. Numbers below come from the
-project's recorded DEV experiments and user-reviewed Fabric runs; they are
-**not** independently repeated production load tests.
+Use this page to separate what was **observed in DEV** from estimates and tests still to run. Its numbers come from
+recorded experiments and user-reviewed Fabric runs, not independently repeated production load tests.
 
 ## Evidence currently recorded
 
@@ -65,11 +63,17 @@ production cost, scalability or enterprise SLAs.
 
 ## Evaluating the evidence
 
-The architecture diagram in [README](../../README.md) explains the design; it is not a measured result. The table above distinguishes completed DEV observations from incomplete or planned comparisons.
+The architecture diagram in [README](../../README.md) explains the design; it is not a measured result. The table
+above distinguishes completed DEV observations from incomplete or planned comparisons.
 
-For each new Copy performance result, record the Pipeline/Activity Run ID, input and output counts, elapsed time, throughput, `usedParallelCopies`, partition mode, and source/capacity conditions. Compare like-for-like runs and repeat measurements before interpreting a difference as a performance improvement.
+For each new Copy performance result, record the Pipeline/Activity Run ID, input and output counts, elapsed time,
+throughput, `usedParallelCopies` , partition mode, and source/capacity conditions. Compare like-for-like runs and
+repeat measurements before interpreting a difference as a performance improvement.
 
-A screenshot is useful only when it can be tied to the same observed run and its source/target checks. Before publishing artifacts, remove credentials, tenant-specific endpoints, private hostnames and personal information. Use synthetic data, never customer data. In particular, the in-progress AUTO observation in E04 is **not** a completed benchmark.
+A screenshot is useful only when it can be tied to the same observed run and its source/target checks. Before
+publishing artifacts, remove credentials, tenant-specific endpoints, private hostnames and personal information. Use
+synthetic data, never customer data. In particular, the in-progress AUTO observation in E04 is **not** a completed
+benchmark.
 
 ## Verified and outstanding test coverage
 

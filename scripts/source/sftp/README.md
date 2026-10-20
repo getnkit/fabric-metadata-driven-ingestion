@@ -1,6 +1,6 @@
-# SFTP source fixtures
+# SFTP Source Fixtures
 
-From the repository root, run:
+Generate additional movement files for incremental DEV tests without changing Fabric state. From the repository root, run:
 
 ```bash
 python3 scripts/source/sftp/generate_inventory_movement.py

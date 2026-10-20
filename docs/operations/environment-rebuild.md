@@ -1,8 +1,8 @@
 # Environment Rebuild — Fresh DEV From Git
 
-**Goal:** Recreate a *functional new DEV instance* of this Microsoft Fabric
-metadata-driven **batch ingestion** framework after losing or retiring a Fabric
-workspace. This is an operator runbook, not a stateful backup/restore procedure.
+**Goal:** Recreate a functional DEV environment for **Metadata-Driven Pipelines in Microsoft Fabric** after losing
+or retiring a workspace. This is a fresh-install runbook, not a backup/restore procedure. It cannot recover
+historical Bronze, audit, or watermark state from Git alone.
 
 - **Supported scope:** Fabric SQL Database, Bronze Lakehouse, Variable Library,
   12 Data Pipelines, 3 Notebooks, 2 Power BI artifacts, optional Activator, and
@@ -67,11 +67,20 @@ Do not reuse IDs from the previous DEV workspace even if the names match.
 
 ## C. Create optional demo source infrastructure
 
-**If rebuilding the demo sources:** provision an adequately sized Ubuntu EC2 host with Docker/Compose and tightly scoped security-group access (SSH 22, SQL Server 1433, SFTP 2222 as applicable; no blanket `0.0.0.0/0`). Follow the [source infrastructure runbook](../../infra/source/README.md) for fresh-host setup, the named `fabric_sqlserver_data` volume, SFTP host key, private `.env`, Compose commands and fixture uploads. Use new secrets; do not commit them.
+**If rebuilding the demo sources:** provision an adequately sized Ubuntu EC2 host with Docker/Compose and tightly
+scoped security-group access (SSH 22, SQL Server 1433, SFTP 2222 as applicable; no blanket `0.0.0.0/0` ). Follow the
+[source infrastructure runbook](../../infra/source/README.md) for fresh-host setup, the named
+`fabric_sqlserver_data` volume, SFTP host key, private `.env` , Compose commands and fixture uploads. Use new
+secrets; do not commit them.
 
-Then follow [RUN_ORDER section C](../../scripts/RUN_ORDER.md#c-optional-dev-demo-source) to create `sql_ecommerce_db`, execute the three source SQL scripts with the correct SQL client/`GO` behavior, and check expected row counts. Upload the CSV fixtures while preserving `movements/YYYY/MM/` subfolders; FILE incremental selection uses the **remote SFTP Last Modified** timestamp, not a filename or CSV event timestamp.
+Then follow [RUN_ORDER section C](../../scripts/RUN_ORDER.md#c-optional-dev-demo-source) to create
+`sql_ecommerce_db` , execute the three source SQL scripts with the correct SQL client/`GO` behavior, and check
+expected row counts. Upload the CSV fixtures while preserving `movements/YYYY/MM/` subfolders; FILE incremental
+selection uses the **remote SFTP Last Modified** timestamp, not a filename or CSV event timestamp.
 
-**If retaining an existing EC2 host:** follow the infrastructure README's **Existing DEV instance** procedure. Do not replace its `.env`, regenerate the SFTP host key, overwrite existing SQL volumes, or run `docker compose down -v`.
+**If retaining an existing EC2 host:** follow the infrastructure README's **Existing DEV instance** procedure. Do
+not replace its `.env` , regenerate the SFTP host key, overwrite existing SQL volumes, or run
+`docker compose down -v` .
 
 Before creating Fabric connections, verify source SQL read-only access, row counts, remote SFTP file listing and the SFTP host-key fingerprint.
 
@@ -184,13 +193,24 @@ individual pipeline parameters. See
 
 ### F2. Check pipeline/notebook graph
 
-Use the canonical [architecture graph](../architecture/framework-overview.md#orchestration-and-routing) rather than maintaining another copy of the hierarchy here. The restored workspace should contain **12 pipelines and 3 notebooks**. Inspect **every** Invoke Pipeline and Notebook target in Fabric: names must resolve in the new workspace. Specifically confirm that the SQL Server INCREMENTAL adapter invokes its Loader and that incremental success-finalization failure (not FULL) can invoke `pl_ingest_incremental_finalize_recovery`.
+Use the canonical [architecture graph](../architecture/framework-overview.md#orchestration-and-routing) rather than
+maintaining another copy of the hierarchy here. The restored workspace should contain **12 pipelines and 3
+notebooks**. Inspect **every** Invoke Pipeline and Notebook target in Fabric: names must resolve in the new
+workspace. Specifically confirm that the SQL Server INCREMENTAL adapter invokes its Loader and that incremental
+success-finalization failure (not FULL) can invoke `pl_ingest_incremental_finalize_recovery` .
 
-Verify all three Notebook targets: `nb_load_file_landing_to_bronze`, `nb_cleanup_bronze_batch_rows`, and `nb_cleanup_landing_batch_files`. Also check Copy Connections, SQL metadata's Lakehouse workspace/item references, and Notebook/Lakehouse attachments. **Rebinding Variable Library values alone is not enough** to fix these targets or Power BI's SQL source.
+Verify all three Notebook targets: `nb_load_file_landing_to_bronze` , `nb_cleanup_bronze_batch_rows` , and
+`nb_cleanup_landing_batch_files` . Also check Copy Connections, SQL metadata's Lakehouse workspace/item references,
+and Notebook/Lakehouse attachments. **Rebinding Variable Library values alone is not enough** to fix these targets
+or Power BI's SQL source.
 
 ### F3. Seed fresh DEV logical connection settings
 
-Use a **local execution copy** of `scripts/control/03_seed_connection_settings.sql` and supply all five required, non-NULL **new-workspace** source/target Connection and Lakehouse IDs. [RUN_ORDER section D](../../scripts/RUN_ORDER.md#d-optional-dev-demo-control-metadata) is the canonical list of seed input variable names, logical references, and seed safety rules. Keep the optional benchmark Connection ID `NULL` unless testing the benchmark.
+Use a **local execution copy** of `scripts/control/03_seed_connection_settings.sql` and supply all five required,
+non-NULL **new-workspace** source/target Connection and Lakehouse IDs.
+[RUN_ORDER section D](../../scripts/RUN_ORDER.md#d-optional-dev-demo-control-metadata) is the canonical list of seed
+input variable names, logical references, and seed safety rules. Keep the optional benchmark Connection ID `NULL`
+unless testing the benchmark.
 
 Run in the new Control SQL Database:
 
@@ -200,7 +220,11 @@ scripts/control/04_seed_ingestion_metadata.sql
 scripts/control/99_verify_control_plane.sql
 ```
 
-Expect six active E-commerce and two active Logistics configs; FULL has no incremental checkpoint. Verify config IDs, connections and initial state before starting any pipelines. **Never commit private GUID/password substitutions.** Re-running demo seeds into a populated environment does **not** restore historic watermarks/audits; review its possible configuration updates first. Optional benchmark installation is documented in [RUN_ORDER section F](../../scripts/RUN_ORDER.md#f-optional-performance-benchmark-separate).
+Expect six active E-commerce and two active Logistics configs; FULL has no incremental checkpoint. Verify config
+IDs, connections and initial state before starting any pipelines. **Never commit private GUID/password
+substitutions.** Re-running demo seeds into a populated environment does **not** restore historic watermarks/audits;
+review its possible configuration updates first. Optional benchmark installation is documented in
+[RUN_ORDER section F](../../scripts/RUN_ORDER.md#f-optional-performance-benchmark-separate) .
 
 ## G. Rebind operational Power BI
 
@@ -243,7 +267,9 @@ privately and capture screenshots only when useful.
 
 - [ ] Git/Fabric imported the **intended** items and matched target names;
       any Git sync warnings or unresolved references are cleared.
-- [ ] `01 -> 02 -> 99` passed (including trusted constraints, keys/indexes and two procedures); all three audit monitoring views query. On an existing environment, compare SQL Project schemas before upgrading: `01` does not migrate them.
+-  [ ] `01 -> 02 -> 99` passed (including trusted constraints, keys/indexes and two procedures); all three audit
+  monitoring views query. On an existing environment, compare SQL Project schemas before upgrading: `01` does not
+  migrate them.
 - [ ] Source SQL row counts and SFTP fixture listing are correct; all
       required Fabric Connections **Test connection** successfully.
 - [ ] All five active Library GUID values are from the **new** workspace;

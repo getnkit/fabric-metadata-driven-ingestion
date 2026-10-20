@@ -1,8 +1,10 @@
 # SQL Server Database Ingestion
 
-The current DATABASE implementation reads SQL Server 2022 Developer tables through Fabric Data Factory Copy activities and appends the results to Bronze Delta tables in a Fabric Lakehouse.
+The current DATABASE implementation reads SQL Server 2022 Developer tables through Fabric Data Factory Copy
+activities and appends the results to Bronze Delta tables in a Fabric Lakehouse.
 
-This guide compares FULL and INCREMENTAL execution, explains how the framework builds the source query, and shows where to check the resulting audit and watermark. The source SQL Server is separate from the Fabric SQL Database that stores pipeline configuration and state.
+Follow FULL and INCREMENTAL query-mode Copy through their processing windows, Bronze writes, and audit/watermark
+results. The source SQL Server is separate from the Fabric SQL Database that stores configuration and state.
 
 Start with [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md) if you have not yet traced the configuration and request-dispatch flow.
 
@@ -36,7 +38,9 @@ WHERE source_system = 'ECOMMERCE'
 ORDER BY source_schema, source_object;
 ```
 
-The seed is documented in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql). Use the returned `ingestion_config_id` for any explicit run request. Do not assume that an existing DEV SQL Database uses the original seed IDs.
+The seed is documented in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql) .
+Use the returned `ingestion_config_id` for any explicit run request. Do not assume that an existing DEV SQL Database
+uses the original seed IDs.
 
 ## 2. How the DATABASE Router selects an adapter
 
@@ -53,9 +57,12 @@ pl_ingest_orchestrator
             -> pl_ingest_sql_server_incremental_loader
 ```
 
-The Object Controller resolves the configuration and its source/target connections. The DATABASE Router combines the connection type and the configured load strategy to select `SQL_SERVER|FULL` or `SQL_SERVER|INCREMENTAL`.
+The Object Controller resolves the configuration and its source/target connections. The DATABASE Router combines the
+connection type and the configured load strategy to select `SQL_SERVER|FULL` or `SQL_SERVER|INCREMENTAL` .
 
-The incremental adapter owns the checkpoint lookup and processing bounds. When data should be loaded, it invokes the incremental Loader. That additional pipeline keeps the Copy execution and finalize/recovery path separate from the state-selection decisions.
+The incremental adapter owns the checkpoint lookup and processing bounds. When data should be loaded, it invokes the
+incremental Loader. That additional pipeline keeps the Copy execution and finalize/recovery path separate from the
+state-selection decisions.
 
 Source definitions:
 
@@ -72,15 +79,19 @@ For `catalog.product_categories`, the FULL Adapter builds a query against the co
 - `_pipeline_run_id`, the object execution identifier used for audit and recovery.
 - `_ingestion_timestamp`, generated once for this adapter execution and cast as SQL Server `DATETIME2(3)` in the source query.
 
-The Copy sink uses a Lakehouse table with `Append` behavior. In this DATABASE path there is **no separate Lakehouse Files Landing step**. The native Copy activity writes directly to the configured Bronze Delta table.
+The Copy sink uses a Lakehouse table with `Append` behavior. In this DATABASE path there is **no separate Lakehouse
+Files Landing step**. The native Copy activity writes directly to the configured Bronze Delta table.
 
-A later successful FULL run appends another batch. It does not truncate or replace a previously successful Bronze batch, so downstream consumers need to account for execution lineage when working with full snapshots.
+A later successful FULL run appends another batch. It does not truncate or replace a previously successful Bronze
+batch, so downstream consumers need to account for execution lineage when working with full snapshots.
 
 ## 4. INCREMENTAL: determine the processing window
 
 The `crm.customers` configuration has `load_strategy = INCREMENTAL` and `watermark_field = updated_at`.
 
-The INCREMENTAL Adapter starts by looking up the state for the exact `ingestion_config_id` and watermark field in `control.pipeline_watermarks`. The following **activity-level** diagram traces its control decisions, not every error-message or variable-assignment detail in the JSON.
+The INCREMENTAL Adapter starts by looking up the state for the exact `ingestion_config_id` and watermark field in
+`control.pipeline_watermarks` . The following **activity-level** diagram traces its control decisions, not every
+error-message or variable-assignment detail in the JSON.
 
 ```mermaid
 flowchart TD
@@ -100,9 +111,14 @@ flowchart TD
     I -->|No| K["inv_ingest_sql_server_incremental_loader"]
 ```
 
-**How to read this:** `lkp_current_watermark` and `if_state_found` validate the saved state first. REGULAR gets HIGH from a source Lookup; BACKFILL uses the explicitly requested HIGH. After boundary validation, only a REGULAR `HIGH = LOW` window takes the early `SKIPPED` branch. The other valid windows invoke the Loader.
+**How to read this:** `lkp_current_watermark` and `if_state_found` validate the saved state first. REGULAR gets HIGH
+from a source Lookup; BACKFILL uses the explicitly requested HIGH. After boundary validation, only a REGULAR
+`HIGH = LOW` window takes the early `SKIPPED` branch. The other valid windows invoke the Loader.
 
-The diagram stops at the initial finalize activities on the error branches to remain readable. Their dependent `fail_*` activities, along with the exact Fabric dependencies and error handling, remain in the [INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sql_server_incremental_adapter.DataPipeline/pipeline-content.json). The diagram is derived from the checked-in definition, **not** an observed DEV run.
+The diagram stops at the initial finalize activities on the error branches to remain readable. Their dependent
+`fail_*` activities, along with the exact Fabric dependencies and error handling, remain in the
+[INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sql_server_incremental_adapter.DataPipeline/pipeline-content.json)
+. The diagram is derived from the checked-in definition, **not** an observed DEV run.
 
 For a REGULAR run the upper bound comes from a source query:
 
@@ -111,7 +127,8 @@ SELECT MAX([updated_at]) AS upper_bound
 FROM [crm].[customers];
 ```
 
-That query illustrates the shape of the generated SQL for this object. The actual adapter builds its identifiers from the validated configuration rather than hardcoding `crm.customers`.
+That query illustrates the shape of the generated SQL for this object. The actual adapter builds its identifiers
+from the validated configuration rather than hardcoding `crm.customers` .
 
 For an eligible nonempty window, the incremental Loader builds a SQL Server query with the following timestamp predicate:
 
@@ -120,7 +137,9 @@ WHERE [updated_at] > CONVERT(datetime2(7), @LOW, 126)
   AND [updated_at] <= CONVERT(datetime2(7), @HIGH, 126)
 ```
 
-`@LOW` and `@HIGH` are explanatory placeholders here, **not literal T-SQL variables supplied by the existing Copy Activity**. The actual Fabric expression inserts the runtime boundary strings into the generated source SQL. Refer to the Loader JSON for the executable expression.
+`@LOW` and `@HIGH` are explanatory placeholders here, **not literal T-SQL variables supplied by the existing Copy
+Activity**. The actual Fabric expression inserts the runtime boundary strings into the generated source SQL. Refer
+to the Loader JSON for the executable expression.
 
 The window includes values after LOW and up to HIGH. The source-derived timestamp precision is preserved by the current SQL Server boundary contract.
 
@@ -130,13 +149,17 @@ For a REGULAR DATABASE run, `HIGH = LOW` is a valid no-new-data window. The adap
 
 If HIGH is lower than LOW, the run fails boundary validation. BACKFILL requires HIGH greater than LOW.
 
-A HIGH greater than LOW does not itself prove that the Copy wrote rows. The rule above describes the adapter's explicit no-new-data branch, not an automatic classification of every zero-row Copy.
+A HIGH greater than LOW does not itself prove that the Copy wrote rows. The rule above describes the adapter's
+explicit no-new-data branch, not an automatic classification of every zero-row Copy.
 
 ### When does the watermark advance?
 
-The SQL Finalizer advances the persistent watermark only for eligible successful REGULAR INCREMENTAL processing. The expected stored value must still match the value read at the start of the run. This protects against a competing execution moving the state unexpectedly.
+The SQL Finalizer advances the persistent watermark only for eligible successful REGULAR INCREMENTAL processing. The
+expected stored value must still match the value read at the start of the run. This protects against a competing
+execution moving the state unexpectedly.
 
-A historical BACKFILL processes the explicitly requested range and **does not** advance the normal operational watermark. It appends a distinct Bronze batch, preserving the existing successful batches.
+A historical BACKFILL processes the explicitly requested range and **does not** advance the normal operational
+watermark. It appends a distinct Bronze batch, preserving the existing successful batches.
 
 Read [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) and [Retry, Rerun, and Backfill](../operations/retry-rerun-backfill.md) for the full contract.
 
@@ -144,7 +167,8 @@ Read [Generic Incremental Watermark](../architecture/generic-incremental-waterma
 
 The `copy_options` field configures connector-native Copy execution. It is separate from the `load_strategy` and `watermark_field`.
 
-Most normal DEV database configurations have `copy_options = NULL`. In the current SQL Server adapter, that means unpartitioned Copy with service-managed parallelism. The `sales.order_items` example uses:
+Most normal DEV database configurations have `copy_options = NULL` . In the current SQL Server adapter, that means
+unpartitioned Copy with service-managed parallelism. The `sales.order_items` example uses:
 
 ```json
 {
@@ -160,7 +184,9 @@ The FULL Adapter and INCREMENTAL Loader each have two Copy branches:
 | `copy_source_to_bronze_auto` | No positive override provided | Omitted, allowing the service to manage parallelism |
 | `copy_source_to_bronze_tuned` | Positive `parallel_copies` override | Set explicitly from metadata |
 
-The routing gate checks that the Copy options are valid before the Copy stage. The optional dynamic-range mode uses a partition predicate generated for the SQL Server connector; it does not change the ingestion checkpoint definition.
+The routing gate checks that the Copy options are valid before the Copy stage. The optional dynamic-range mode uses
+a partition predicate generated for the SQL Server connector; it does not change the ingestion checkpoint
+definition.
 
 The separate **INCREMENTAL Loader** implements the Copy and finalization portion of the flow:
 
@@ -179,19 +205,37 @@ flowchart TD
     CL -->|Cleanup fails| CFF["sp_finalize_bronze_write_cleanup_failed"]
 ```
 
-The solid arrows show the normal execution path; dashed arrows mark the **failed activity dependencies** in the Fabric definition. The Cleanup Notebook is triggered when the Copy branch fails; it is not part of a successful Copy path. The Finalizer recovery child is invoked only when `sp_finalize_success` fails, because a failed response does not prove whether the SQL transaction committed.
+The solid arrows show the normal execution path; dashed arrows mark the **failed activity dependencies** in the
+Fabric definition. The Cleanup Notebook is triggered when the Copy branch fails; it is not part of a successful Copy
+path. The Finalizer recovery child is invoked only when `sp_finalize_success` fails, because a failed response does
+not prove whether the SQL transaction committed.
 
-The complete definitions also include the count-setting activities following each Copy and terminal `Fail` activities after error finalization. They are omitted from the visual only to keep the control decisions legible; see the [INCREMENTAL Loader JSON](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json) and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) for those details.
+The complete definitions also include the count-setting activities following each Copy and terminal `Fail`
+activities after error finalization. They are omitted from the visual only to keep the control decisions legible;
+see the [INCREMENTAL Loader JSON](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json)
+and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) for those details.
 
-An earlier isolated DEV experiment showed that explicitly setting `parallelCopies = 0` was not equivalent to omitting the property. This is why the AUTO branch omits it. Do not treat that observation as a general performance benchmark.
+An earlier isolated DEV experiment showed that explicitly setting `parallelCopies = 0` was not equivalent to
+omitting the property. This is why the AUTO branch omits it. Do not treat that observation as a general performance
+benchmark.
 
-See [Database Copy Performance](../architecture/database-copy-performance.md) and [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the actual option contract and recorded test limitations.
+See [Database Copy Performance](../architecture/database-copy-performance.md) and
+[Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the actual option contract and recorded test
+limitations.
 
 ### Transfer consistency and type-conversion safety
 
-The implemented SQL Server 2022 Developer on EC2 to Lakehouse Bronze FULL and INCREMENTAL Copy branches enable **native Data Consistency Verification**. For that supported source-to-sink pair and execution mode, native verification is the transfer-consistency gate; do not add a second row-count check for the same transfer. A future connector must verify support for its actual pair and mode or implement a documented, pattern-appropriate fallback rather than silently skipping consistency checks.
+The implemented SQL Server 2022 Developer on EC2 to Lakehouse Bronze FULL and INCREMENTAL Copy branches enable
+**native Data Consistency Verification**. For that supported source-to-sink pair and execution mode, native
+verification is the transfer-consistency gate; do not add a second row-count check for the same transfer. A future
+connector must verify support for its actual pair and mode or implement a documented, pattern-appropriate fallback
+rather than silently skipping consistency checks.
 
-All four SQL Server Copy branches (FULL/INCREMENTAL and AUTO/TUNED) use automatic mapping with `TabularTranslator.typeConversion = true` and `typeConversionSettings.allowDataTruncation = false`. The fail-fast setting prevents silent truncation at the Copy type-conversion layer. It does **not** guarantee byte-for-byte equivalence or eliminate every lossy SQL Server → Fabric intermediate → Delta type mapping; verify real source-type compatibility during onboarding. No per-table hardcoded mappings are introduced.
+All four SQL Server Copy branches (FULL/INCREMENTAL and AUTO/TUNED) use automatic mapping with
+`TabularTranslator.typeConversion = true` and `typeConversionSettings.allowDataTruncation = false` . The fail-fast
+setting prevents silent truncation at the Copy type-conversion layer. It does **not** guarantee byte-for-byte
+equivalence or eliminate every lossy SQL Server → Fabric intermediate → Delta type mapping; verify real source-type
+compatibility during onboarding. No per-table hardcoded mappings are introduced.
 
 SFTP Binary Copy to Landing and Spark delimited-text parsing have separate consistency/type-handling behavior and do not use TabularTranslator.
 
@@ -208,7 +252,8 @@ To execute one object through the supported entry point, first obtain the actual
 ]
 ```
 
-This is a request-format example. Replace `1` with the actual ID returned by SQL, and keep `p_source_system` empty. For all active E-commerce objects, use `p_run_requests = []` with `p_source_system = "ECOMMERCE"` instead.
+This is a request-format example. Replace `1` with the actual ID returned by SQL, and keep `p_source_system` empty.
+For all active E-commerce objects, use `p_run_requests = []` with `p_source_system = "ECOMMERCE"` instead.
 
 After an actual run, inspect the latest object audits:
 
@@ -249,14 +294,24 @@ WHERE c.source_system = 'ECOMMERCE'
 ORDER BY c.source_schema, c.source_object;
 ```
 
-Match the Fabric object Run ID, SQL audit row, and Bronze `_pipeline_run_id` when checking a specific execution. A green Copy activity alone does not establish the final audit or checkpoint outcome.
+Match the Fabric object Run ID, SQL audit row, and Bronze `_pipeline_run_id` when checking a specific execution. A
+green Copy activity alone does not establish the final audit or checkpoint outcome.
 
 ## 7. Failure and recovery boundaries
 
-A successful Delta write and the SQL Control Database finalization are not one distributed transaction. The framework uses execution-scoped Bronze cleanup when a failed write may have left rows behind. If success finalization fails with an uncertain outcome, the incremental recovery flow checks durable state before deciding how to proceed.
+A successful Delta write and the SQL Control Database finalization are not one distributed transaction. The
+framework uses execution-scoped Bronze cleanup when a failed write may have left rows behind. If success
+finalization fails with an uncertain outcome, the incremental recovery flow checks durable state before deciding how
+to proceed.
 
-The [Bronze Compensating Cleanup runbook](../operations/bronze-compensating-cleanup.md) now includes activity-level Mermaid diagrams for both **Bronze write failure** and **post-finalization reconciliation**. Follow those diagrams alongside the Pipeline JSON to see why cleanup is conditional on the failure boundary. These behaviors should not be simplified into a claim that every rerun is automatically exactly once at business-record level.
+The [Bronze Compensating Cleanup runbook](../operations/bronze-compensating-cleanup.md) now includes activity-level
+Mermaid diagrams for both **Bronze write failure** and **post-finalization reconciliation**. Follow those diagrams
+alongside the Pipeline JSON to see why cleanup is conditional on the failure boundary. These behaviors should not be
+simplified into a claim that every rerun is automatically exactly once at business-record level.
 
 ### Check the run before drawing conclusions
 
-In Fabric Monitor, inspect the executed FULL or INCREMENTAL Copy branch and match its object Pipeline Run ID to `audit.ingestion_log`. For an incremental run, compare the stored watermark before and after finalization. The Copy activity's success alone does not confirm the terminal audit or checkpoint update. This guide documents implementation behavior; the observed result depends on the DEV source state at execution time.
+In Fabric Monitor, inspect the executed FULL or INCREMENTAL Copy branch and match its object Pipeline Run ID to
+`audit.ingestion_log` . For an incremental run, compare the stored watermark before and after finalization. The Copy
+activity's success alone does not confirm the terminal audit or checkpoint update. This guide documents
+implementation behavior; the observed result depends on the DEV source state at execution time.

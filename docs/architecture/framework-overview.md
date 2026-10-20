@@ -1,6 +1,7 @@
 # Architecture & Design Decisions
 
-This page explains the implemented architecture, the engineering decisions behind it, and their limits. The linked Fabric Pipelines, Notebooks, and SQL definitions are the source of truth for runtime behavior.
+This document explains the implemented architecture, why its boundaries exist, and where they stop. For exact
+runtime behavior, consult the linked Fabric Pipelines, Notebooks, and SQL definitions.
 
 ## What problem does this solve?
 
@@ -62,15 +63,25 @@ The `pl_ingest_<scope>_<role>` names reflect distinct responsibilities in the im
 | Adapter | Executes source-specific extraction, boundary handling, and physical loading |
 | Loader / Recovery | Optional boundaries for nested Copy execution or uncertain incremental finalization |
 
-The **framework** owns REGULAR/BACKFILL intent, watermark/no-new-data semantics, Bronze append, audit/finalization, and optimistic checkpoint protection. A **connector adapter** owns its connection, source SQL/predicates and identifier quoting, boundary capture, type compatibility, and native Copy settings. An adapter must not silently redefine the framework's state or finalization semantics.
+The **framework** owns REGULAR/BACKFILL intent, watermark/no-new-data semantics, Bronze append, audit/finalization,
+and optimistic checkpoint protection. A **connector adapter** owns its connection, source SQL/predicates and
+identifier quoting, boundary capture, type compatibility, and native Copy settings. An adapter must not silently
+redefine the framework's state or finalization semantics.
 
-Only SQL Server FULL/INCREMENTAL DATABASE adapters are implemented. A future Oracle or PostgreSQL connector should be added behind the existing thin DATABASE router, but deeper shared orchestration should be extracted only after a second real implementation proves the common contract. Transfer verification and Copy options must be validated for each actual connector and execution mode; do not assume one vendor's behavior is universal.
+The implemented DATABASE connector is SQL Server (FULL and INCREMENTAL); the FILE connector is SFTP. A future Oracle
+or PostgreSQL connector belongs behind the thin DATABASE router, but deeper shared orchestration should be extracted
+only after a second implementation proves the common contract. Transfer verification and Copy options must be
+validated for each actual connector and execution mode; do not assume one vendor's behavior is universal.
 
-Fabric Pipelines handle orchestration and connector-native movement; Notebooks handle reusable Spark/Delta operations such as file parsing and scoped cleanup. The relational SQL Server path deliberately stays with native Copy instead of adding Spark just for uniformity.
+Fabric Pipelines handle orchestration and connector-native movement; Notebooks handle reusable Spark/Delta
+operations such as file parsing and scoped cleanup. The relational SQL Server path deliberately stays with native
+Copy instead of adding Spark just for uniformity.
 
 ## Logical planes and responsibilities
 
-The README architecture visual separates three **logical responsibility groups**. They are not three isolated Fabric systems: orchestration pipelines read Control SQL metadata, invoke data movement, and finalize audit/checkpoint state.
+The README architecture visual separates three **logical responsibility groups**. They are not three isolated Fabric
+systems: orchestration pipelines read Control SQL metadata, invoke data movement, and finalize audit/checkpoint
+state.
 
 | Logical plane | Responsibility |
 | --- | --- |
@@ -187,13 +198,28 @@ for the actual activity branches, audit codes, and verification steps.
 
 ## Scaling and extension considerations
 
-The current framework has one supported orchestration entry point and bounded parallelism. These choices provide basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational requirements may need additional coordination:
+The current framework has one supported orchestration entry point and bounded parallelism. These choices provide
+basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational
+requirements may need additional coordination:
 
-- **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object outcomes.
-- **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations **within one run**. This is not a database-connection limit: one object execution can use multiple connections, and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency policies or a shared per-source execution budget.
-- **Overlapping executions and locking.** The checked-in master pipeline sets `concurrency = 1`, limiting simultaneous runs of that master within its workspace. This is not a lock on each ingestion configuration: another deployment, a changed concurrency setting, or work outside the master could still target the same state and Bronze data. Guarded SQL watermark finalization detects certain conflicts after work has begun; it does not prevent duplicate extraction or overlapping writes. Where cross-run exclusivity is required, define a per-configuration lock or lease policy before increasing concurrency.
+-  **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different
+  `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A
+  dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object
+  outcomes.
+-  **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations
+  **within one run**. This is not a database-connection limit: one object execution can use multiple connections,
+  and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency
+  policies or a shared per-source execution budget.
+-  **Overlapping executions and locking.** The checked-in master pipeline sets `concurrency = 1` , limiting
+  simultaneous runs of that master within its workspace. This is not a lock on each ingestion configuration: another
+  deployment, a changed concurrency setting, or work outside the master could still target the same state and Bronze
+  data. Guarded SQL watermark finalization detects certain conflicts after work has begun; it does not prevent
+  duplicate extraction or overlapping writes. Where cross-run exclusivity is required, define a per-configuration
+  lock or lease policy before increasing concurrency.
 
-These are **possible extensions, not implemented features**. The current framework does not provide cross-system dependency coordination, shared per-source concurrency enforcement, or execution locks. The design should be revisited only when workload requirements justify the additional complexity.
+These are **possible extensions, not implemented features**. The current framework does not provide cross-system
+dependency coordination, shared per-source concurrency enforcement, or execution locks. The design should be
+revisited only when workload requirements justify the additional complexity.
 
 ## Reuse boundaries
 

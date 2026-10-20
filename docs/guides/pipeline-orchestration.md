@@ -1,8 +1,10 @@
 # Pipeline Orchestration and Run Requests
 
-The Control Plane tells the framework which source objects exist. The orchestration pipelines decide which objects to run in a particular execution and pass their metadata to the appropriate adapter.
+Control SQL defines the available source objects. Fabric Data Pipelines select requests, validate each configuration, and route it to the correct source adapter.
 
-This guide follows the implemented Microsoft Fabric Data Pipeline definitions from the entry parameters to the DATABASE and FILE Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are unfamiliar.
+This guide traces the implemented orchestration flow from the entry parameters through the DATABASE and FILE
+Routers. Read [Control Plane and Ingestion Configuration](control-plane.md) first if the metadata tables are
+unfamiliar.
 
 ## 1. Start at the master pipeline
 
@@ -45,9 +47,11 @@ Only active configurations from `ECOMMERCE` are selected. You can use `LOGISTICS
 ]
 ```
 
-Pass this array as `p_run_requests` and leave `p_source_system` empty. The ID is an example from the standard fresh DEV seed; query `control.ingestion_config` for the actual ID before running.
+Pass this array as `p_run_requests` and leave `p_source_system` empty. The ID is an example from the standard fresh
+DEV seed; query `control.ingestion_config` for the actual ID before running.
 
-For an INCREMENTAL historical BACKFILL, an explicit request also needs `lower_bound` and `upper_bound`. See [Run Request Examples](../operations/run-request-examples.md) for the exact request shapes and boundaries.
+For an INCREMENTAL historical BACKFILL, an explicit request also needs `lower_bound` and `upper_bound` . See
+[Run Request Examples](../operations/run-request-examples.md) for the exact request shapes and boundaries.
 
 A nonempty request array combined with a nonblank `p_source_system` fails with `AMBIGUOUS_RUN_SCOPE`. The framework does not silently pick one of those two scopes.
 
@@ -78,11 +82,14 @@ flowchart TD
 
 *Conceptual routing based on the checked-in Fabric Pipeline definitions. Validation and pre-dispatch failure branches are summarized; this is not a screenshot of a particular run.*
 
-The explicit request path invokes `control.usp_validate_run_requests` before dispatch. The Paginator path first obtains active configurations from SQL. In either case, the Dispatcher receives an array of object requests and a shared Batch ID.
+The explicit request path invokes `control.usp_validate_run_requests` before dispatch. The Paginator path first
+obtains active configurations from SQL. In either case, the Dispatcher receives an array of object requests and a
+shared Batch ID.
 
 ## 3. Why is there a Paginator?
 
-The Paginator keeps the number of configuration rows returned by each Lookup bounded. This matters as the number of source objects grows, even though the current demo only has eight active objects.
+The Paginator keeps the number of configuration rows returned by each Lookup bounded. This matters as the number of
+source objects grows, even though the current demo only has eight active objects.
 
 The implemented `pl_ingest_config_paginator` pipeline:
 
@@ -92,7 +99,8 @@ The implemented `pl_ingest_config_paginator` pipeline:
 4. Uses `fe_config_pages` to iterate through pages **sequentially**.
 5. Uses `lkp_config_page` to select one page ordered by `ingestion_config_id`, then `inv_ingest_config_dispatcher` to process that page.
 
-The page Lookup returns pairs of `config_id` and `run_type = REGULAR`. It does not copy every source field into the request array. The Object Controller performs a separate configuration lookup for each object.
+The page Lookup returns pairs of `config_id` and `run_type = REGULAR` . It does not copy every source field into the
+request array. The Object Controller performs a separate configuration lookup for each object.
 
 The current design uses sequential pages and bounded object parallelism inside each page. It does not promise that all active objects start at the same moment.
 
@@ -105,9 +113,12 @@ The current design uses sequential pages and bounded object parallelism inside e
 - The execution intent `p_run_type`.
 - Optional requested LOW/HIGH bounds (normalized to empty strings when omitted).
 
-Do not confuse object parallelism with the master setting. The master Orchestrator currently has `concurrency = 1`, so two master executions are serialized. Within one master run, the Dispatcher can start up to eight object requests in parallel.
+Do not confuse object parallelism with the master setting. The master Orchestrator currently has `concurrency = 1` ,
+so two master executions are serialized. Within one master run, the Dispatcher can start up to eight object requests
+in parallel.
 
-This is an implemented DEV setting, not a general performance recommendation. The [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) documents the limited comparison used to choose it.
+This is an implemented DEV setting, not a general performance recommendation. The
+[Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) documents the limited comparison used to choose it.
 
 ## 5. The Object Controller looks up and validates configuration
 
@@ -123,7 +134,9 @@ The controller then checks:
 
 The `sw_execution_decision` activity handles `INACTIVE`, `INVALID_REQUEST`, `INVALID_TARGET`, `DATABASE`, and `FILE` outcomes, with a default unsupported-route path.
 
-An explicitly requested inactive configuration is finalized as `SKIPPED`. An invalid request or invalid target follows a failure path. The controller only invokes a physical router after the metadata and execution request have passed the relevant checks.
+An explicitly requested inactive configuration is finalized as `SKIPPED` . An invalid request or invalid target
+follows a failure path. The controller only invokes a physical router after the metadata and execution request have
+passed the relevant checks.
 
 ## 6. The Routers choose the physical adapter
 
@@ -136,9 +149,13 @@ The DATABASE and FILE Routers keep connector-specific behavior out of the Object
 
 The route key joins the uppercased connection type and load strategy with the pipe character (`|`), using `concat` in the Router activities.
 
-The FILE Router first checks `if_supported_file_format`. At present, the accepted format is `DELIMITED_TEXT`. The SQL Server INCREMENTAL adapter adds a separate Loader pipeline for Copy execution and finalization. Each physical adapter is responsible for source-specific extraction, processing boundaries, and failure handling.
+The FILE Router first checks `if_supported_file_format` . At present, the accepted format is `DELIMITED_TEXT` . The
+SQL Server INCREMENTAL adapter adds a separate Loader pipeline for Copy execution and finalization. Each physical
+adapter is responsible for source-specific extraction, processing boundaries, and failure handling.
 
-See [SQL Server Database Ingestion](sql-server-database-ingestion.md), [Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary), and [SFTP File Ingestion](sftp-file-ingestion.md) for the next level of detail.
+See [SQL Server Database Ingestion](sql-server-database-ingestion.md) ,
+[Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary) , and
+[SFTP File Ingestion](sftp-file-ingestion.md) for the next level of detail.
 
 ## 7. Trace a real run without guessing its result
 
@@ -149,7 +166,8 @@ p_run_requests = []
 p_source_system = "LOGISTICS_VENDOR"
 ```
 
-Before running, inspect the two configurations in SQL. After execution, open the Fabric pipeline Monitor and follow the child invocations through Dispatcher, Object Controller, FILE Router, and SFTP adapter.
+Before running, inspect the two configurations in SQL. After execution, open the Fabric pipeline Monitor and follow
+the child invocations through Dispatcher, Object Controller, FILE Router, and SFTP adapter.
 
 Then check the object audits:
 
@@ -171,11 +189,17 @@ WHERE source_system = 'LOGISTICS_VENDOR'
 ORDER BY ingestion_log_id DESC;
 ```
 
-The expected result depends on the remote files and current checkpoint. A FULL snapshot may append a new batch while the unchanged INCREMENTAL movement feed finishes `SKIPPED`. You cannot infer the audit status from the parameter values alone.
+The expected result depends on the remote files and current checkpoint. A FULL snapshot may append a new batch while
+the unchanged INCREMENTAL movement feed finishes `SKIPPED` . You cannot infer the audit status from the parameter
+values alone.
 
-Use the shared Batch ID to connect the object outcomes, and the object Pipeline Run ID to inspect a specific execution. A master run that fails before object dispatch may have **no object audit record**. Use Fabric Monitor for that case.
+Use the shared Batch ID to connect the object outcomes, and the object Pipeline Run ID to inspect a specific
+execution. A master run that fails before object dispatch may have **no object audit record**. Use Fabric Monitor
+for that case.
 
-For verification, compare the master run parameters and child activity outcomes in Fabric Monitor with the object audit rows returned by the query. The diagram describes the implemented routing; only an observed run establishes what happened in a particular execution.
+For verification, compare the master run parameters and child activity outcomes in Fabric Monitor with the object
+audit rows returned by the query. The diagram describes the implemented routing; only an observed run establishes
+what happened in a particular execution.
 
 ## 8. What to read next
 

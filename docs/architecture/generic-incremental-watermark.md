@@ -1,5 +1,9 @@
 # Generic Incremental Watermark
 
+This design describes the durable checkpoint shared by DATABASE and FILE incremental ingestion, including run
+boundaries, no-new-data behavior, and guarded finalization. See the
+[retry/rerun/backfill runbook](../operations/retry-rerun-backfill.md) for operational choices.
+
 ## Decision
 
 All incremental ingestion patterns share one persistent checkpoint table:
@@ -97,7 +101,11 @@ BACKFILL:
   upper <= lower -> invalid boundary -> FAILED
 ```
 
-For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A scan with zero matching files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. For DATABASE, a REGULAR `HIGH = LOW` scan also finalizes as `SKIPPED` without invoking the Loader or advancing state. The triggers differ, but both patterns share the same no-new-data audit convention. A DATABASE `HIGH > LOW` run that subsequently copies zero rows is a separate scenario and is not reclassified by this branch.
+For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower` . A scan with zero matching
+files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. For
+DATABASE, a REGULAR `HIGH = LOW` scan also finalizes as `SKIPPED` without invoking the Loader or advancing state.
+The triggers differ, but both patterns share the same no-new-data audit convention. A DATABASE `HIGH > LOW` run that
+subsequently copies zero rows is a separate scenario and is not reclassified by this branch.
 
 ## Timestamp ownership and timezone contract
 
@@ -215,7 +223,8 @@ This change does not apply to SQL Server `DATETIME2` source watermarks.
 
 Operationally, the lower boundary is the previously committed watermark and the
 upper boundary is captured at the start of the current ingestion run. After a
-successful REGULAR ingestion with matching files and a completed Bronze write, the watermark advances to that upper boundary. When no files match, the status is `SKIPPED` and the checkpoint stays at the previous LOW.
+successful REGULAR ingestion with matching files and a completed Bronze write, the watermark advances to that upper
+boundary. When no files match, the status is `SKIPPED` and the checkpoint stays at the previous LOW.
 
 The source filename remains a file identity/evidence field, not the incremental
 checkpoint.

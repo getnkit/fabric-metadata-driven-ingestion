@@ -1,5 +1,10 @@
 # Database Copy Performance Strategy
 
+This document records the SQL Server Copy settings and measured DEV observations behind the current framework. The
+[SQL Server ingestion guide](../guides/sql-server-database-ingestion.md) follows the corresponding execution path;
+the [evidence plan](../benchmarks/evidence-and-test-plan.md) distinguishes measured results from planned
+comparisons.
+
 ## Implemented scope
 
 The current SQL Server 2022 Developer on EC2 adapter uses Copy activities in Fabric Data Pipelines to ingest data into Bronze.
@@ -65,7 +70,9 @@ Optional explicit override (illustrative, not a benchmark-derived recommendation
 }
 ```
 
-The value `8` above illustrates the configuration syntax; the recorded DEV measurements do not establish it as an optimal setting for this workload. See [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the observed results and outstanding comparisons.
+The value `8` above illustrates the configuration syntax; the recorded DEV measurements do not establish it as an
+optimal setting for this workload. See [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the
+observed results and outstanding comparisons.
 
 Current SQL Server 2022 Developer on EC2 support (FULL and INCREMENTAL):
 
@@ -307,4 +314,9 @@ that every connector supports the same partition mechanisms.
 
 ### EC2 SQL Server Developer sizing note
 
-The benchmark generator defaults to **10,000,000 rows per table** across two permanent fixture tables (`CHAR(512)` payload), reflecting the original benchmark intent rather than the short-lived RDS Express-sized 1M version. This is a DEV/test workload: confirm EBS free space, SQL data/log growth and Fabric egress cost before generation. Do not assume 80 GiB EBS will always be sufficient for arbitrary future increases in test data or index size. Retest generic `SqlServerSource` query-mode and partition options in Fabric DEV; repository validation alone does not establish runtime acceptance.
+The benchmark generator defaults to **10,000,000 rows per table** across two permanent fixture tables (`CHAR(512)`
+payload), reflecting the original benchmark intent rather than the short-lived RDS Express-sized 1M version. This is
+a DEV/test workload: confirm EBS free space, SQL data/log growth and Fabric egress cost before generation. Do not
+assume 80 GiB EBS will always be sufficient for arbitrary future increases in test data or index size. Retest
+generic `SqlServerSource` query-mode and partition options in Fabric DEV; repository validation alone does not
+establish runtime acceptance.

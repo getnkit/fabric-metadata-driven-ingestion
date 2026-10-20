@@ -1,4 +1,4 @@
-# SQL Server 2022 Developer on EC2 Copy Performance Benchmark
+# SQL Server Copy Performance Benchmark — EC2 DEV
 
 ## Purpose
 
@@ -165,11 +165,18 @@ Record per-run row counts and the observed source/sink load before drawing a con
 
 ## Storage safety
 
-The benchmark uses a **separate database on the existing EC2 SQL Server 2022 Developer container**. Default is **10,000,000 rows in each of two tables** with `CHAR(512)` payload. Data is generated in resumable 100,000-row batches and is retained for repeatable Copy performance tests. Confirm sufficient free space before starting (an 80 GiB gp3 root EBS volume is only an initial sizing assumption, not a guarantee). Review allocated MDF/LDF size, free disk space, tempdb, indexing overhead and memory pressure while generating data. The e-commerce source data volume is unchanged.
+The benchmark uses a **separate database on the existing EC2 SQL Server 2022 Developer container**. Default is
+**10,000,000 rows in each of two tables** with `CHAR(512)` payload. Data is generated in resumable 100,000-row
+batches and is retained for repeatable Copy performance tests. Confirm sufficient free space before starting (an 80
+GiB gp3 root EBS volume is only an initial sizing assumption, not a guarantee). Review allocated MDF/LDF size, free
+disk space, tempdb, indexing overhead and memory pressure while generating data. The e-commerce source data volume
+is unchanged.
 
 ## Cost and reproducibility guardrails
 
-SQL Server **Developer Edition is for development/testing, not production use**. Capture EC2 instance type, EBS size/IOPS, SQL Server edition, CPU and memory load, network egress, row counts and effective parallelism for each run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
+SQL Server **Developer Edition is for development/testing, not production use**. Capture EC2 instance type, EBS
+size/IOPS, SQL Server edition, CPU and memory load, network egress, row counts and effective parallelism for each
+run. Benchmark results are **not directly comparable** with the earlier Azure SQL compute configuration.
 
 The physically partitioned source table is retained **unchanged**: retiring
 Fabric's Table-mode `PHYSICAL_PARTITIONS` option does not remove or modify SQL

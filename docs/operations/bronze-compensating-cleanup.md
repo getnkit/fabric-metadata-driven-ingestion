@@ -1,6 +1,7 @@
 # Bronze Compensating Cleanup
 
-This runbook documents the framework's automatic compensating cleanup for append-oriented Bronze ingestion.
+This runbook explains when a failed ingestion may remove its own Bronze or Landing writes, and why a successful
+batch must remain intact. It distinguishes confirmed failed writes from uncertain SQL finalization.
 
 ## Framework invariant
 
@@ -11,15 +12,19 @@ REGULAR  -> append a new Bronze batch
 BACKFILL -> append a new Bronze batch
 ```
 
-A successful Bronze batch is never deleted, truncated, overwritten, or replaced merely because a later REGULAR or BACKFILL run processes overlapping source data. Each execution preserves its own `_batch_id` / pipeline-run lineage.
+A successful Bronze batch is never deleted, truncated, overwritten, or replaced merely because a later REGULAR or
+BACKFILL run processes overlapping source data. Each execution preserves its own `_batch_id` / pipeline-run lineage.
 
-The only ingestion-time deletion allowed by this framework is **compensating cleanup of the current failed batch** when a Bronze write may have partially succeeded. That failed batch is not treated as committed Bronze history.
+The only ingestion-time deletion allowed by this framework is **compensating cleanup of the current failed batch**
+when a Bronze write may have partially succeeded. That failed batch is not treated as committed Bronze history.
 
 Retention, legal erasure, or other lifecycle-management policies are separate governance/maintenance concerns and are not part of REGULAR/BACKFILL ingestion semantics.
 
 ## Why it exists
 
-A Bronze write and the control/audit finalization are not one distributed transaction. A pipeline can fail after rows have already reached Bronze while the watermark/control state remains uncommitted. A blind rerun can then append the same logical input again.
+A Bronze write and the control/audit finalization are not one distributed transaction. A pipeline can fail after
+rows have already reached Bronze while the watermark/control state remains uncommitted. A blind rerun can then
+append the same logical input again.
 
 The recovery scope is the pair **(`batch_id`, `pipeline_run_id`)** in the
 specific target Delta table. The orchestrator intentionally shares a batch ID
@@ -92,7 +97,9 @@ If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, a
 
 ### Bronze write failure: compensate the affected execution
 
-The following flow summarizes the **post-write failure branch**. Both SQL Server Copy and the SFTP Bronze Loader Notebook can reach an activity named `nb_cleanup_bronze_write_failed`; these are activities in their respective pipelines, not one shared Pipeline invocation.
+The following flow summarizes the **post-write failure branch**. Both SQL Server Copy and the SFTP Bronze Loader
+Notebook can reach an activity named `nb_cleanup_bronze_write_failed` ; these are activities in their respective
+pipelines, not one shared Pipeline invocation.
 
 ```mermaid
 flowchart TD
@@ -103,21 +110,34 @@ flowchart TD
     AF --> FF["fail_bronze_write_cleanup"]
 ```
 
-This path is **not** triggered by pre-write metadata or boundary validation failures. Its Cleanup Notebook targets the specific Bronze table and the `(_batch_id, _pipeline_run_id)` pair. A successful cleanup leads to a terminal **FAILED** audit for the original write failure; cleanup failure is separately surfaced as `BRONZE_CLEANUP_FAILED`.
+This path is **not** triggered by pre-write metadata or boundary validation failures. Its Cleanup Notebook targets
+the specific Bronze table and the `(_batch_id, _pipeline_run_id)` pair. A successful cleanup leads to a terminal
+**FAILED** audit for the original write failure; cleanup failure is separately surfaced as `BRONZE_CLEANUP_FAILED` .
 
-FILE ingestion also has **Landing Copy** and file-count consistency failure branches, with their own Landing cleanup activities (for example, `nb_cleanup_landing_copy_failed`). Do not treat those as the Bronze write-failure branch above. See the [SQL Server INCREMENTAL Loader](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json) and [SFTP INCREMENTAL Adapter](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json) for the full, source-specific dependencies.
+FILE ingestion also has **Landing Copy** and file-count consistency failure branches, with their own Landing cleanup
+activities (for example, `nb_cleanup_landing_copy_failed` ). Do not treat those as the Bronze write-failure branch
+above. See the
+[SQL Server INCREMENTAL Loader](../../fabric/pl_ingest_sql_server_incremental_loader.DataPipeline/pipeline-content.json)
+and [SFTP INCREMENTAL Adapter](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json)
+for the full, source-specific dependencies.
 
 ## Audit error-message length contract
 
-The Fabric SQL Database stores `audit.ingestion_log.error_message` and the finalize procedure parameter as `NVARCHAR(4000)`. All 15 Finalizers that consume activity error messages use `take()` instead of `substring()`; `take()` safely handles shorter messages.
+The Fabric SQL Database stores `audit.ingestion_log.error_message` and the finalize procedure parameter as
+`NVARCHAR(4000)` . All 15 Finalizers that consume activity error messages use `take()` instead of `substring()` ;
+`take()` safely handles shorter messages.
 
 - **One failing activity:** `@take(string(activity('some_activity').error.message),4000)`.
-- **Original failure plus cleanup failure:** use `take(...,1500)` on **each** error, then `concat()` the two labeled segments. The resulting message stays below 4,000 characters without an outer `take()`, and neither failure can displace the other.
+-  **Original failure plus cleanup failure:** use `take(...,1500)` on **each** error, then `concat()` the two
+  labeled segments. The resulting message stays below 4,000 characters without an outer `take()` , and neither
+  failure can displace the other.
 - **Landing file-count mismatch plus cleanup failure:** include `filesRead` / `filesWritten` and `take(cleanup_error,3000)`; no outer `take()` is required.
 
-Validation and Routing messages that do not propagate activity errors keep their existing `concat()` expressions. The Error Handler activity dependencies, audit statuses, retries, cleanup, and watermark semantics do not change.
+Validation and Routing messages that do not propagate activity errors keep their existing `concat()` expressions.
+The Error Handler activity dependencies, audit statuses, retries, cleanup, and watermark semantics do not change.
 
-Smoke-check one short lookup error and one source-to-Bronze failure path in DEV after synchronizing the Fabric pipeline definitions. Full runtime failure-path coverage has not been performed.
+Smoke-check one short lookup error and one source-to-Bronze failure path in DEV after synchronizing the Fabric
+pipeline definitions. Full runtime failure-path coverage has not been performed.
 
 ## Finalization failure recovery (incremental DATABASE and FILE)
 
@@ -135,7 +155,9 @@ The child pipeline reads a **committed terminal Audit record** matched by
 
 ### Activity-level flow: reconcile the committed outcome
 
-The recovery child reads `audit.ingestion_log` using the exact `ingestion_config_id`, `batch_id`, and object `pipeline_run_id`. Its SQL Lookup maps committed `SUCCESS` to `COMMITTED_SUCCESS`, committed `FAILED / WATERMARK_CONFLICT` to `CONFIRMED_CONFLICT`, and missing or other outcomes to `OTHER`.
+The recovery child reads `audit.ingestion_log` using the exact `ingestion_config_id` , `batch_id` , and object
+`pipeline_run_id` . Its SQL Lookup maps committed `SUCCESS` to `COMMITTED_SUCCESS` , committed
+`FAILED / WATERMARK_CONFLICT` to `CONFIRMED_CONFLICT` , and missing or other outcomes to `OTHER` .
 
 ```mermaid
 flowchart TD
@@ -150,9 +172,17 @@ flowchart TD
     F -->|Bronze cleanup succeeded| L["nb_cleanup_landing_finalize_conflict"]
 ```
 
-The diagram deliberately stops at the conflict cleanup activities: their **Succeeded/Failed terminal `Fail` activities** are listed in the [recovery pipeline JSON](../../fabric/pl_ingest_incremental_finalize_recovery.DataPipeline/pipeline-content.json). In the DATABASE conflict branch, successful Bronze cleanup is followed by `fail_confirmed_watermark_conflict`; failed cleanup by `fail_bronze_finalize_cleanup`. In the FILE conflict branch, successful Bronze **and** Landing cleanup is followed by `fail_confirmed_watermark_conflict_file`; failures use `fail_bronze_finalize_cleanup_file` or `fail_landing_finalize_cleanup`.
+The diagram deliberately stops at the conflict cleanup activities: their **Succeeded/Failed terminal `Fail`
+activities** are listed in the
+[recovery pipeline JSON](../../fabric/pl_ingest_incremental_finalize_recovery.DataPipeline/pipeline-content.json) .
+In the DATABASE conflict branch, successful Bronze cleanup is followed by `fail_confirmed_watermark_conflict` ;
+failed cleanup by `fail_bronze_finalize_cleanup` . In the FILE conflict branch, successful Bronze **and** Landing
+cleanup is followed by `fail_confirmed_watermark_conflict_file` ; failures use `fail_bronze_finalize_cleanup_file`
+or `fail_landing_finalize_cleanup` .
 
-**Decision rule:** only the confirmed conflict branches run automatic finalization-failure compensation. `COMMITTED_SUCCESS`, `OTHER`, and Audit Lookup failure all preserve data for reconciliation, even though the Pipeline reports a failure.
+**Decision rule:** only the confirmed conflict branches run automatic finalization-failure compensation.
+`COMMITTED_SUCCESS` , `OTHER` , and Audit Lookup failure all preserve data for reconciliation, even though the
+Pipeline reports a failure.
 
 | Confirmed audit outcome | Recovery action | Final pipeline status |
 | --- | --- | --- |
@@ -270,4 +300,6 @@ For a failed run that completed automatic cleanup, `batch_rows` must be zero and
 
 ## Manual fallback
 
-If an operational incident predates the automatic cleanup path, or cleanup itself could not run, reconcile only the failed (`_batch_id`, `_pipeline_run_id`) pair using a Fabric Notebook / Spark Delta operation and verify zero remaining rows before rerun.
+If an operational incident predates the automatic cleanup path, or cleanup itself could not run, reconcile only the
+failed (`_batch_id`, `_pipeline_run_id` ) pair using a Fabric Notebook / Spark Delta operation and verify zero
+remaining rows before rerun.

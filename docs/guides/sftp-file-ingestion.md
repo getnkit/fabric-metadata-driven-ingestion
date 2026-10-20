@@ -1,8 +1,13 @@
 # SFTP File Ingestion Guide
 
-This guide follows the existing `LOGISTICS_VENDOR` demo through its control metadata, Fabric pipelines, Lakehouse Landing and Bronze, and SQL audit. The point is to understand how one pipeline framework handles two file workloads without building a separate orchestration tree for each file.
+Follow the `LOGISTICS_VENDOR` example from control metadata through Fabric pipelines, Lakehouse Files Landing,
+Bronze Delta, and terminal SQL audit. The FULL snapshot and INCREMENTAL movement feed share the same orchestration
+framework.
 
-To understand source configuration and the master pipeline, start with [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md). You can read the artifacts below without running Fabric. The optional verification queries require an already configured DEV environment. If you are setting up a new workspace, complete the [environment rebuild guide](../operations/environment-rebuild.md) first.
+To understand source configuration and the master pipeline, start with [Control Plane](control-plane.md) and
+[Pipeline Orchestration](pipeline-orchestration.md) . You can read the artifacts below without running Fabric. The
+optional verification queries require an already configured DEV environment. If you are setting up a new workspace,
+complete the [environment rebuild guide](../operations/environment-rebuild.md) first.
 
 ## What you will learn
 
@@ -24,9 +29,14 @@ The DEV metadata seed defines two active objects for the `LOGISTICS_VENDOR` sour
 | `inventory_snapshot` | `inventory_snapshot.csv` | FULL | `fulfillment.inventory_snapshots` |
 | `inventory_movement` | `inventory_movement_*.csv` | INCREMENTAL | `fulfillment.inventory_movements` |
 
-The snapshot represents current inventory. The movement files represent separate change events delivered over time. Both are delimited text, but their processing boundaries differ. Each configuration identifies a **logical feed**, not an individual physical file: the `inventory_movement` feed uses its `source_path` and `source_options.file_name_pattern` to select potentially multiple movement files in a run.
+The snapshot represents current inventory. The movement files represent separate change events delivered over time.
+Both are delimited text, but their processing boundaries differ. Each configuration identifies a **logical feed**,
+not an individual physical file: the `inventory_movement` feed uses its `source_path` and
+`source_options.file_name_pattern` to select potentially multiple movement files in a run.
 
-Read the seed statements in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql). Inspect the [snapshot fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv) and the [SFTP sample directory](../../scripts/source/sftp/outbound/inventory/) to see the actual source layouts.
+Read the seed statements in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql) .
+Inspect the [snapshot fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv) and the
+[SFTP sample directory](../../scripts/source/sftp/outbound/inventory/) to see the actual source layouts.
 
 **Inspect the Control Plane.** In the Fabric SQL Database `sqldb_ingestion_control`, run this read-only query:
 
@@ -55,7 +65,9 @@ Look for three important differences:
 2. `inventory_movement` uses `INCREMENTAL` with `last_modified_time`.
 3. Both objects share the FILE routing path and use a Files-relative `landing_path` that begins with `landing/`, not `Files/landing/`.
 
-The parser options are stored in `source_options`, including `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and `escape`. The FILE Router currently supports `DELIMITED_TEXT` only. A schema column may permit other format names without implying that their readers are implemented.
+The parser options are stored in `source_options` , including `file_name_pattern` , `delimiter` , `has_header` ,
+`encoding` , `quote` , and `escape` . The FILE Router currently supports `DELIMITED_TEXT` only. A schema column may
+permit other format names without implying that their readers are implemented.
 
 **Why this matters:** adding another supported file object is principally a metadata and source-onboarding task. It should not require copying the entire orchestration tree.
 
@@ -68,9 +80,12 @@ p_run_requests = []
 p_source_system = "LOGISTICS_VENDOR"
 ```
 
-An empty request array asks the framework to select active configurations. The nonblank source-system parameter narrows that selection. With both parameters empty, the same orchestrator selects all active configurations.
+An empty request array asks the framework to select active configurations. The nonblank source-system parameter
+narrows that selection. With both parameters empty, the same orchestrator selects all active configurations.
 
-The top-level activities first establish the batch ID, check the required runtime bindings, and reject ambiguous scope. The source-system path then invokes `pl_ingest_config_paginator`. The paginator selects active configurations before the Dispatcher invokes object controllers.
+The top-level activities first establish the batch ID, check the required runtime bindings, and reject ambiguous
+scope. The source-system path then invokes `pl_ingest_config_paginator` . The paginator selects active
+configurations before the Dispatcher invokes object controllers.
 
 The relevant routing sequence is:
 
@@ -84,9 +99,13 @@ pl_ingest_orchestrator
        -> pl_ingest_sftp_incremental_adapter
 ```
 
-The FILE Router checks the file format before choosing an adapter. Its `if_supported_file_format` activity evaluates the requested format against `DELIMITED_TEXT`; its `sw_file_route` activity uses connection type and load strategy to choose the path.
+The FILE Router checks the file format before choosing an adapter. Its `if_supported_file_format` activity evaluates
+the requested format against `DELIMITED_TEXT` ; its `sw_file_route` activity uses connection type and load strategy
+to choose the path.
 
-Read the [request contract](../operations/run-request-examples.md) for explicit `config_id` requests and BACKFILL examples. A nonempty `p_run_requests` together with a nonblank `p_source_system` is deliberately rejected as `AMBIGUOUS_RUN_SCOPE`.
+Read the [request contract](../operations/run-request-examples.md) for explicit `config_id` requests and BACKFILL
+examples. A nonempty `p_run_requests` together with a nonblank `p_source_system` is deliberately rejected as
+`AMBIGUOUS_RUN_SCOPE` .
 
 ## 3. Follow the FULL snapshot through Landing
 
@@ -108,15 +127,21 @@ Files/landing/logistics_vendor/inventory_snapshot/
         pipeline_run_id=<object_run_id>/
 ```
 
-This path is execution-scoped so a later run does not overwrite an earlier run's Landing files. The configured `landing_path` itself is relative to the Lakehouse Files root. The adapter and Notebook add the necessary runtime path segments.
+This path is execution-scoped so a later run does not overwrite an earlier run's Landing files. The configured
+`landing_path` itself is relative to the Lakehouse Files root. The adapter and Notebook add the necessary runtime
+path segments.
 
 The copy stage is Binary because source preservation and CSV parsing are separate responsibilities. The Notebook performs parsing only after the raw file has arrived in Landing.
 
-The FULL snapshot does not have a persistent watermark. Repeating a successful FULL run appends a new Bronze batch; it does not replace the previous successful batch. See [FILE ingestion design](../architecture/file-ingestion-design.md) for the file count check and cleanup behavior.
+The FULL snapshot does not have a persistent watermark. Repeating a successful FULL run appends a new Bronze batch;
+it does not replace the previous successful batch. See
+[FILE ingestion design](../architecture/file-ingestion-design.md) for the file count check and cleanup behavior.
 
 ## 4. Compare the INCREMENTAL movement feed
 
-The `inventory_movement` configuration uses the same routing machinery but selects `pl_ingest_sftp_incremental_adapter`. Its `last_modified_time` checkpoint is maintained in `control.pipeline_watermarks`.
+The `inventory_movement` configuration uses the same routing machinery but selects
+`pl_ingest_sftp_incremental_adapter` . Its `last_modified_time` checkpoint is maintained in
+`control.pipeline_watermarks` .
 
 Inspect the checkpoint with this read-only query:
 
@@ -136,7 +161,9 @@ WHERE c.source_system = 'LOGISTICS_VENDOR'
 ORDER BY c.source_object;
 ```
 
-For a normal incremental file run, the committed watermark supplies the lower bound and the run start time supplies the upper bound. The SFTP file selection uses the remote **Last Modified** timestamp. It does not use a timestamp inside the CSV payload.
+For a normal incremental file run, the committed watermark supplies the lower bound and the run start time supplies
+the upper bound. The SFTP file selection uses the remote **Last Modified** timestamp. It does not use a timestamp
+inside the CSV payload.
 
 ### Step A: validate state and establish the processing window
 
@@ -155,9 +182,16 @@ flowchart TD
     F -->|Yes| G["set_landing_relative_path"]
 ```
 
-The supported watermark field is `last_modified_time`. The Lookup matches **both** `ingestion_config_id` and `watermark_field`. For `REGULAR`, `set_processing_lower_bound` reads the committed checkpoint and `set_processing_upper_bound` takes `p_start_time`. For `BACKFILL`, the corresponding values come from the explicitly requested bounds. **Both run types require `HIGH > LOW`** for FILE ingestion; a missing checkpoint, an unsupported field, or an invalid boundary follows a failure-finalization branch.
+The supported watermark field is `last_modified_time` . The Lookup matches **both** `ingestion_config_id` and
+`watermark_field` . For `REGULAR` , `set_processing_lower_bound` reads the committed checkpoint and
+`set_processing_upper_bound` takes `p_start_time` . For `BACKFILL` , the corresponding values come from the
+explicitly requested bounds. **Both run types require `HIGH > LOW` ** for FILE ingestion; a missing checkpoint, an
+unsupported field, or an invalid boundary follows a failure-finalization branch.
 
-The diagram shows the initial `sp_finalize_*` activities for rejected requests and omits their dependent `fail_*` activities for readability. The exact Activity dependencies are in the [SFTP INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json).
+The diagram shows the initial `sp_finalize_*` activities for rejected requests and omits their dependent `fail_*`
+activities for readability. The exact Activity dependencies are in the
+[SFTP INCREMENTAL Adapter JSON](../../fabric/pl_ingest_sftp_incremental_adapter.DataPipeline/pipeline-content.json)
+.
 
 ### Step B: discover files, copy to Landing, then decide whether to write Bronze
 
@@ -176,21 +210,38 @@ flowchart TD
     F -.->|Failed| R["inv_ingest_incremental_finalize_recovery"]
 ```
 
-`copy_sftp_to_landing` uses the configured `source_path` and trimmed `source_options.file_name_pattern` (for example, `inventory_movement_*.csv`) with recursive SFTP traversal. The source settings use `modifiedDatetimeStart` and `modifiedDatetimeEnd` formatted as UTC `yyyy-MM-ddTHH:mm:ss.fffZ`. The documented SFTP selection window is:
+`copy_sftp_to_landing` uses the configured `source_path` and trimmed `source_options.file_name_pattern` (for
+example, `inventory_movement_*.csv` ) with recursive SFTP traversal. The source settings use `modifiedDatetimeStart`
+and `modifiedDatetimeEnd` formatted as UTC `yyyy-MM-ddTHH:mm:ss.fffZ` . The documented SFTP selection window is:
 
 ```text
 LOW <= remote Last Modified < HIGH
 ```
 
-This is **not** the SQL Server timestamp predicate (`LOW < updated_at <= HIGH`). The SFTP connector discovers and filters files; the filename is not the checkpoint. Copy uses `PreserveHierarchy` into the isolated Landing directory. The Notebook parses the landed delimited-text files and appends Bronze Delta rows only when the copy reports new files.
+This is **not** the SQL Server timestamp predicate (`LOW < updated_at <= HIGH`). The SFTP connector discovers and
+filters files; the filename is not the checkpoint. Copy uses `PreserveHierarchy` into the isolated Landing
+directory. The Notebook parses the landed delimited-text files and appends Bronze Delta rows only when the copy
+reports new files.
 
-**File-count consistency is checked before SKIPPED:** `if_landing_file_count_consistent` requires `filesRead = filesWritten`. A consistent `0 / 0` proceeds to `if_no_new_data`, which finalizes `SKIPPED` with zero counts, skips the Bronze Notebook, and sets `advance_watermark = false`. This applies to both REGULAR and BACKFILL.
+**File-count consistency is checked before SKIPPED:** `if_landing_file_count_consistent` requires
+`filesRead = filesWritten` . A consistent `0 / 0` proceeds to `if_no_new_data` , which finalizes `SKIPPED` with zero
+counts, skips the Bronze Notebook, and sets `advance_watermark = false` . This applies to both REGULAR and BACKFILL.
 
-With `filesRead > 0`, a successful Bronze Notebook leads to `sp_finalize_success`. Only `REGULAR` requests can advance the watermark during successful finalization; BACKFILL leaves the operational checkpoint unchanged. A failed Landing Copy or file-count mismatch triggers **Landing cleanup**; a failed Bronze Notebook triggers **Bronze cleanup**; and a failed success-finalization activity invokes the shared recovery pipeline instead of deleting Bronze blindly. The failure branches' additional Finalize and Fail activities are deliberately not expanded in this diagram. See [FILE Ingestion Design](../architecture/file-ingestion-design.md) and [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md).
+With `filesRead > 0` , a successful Bronze Notebook leads to `sp_finalize_success` . Only `REGULAR` requests can
+advance the watermark during successful finalization; BACKFILL leaves the operational checkpoint unchanged. A failed
+Landing Copy or file-count mismatch triggers **Landing cleanup**; a failed Bronze Notebook triggers **Bronze
+cleanup**; and a failed success-finalization activity invokes the shared recovery pipeline instead of deleting
+Bronze blindly. The failure branches' additional Finalize and Fail activities are deliberately not expanded in this
+diagram. See [FILE Ingestion Design](../architecture/file-ingestion-design.md) and
+[Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) .
 
-**What the diagrams establish:** these are conceptual traces of the checked-in Pipeline activities, not evidence of a new DEV execution or a measured file scan. They do not imply support for JSON/Parquet readers or CDC.
+**What the diagrams establish:** these are conceptual traces of the checked-in Pipeline activities, not evidence of
+a new DEV execution or a measured file scan. They do not imply support for JSON/Parquet readers or CDC.
 
-Unlike the SQL Server INCREMENTAL adapter, which can skip a REGULAR `HIGH = LOW` window before the Loader, SFTP determines whether new data exists **after** its Binary Copy completes and the file counts are checked. See [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) for the comparison and timestamp rules. Do not infer file ingestion from the payload's business event date.
+Unlike the SQL Server INCREMENTAL adapter, which can skip a REGULAR `HIGH = LOW` window before the Loader, SFTP
+determines whether new data exists **after** its Binary Copy completes and the file counts are checked. See
+[Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) for the comparison and timestamp
+rules. Do not infer file ingestion from the payload's business event date.
 
 ## 5. Verify the terminal object audits
 
@@ -216,17 +267,26 @@ WHERE source_system = 'LOGISTICS_VENDOR'
 ORDER BY ingestion_log_id DESC;
 ```
 
-Check that each object has its own terminal audit, and use `batch_id` to correlate objects belonging to the same orchestrated batch. Do not assume every run will produce `SUCCESS`. An unchanged incremental feed may produce `SKIPPED`; failures must be investigated rather than treated as successful ingestion.
+Check that each object has its own terminal audit, and use `batch_id` to correlate objects belonging to the same
+orchestrated batch. Do not assume every run will produce `SUCCESS` . An unchanged incremental feed may produce
+`SKIPPED` ; failures must be investigated rather than treated as successful ingestion.
 
-For an actual success, compare the audit's target, counts, and run identifiers with the corresponding Bronze table and technical metadata. The FILE Notebook supplies its processed-row metric after a successful write; that count is not an independent second Bronze recount.
+For an actual success, compare the audit's target, counts, and run identifiers with the corresponding Bronze table
+and technical metadata. The FILE Notebook supplies its processed-row metric after a successful write; that count is
+not an independent second Bronze recount.
 
-The [Power BI monitoring report](../operations/monitoring-report.md) summarizes persisted object audits. It cannot show master runs that fail before an object audit is written, or every in-progress activity. Use Fabric Monitor for those cases.
+The [Power BI monitoring report](../operations/monitoring-report.md) summarizes persisted object audits. It cannot
+show master runs that fail before an object audit is written, or every in-progress activity. Use Fabric Monitor for
+those cases.
 
 ## 6. Explain the failure boundary
 
 A single Delta write has transaction atomicity. The pipeline as a whole does not have one distributed transaction spanning Lakehouse Delta and Fabric SQL Database.
 
-For a failed or uncertain Bronze write, the framework has an execution-scoped cleanup path. That path identifies rows by the combination of `_batch_id` and `_pipeline_run_id` and avoids deleting successful rows from another object sharing the same batch ID. An ambiguous success-finalization failure needs reconciliation before any compensation decision.
+For a failed or uncertain Bronze write, the framework has an execution-scoped cleanup path. That path identifies
+rows by the combination of `_batch_id` and `_pipeline_run_id` and avoids deleting successful rows from another
+object sharing the same batch ID. An ambiguous success-finalization failure needs reconciliation before any
+compensation decision.
 
 Study [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) and [Retry, Rerun, and Backfill](../operations/retry-rerun-backfill.md) for the detailed behavior.
 
