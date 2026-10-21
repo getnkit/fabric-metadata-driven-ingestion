@@ -24,13 +24,13 @@ flowchart TD
   D --> C["pl_ingest_object_controller"]
   C -->|DATABASE| DR["pl_ingest_database_router"]
   C -->|FILE| FR["pl_ingest_file_router"]
-  DR --> SF["pl_ingest_sql_server_full_adapter"]
-  DR --> SI["pl_ingest_sql_server_incremental_adapter"]
+  DR -->|FULL| SF["pl_ingest_sql_server_full_adapter"]
+  DR -->|INCREMENTAL| SI["pl_ingest_sql_server_incremental_adapter"]
   SI --> SL["pl_ingest_sql_server_incremental_loader"]
-  FR --> FF["pl_ingest_sftp_full_adapter"]
-  FR --> FI["pl_ingest_sftp_incremental_adapter"]
-  SL -->|finalize conflict path| REC["pl_ingest_incremental_finalize_recovery"]
-  FI -->|finalize conflict path| REC
+  FR -->|FULL| FF["pl_ingest_sftp_full_adapter"]
+  FR -->|INCREMENTAL| FI["pl_ingest_sftp_incremental_adapter"]
+  SL -.->|Finalizer error| REC["pl_ingest_incremental_finalize_recovery"]
+  FI -.->|Finalizer error| REC
 ```
 
 The supporting Notebooks are:
@@ -45,9 +45,10 @@ The supporting Notebooks are:
 The graph is intentionally not fully flattened. The incremental SQL adapter
 owns watermark/no-new-data decisions; the separate loader keeps the nested
 AUTO/TUNED Copy execution branch compatible with current Fabric Pipeline
-structure. The incremental finalize-recovery pipeline is called by both source paths
-when success finalization needs reconciliation; FULL loads do not normally
-invoke it.
+structure. Dashed edges indicate recovery invoked after a **failed success-finalization
+activity**, not necessarily a confirmed watermark conflict. Only the implemented
+SQL Server and SFTP INCREMENTAL paths invoke this recovery pipeline; FULL loads
+do not use it.
 
 ### Pipeline roles and connector boundary
 
@@ -111,10 +112,11 @@ SQL Control Database are **not** one distributed transaction.
 
 ```mermaid
 flowchart LR
-  SQL["SQL Server table"] --> Q["Query-mode Fabric Copy<br/>FULL or timestamp incremental"]
-  Q --> B[("Bronze Delta append")]
-  S["SFTP CSV files"] --> BC["Binary Copy"] --> L["Lakehouse Files<br/>Landing"]
-  L --> N["Notebook parse"] --> B
+  SQL["SQL Server<br/>Source tables"] --> Q["Query-mode Copy<br/>Parallel Copy · Auto / Tuned"]
+  Q --> B[("Bronze Delta<br/>Append-only batches")]
+  S["SFTP<br/>CSV files"] --> BC["Binary Copy<br/>Preserve raw files"]
+  BC --> L["Landing<br/>Lakehouse Files"]
+  L --> N["Notebook<br/>Parse &amp; Append to Delta"] --> B
 ```
 
 **DATABASE:** current SQL Server 2022 connector uses query-mode Copy for

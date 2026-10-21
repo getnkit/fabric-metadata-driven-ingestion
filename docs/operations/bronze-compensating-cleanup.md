@@ -166,7 +166,7 @@ flowchart TD
     C -->|Lookup failed| LF["fail_finalize_outcome_lookup"]
     C -->|Lookup succeeded| S{"sw_finalize_outcome"}
     S -->|COMMITTED_SUCCESS| OK["fail_finalize_committed"]
-    S -->|OTHER or absent| U["fail_finalize_unconfirmed"]
+    S -->|Default / unconfirmed| U["fail_finalize_unconfirmed"]
     S -->|CONFIRMED_CONFLICT_DATABASE| D["nb_cleanup_bronze_finalize_conflict"]
     S -->|CONFIRMED_CONFLICT_FILE| F["nb_cleanup_bronze_finalize_conflict_file"]
     F -->|Bronze cleanup succeeded| L["nb_cleanup_landing_finalize_conflict"]
