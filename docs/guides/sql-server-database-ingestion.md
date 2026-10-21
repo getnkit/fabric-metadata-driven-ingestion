@@ -8,9 +8,10 @@ results. The source SQL Server is separate from the Fabric SQL Database that sto
 
 Start with [Control Plane](control-plane.md) and [Pipeline Orchestration](pipeline-orchestration.md) if you have not yet traced the configuration and request-dispatch flow.
 
-## 1. Choose two database configurations
+## 1. Compare three database configurations
 
-The DEV ingestion seed includes these representative objects:
+The DEV ingestion seed includes three examples that separate FULL snapshot loading, ordinary timestamp incremental
+loading, and incremental loading with optional Copy partitioning:
 
 | Source object | Load strategy | Watermark field | What it demonstrates |
 | --- | --- | --- | --- |

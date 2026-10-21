@@ -34,9 +34,11 @@ are not one distributed transaction.
 `control.connection_settings`, `control.ingestion_config`, `control.pipeline_watermarks`, and
 `audit.ingestion_log`.
 
-**Source of truth:** [Control schema](../../scripts/control/01_create_control_schema.sql),
-[connection seed](../../scripts/control/03_seed_connection_settings.sql), and
-[ingestion seed](../../scripts/control/04_seed_ingestion_metadata.sql). The demo defines six E-commerce DATABASE
+**Inspect the definitions:** The [Fabric SQL Database Project](../../fabric/sqldb_ingestion_control.SQLDatabase/)
+is the schema source of truth. The [Control schema bootstrap](../../scripts/control/01_create_control_schema.sql)
+creates missing objects for a fresh install; it does not migrate an existing schema. The
+[connection seed](../../scripts/control/03_seed_connection_settings.sql) and
+[ingestion seed](../../scripts/control/04_seed_ingestion_metadata.sql) supply DEV examples: six E-commerce DATABASE
 objects and two Logistics FILE objects.
 
 **Check yourself:** Which configs are FULL versus INCREMENTAL, and why does FULL have no persistent checkpoint?
@@ -67,8 +69,8 @@ connector and parsing decisions. Only `DELIMITED_TEXT` is implemented.
 
 **Read:** [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) and [Retry/Rerun/Backfill](../operations/retry-rerun-backfill.md).
 
-Inspect [the SQL finalizer procedure](../../fabric/sqldb_ingestion_control.SQLDatabase/control/StoredProcedures/usp_finalize_ingestion_run.sql)
-. A normal incremental run derives a LOW/HIGH boundary; an eligible successful REGULAR run may advance the
+Inspect [the SQL finalizer procedure](../../fabric/sqldb_ingestion_control.SQLDatabase/control/StoredProcedures/usp_finalize_ingestion_run.sql).
+A normal incremental run derives a LOW/HIGH boundary; an eligible successful REGULAR run may advance the
 checkpoint with optimistic protection. BACKFILL and no-new-data SKIPPED do not advance it.
 
 **Check yourself:** Predict audit and watermark behavior for DATABASE REGULAR INCREMENTAL with HIGH = LOW, and for an incremental historical BACKFILL.

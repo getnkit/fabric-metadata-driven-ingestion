@@ -5,27 +5,26 @@ Use these inputs only with the supported entry pipeline, `pl_ingest_orchestrator
 `pl_ingest_orchestrator` accepts:
 
 ```text
-p_run_requests : array
-p_source_system : string (optional; default "")
+p_run_requests    : array   (default [])
+p_source_system   : string  (optional; default "")
+p_config_page_size: integer (optional; default 1000)
 ```
 
-The default is an empty array. `p_source_system` defaults to an empty string.
+The first two parameters select the run scope. `p_config_page_size` controls all-active pagination only
+(accepted range: 1–5000); explicit requests bypass the paginator. The examples below leave it at its default.
 
 ## Run all active configurations
 
-Use:
-
-```json
-[]
-```
-
-An empty array means:
+Use these top-level parameter values:
 
 ```text
-run every active ingestion configuration as REGULAR
+p_run_requests = []
+p_source_system = ""
 ```
 
-Each config uses its persistent `load_strategy` from `control.ingestion_config`.
+With an empty request array and no source-system filter, the paginator selects **all active configurations** as
+`REGULAR`. Each configuration retains its persistent `load_strategy` from `control.ingestion_config`.
+An empty array with a nonblank `p_source_system` instead selects that source-system subset, as shown below.
 
 ## Run active configurations for one source system
 
@@ -133,7 +132,7 @@ Rules:
 - BACKFILL never advances an INCREMENTAL config's operational watermark/checkpoint.
 - Every successful REGULAR/BACKFILL execution appends a new Bronze batch.
 - An explicitly requested inactive configuration is recorded as `SKIPPED`; it does not move data or advance processing state.
--  Malformed envelope fields are rejected before Dispatcher fan-out: `config_id` must be a positive integer,
+- Malformed envelope fields are rejected before Dispatcher fan-out: `config_id` must be a positive integer,
   `run_type` must be REGULAR/BACKFILL, and any supplied LOW/HIGH value must be a string or null.
 - Config-specific LOW/HIGH requirements are validated by the Object Controller after the ingestion configuration is resolved.
 - A given `config_id` may appear at most once in one `p_run_requests` array; duplicates are rejected before Dispatcher fan-out.
