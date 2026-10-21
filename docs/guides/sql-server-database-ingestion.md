@@ -38,7 +38,7 @@ WHERE source_system = 'ECOMMERCE'
 ORDER BY source_schema, source_object;
 ```
 
-The seed is documented in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql) .
+The seed is documented in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql).
 Use the returned `ingestion_config_id` for any explicit run request. Do not assume that an existing DEV SQL Database
 uses the original seed IDs.
 
@@ -58,7 +58,7 @@ pl_ingest_orchestrator
 ```
 
 The Object Controller resolves the configuration and its source/target connections. The DATABASE Router combines the
-connection type and the configured load strategy to select `SQL_SERVER|FULL` or `SQL_SERVER|INCREMENTAL` .
+connection type and the configured load strategy to select `SQL_SERVER|FULL` or `SQL_SERVER|INCREMENTAL`.
 
 The incremental adapter owns the checkpoint lookup and processing bounds. When data should be loaded, it invokes the
 incremental Loader. That additional pipeline keeps the Copy execution and finalize/recovery path separate from the
@@ -90,7 +90,7 @@ batch, so downstream consumers need to account for execution lineage when workin
 The `crm.customers` configuration has `load_strategy = INCREMENTAL` and `watermark_field = updated_at`.
 
 The INCREMENTAL Adapter starts by looking up the state for the exact `ingestion_config_id` and watermark field in
-`control.pipeline_watermarks` . The following **activity-level** diagram traces its control decisions, not every
+`control.pipeline_watermarks`. The following **activity-level** diagram traces its control decisions, not every
 error-message or variable-assignment detail in the JSON.
 
 ```mermaid
@@ -128,7 +128,7 @@ FROM [crm].[customers];
 ```
 
 That query illustrates the shape of the generated SQL for this object. The actual adapter builds its identifiers
-from the validated configuration rather than hardcoding `crm.customers` .
+from the validated configuration rather than hardcoding `crm.customers`.
 
 For an eligible nonempty window, the incremental Loader builds a SQL Server query with the following timestamp predicate:
 
@@ -167,7 +167,7 @@ Read [Generic Incremental Watermark](../architecture/generic-incremental-waterma
 
 The `copy_options` field configures connector-native Copy execution. It is separate from the `load_strategy` and `watermark_field`.
 
-Most normal DEV database configurations have `copy_options = NULL` . In the current SQL Server adapter, that means
+Most normal DEV database configurations have `copy_options = NULL`. In the current SQL Server adapter, that means
 unpartitioned Copy with service-managed parallelism. The `sales.order_items` example uses:
 
 ```json
@@ -232,7 +232,7 @@ connector must verify support for its actual pair and mode or implement a docume
 rather than silently skipping consistency checks.
 
 All four SQL Server Copy branches (FULL/INCREMENTAL and AUTO/TUNED) use automatic mapping with
-`TabularTranslator.typeConversion = true` and `typeConversionSettings.allowDataTruncation = false` . The fail-fast
+`TabularTranslator.typeConversion = true` and `typeConversionSettings.allowDataTruncation = false`. The fail-fast
 setting prevents silent truncation at the Copy type-conversion layer. It does **not** guarantee byte-for-byte
 equivalence or eliminate every lossy SQL Server → Fabric intermediate → Delta type mapping; verify real source-type
 compatibility during onboarding. No per-table hardcoded mappings are introduced.
@@ -312,6 +312,6 @@ simplified into a claim that every rerun is automatically exactly once at busine
 ### Check the run before drawing conclusions
 
 In Fabric Monitor, inspect the executed FULL or INCREMENTAL Copy branch and match its object Pipeline Run ID to
-`audit.ingestion_log` . For an incremental run, compare the stored watermark before and after finalization. The Copy
+`audit.ingestion_log`. For an incremental run, compare the stored watermark before and after finalization. The Copy
 activity's success alone does not confirm the terminal audit or checkpoint update. This guide documents
 implementation behavior; the observed result depends on the DEV source state at execution time.

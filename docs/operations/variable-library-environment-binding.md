@@ -123,7 +123,7 @@ a DEV GUID as a workaround.
 
 Implementation references:
 [Variable Library definition](../../fabric/vl_ingestion_connections.VariableLibrary/variables.json) and
-[orchestrator Pipeline](../../fabric/pl_ingest_orchestrator.DataPipeline/pipeline-content.json) .
+[orchestrator Pipeline](../../fabric/pl_ingest_orchestrator.DataPipeline/pipeline-content.json).
 
 Fabric references:
 - https://learn.microsoft.com/en-us/fabric/data-factory/variable-library-integration-with-data-pipelines

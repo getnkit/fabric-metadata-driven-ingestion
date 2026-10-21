@@ -101,7 +101,7 @@ BACKFILL:
   upper <= lower -> invalid boundary -> FAILED
 ```
 
-For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower` . A scan with zero matching
+For FILE Last Modified ingestion, both REGULAR and BACKFILL require `upper > lower`. A scan with zero matching
 files finishes `SKIPPED` with zero rows and **no operational watermark advance**, for both REGULAR and BACKFILL. For
 DATABASE, a REGULAR `HIGH = LOW` scan also finalizes as `SKIPPED` without invoking the Loader or advancing state.
 The triggers differ, but both patterns share the same no-new-data audit convention. A DATABASE `HIGH > LOW` run that

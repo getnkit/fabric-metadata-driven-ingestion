@@ -17,7 +17,7 @@ For the execution path that reads this metadata, continue with [Pipeline Orchest
 | `audit.ingestion_log` | One terminal result per object Pipeline Run ID, with counts, boundaries, status, and errors | Operations and troubleshooting after object execution |
 
 These are SQL Control/Audit tables, not Bronze business tables. The sample SQL schema is defined in
-[01_create_control_schema.sql](../../scripts/control/01_create_control_schema.sql) . The SQL Database Project under
+[01_create_control_schema.sql](../../scripts/control/01_create_control_schema.sql). The SQL Database Project under
 `fabric/sqldb_ingestion_control.SQLDatabase/` is the corresponding tracked schema definition.
 
 ### SQL-enforced guardrails
@@ -72,10 +72,10 @@ ORDER BY source_system, ingestion_config_id;
 ```
 
 The supplied DEV seed creates six `ECOMMERCE` database objects and two `LOGISTICS_VENDOR` file objects. The database
-examples include `crm.customers` , `catalog.product_categories` , and `sales.order_items` . The file examples are
-`inventory_snapshot` and `inventory_movement` .
+examples include `crm.customers`, `catalog.product_categories`, and `sales.order_items`. The file examples are
+`inventory_snapshot` and `inventory_movement`.
 
-Compare `catalog.product_categories` with `crm.customers` . The former is configured as `FULL` and has no watermark
+Compare `catalog.product_categories` with `crm.customers`. The former is configured as `FULL` and has no watermark
 field. The latter is `INCREMENTAL` with an `updated_at` watermark. Both use the same Orchestrator; the
 object-specific behavior comes from the configuration and the selected adapter.
 
@@ -98,10 +98,10 @@ For the standard demo, `SQL_SERVER_ECOMMERCE` is a SQL Server source, `SFTP_LOGI
 `LH_ECOMMERCE_BRONZE` is the Lakehouse target. Their physical connection and Lakehouse identifiers are stored in
 `connection_settings` and resolved by `lkp_ingestion_config` in the Object Controller.
 
-Fabric Pipeline activities use a separate set of runtime bindings, stored in `vl_ingestion_connections` , for
+Fabric Pipeline activities use a separate set of runtime bindings, stored in `vl_ingestion_connections`, for
 Control SQL, Invoke Pipeline, and Notebook execution. Those Library values are **not** the same as the per-source
 `control.connection_settings` rows. For the actual binding contract, see
-[Variable Library configuration](../operations/variable-library-environment-binding.md) .
+[Variable Library configuration](../operations/variable-library-environment-binding.md).
 
 ## 3. What changes between DATABASE and FILE?
 
@@ -118,9 +118,9 @@ Control SQL, Invoke Pipeline, and Notebook execution. Those Library values are *
 | `load_strategy` | `FULL` or `INCREMENTAL` | `FULL` or `INCREMENTAL` |
 | `watermark_field` | `updated_at` when incremental | `last_modified_time` when incremental |
 
-The optional `copy_options` JSON is separate from `source_options` . The SQL Server demo uses it to choose Copy
-partition behavior, such as `DYNAMIC_RANGE` for `sales.order_items` . File parsing details belong in
-`source_options` .
+The optional `copy_options` JSON is separate from `source_options`. The SQL Server demo uses it to choose Copy
+partition behavior, such as `DYNAMIC_RANGE` for `sales.order_items`. File parsing details belong in
+`source_options`.
 
 To inspect the options of actual FILE configurations without changing them:
 
@@ -177,7 +177,7 @@ commits. BACKFILL never advances it. A no-new-data SKIPPED run does not advance 
 
 The state comparison and transaction rules are explained in
 [Generic Incremental Watermark](../architecture/generic-incremental-watermark.md) and implemented in
-[02_create_control_procedures.sql](../../scripts/control/02_create_control_procedures.sql) .
+[02_create_control_procedures.sql](../../scripts/control/02_create_control_procedures.sql).
 
 ## 5. Where does the run history live?
 
@@ -207,7 +207,7 @@ ORDER BY ingestion_log_id DESC;
 
 Two object runs may share a `batch_id` when one master execution dispatches multiple objects. They still have distinct object `pipeline_run_id` values.
 
-The audit status records an object outcome such as `SUCCESS` , `FAILED` , or `SKIPPED` . This table does not
+The audit status records an object outcome such as `SUCCESS`, `FAILED`, or `SKIPPED`. This table does not
 independently record every master-level failure before any object was dispatched, and it does not show in-progress
 work. The [Monitoring Report](../operations/monitoring-report.md) explains the resulting visibility limits.
 

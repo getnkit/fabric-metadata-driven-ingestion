@@ -204,15 +204,15 @@ The current framework has one supported orchestration entry point and bounded pa
 basic run-level control, but workloads with more sources, overlapping deployments, or stricter operational
 requirements may need additional coordination:
 
--  **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different
+- **Scheduling and dependencies.** Separate schedules can invoke `pl_ingest_orchestrator` with different
   `p_source_system` values. The framework does not coordinate dependencies between source-system runs. A
   dependency-aware scheduler would need to define what counts as completion, including `SKIPPED` and failed object
   outcomes.
--  **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations
+- **Per-source concurrency.** The dispatcher uses a fixed `batchCount` to bound parallel ForEach iterations
   **within one run**. This is not a database-connection limit: one object execution can use multiple connections,
   and overlapping runs do not share this limit. Sources with different capacities may need separate concurrency
   policies or a shared per-source execution budget.
--  **Overlapping executions and locking.** The checked-in master pipeline sets `concurrency = 1` , limiting
+- **Overlapping executions and locking.** The checked-in master pipeline sets `concurrency = 1`, limiting
   simultaneous runs of that master within its workspace. This is not a lock on each ingestion configuration: another
   deployment, a changed concurrency setting, or work outside the master could still target the same state and Bronze
   data. Guarded SQL watermark finalization detects certain conflicts after work has begun; it does not prevent

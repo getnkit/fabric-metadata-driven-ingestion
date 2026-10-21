@@ -30,13 +30,13 @@ are not one distributed transaction.
 
 ## 2 — Inspect the metadata
 
-**Read:** [Control Plane](control-plane.md) . Inspect the read-only example queries for
-`control.connection_settings` , `control.ingestion_config` , `control.pipeline_watermarks` , and
-`audit.ingestion_log` .
+**Read:** [Control Plane](control-plane.md). Inspect the read-only example queries for
+`control.connection_settings`, `control.ingestion_config`, `control.pipeline_watermarks`, and
+`audit.ingestion_log`.
 
-**Source of truth:** [Control schema](../../scripts/control/01_create_control_schema.sql) ,
-[connection seed](../../scripts/control/03_seed_connection_settings.sql) , and
-[ingestion seed](../../scripts/control/04_seed_ingestion_metadata.sql) . The demo defines six E-commerce DATABASE
+**Source of truth:** [Control schema](../../scripts/control/01_create_control_schema.sql),
+[connection seed](../../scripts/control/03_seed_connection_settings.sql), and
+[ingestion seed](../../scripts/control/04_seed_ingestion_metadata.sql). The demo defines six E-commerce DATABASE
 objects and two Logistics FILE objects.
 
 **Check yourself:** Which configs are FULL versus INCREMENTAL, and why does FULL have no persistent checkpoint?
@@ -45,9 +45,9 @@ objects and two Logistics FILE objects.
 
 **Read:** [Pipeline Orchestration](pipeline-orchestration.md) and [Run Request Examples](../operations/run-request-examples.md).
 
-Inspect `fabric/pl_ingest_orchestrator.DataPipeline/` , `pl_ingest_config_paginator.DataPipeline/` ,
-`pl_ingest_config_dispatcher.DataPipeline/` , `pl_ingest_object_controller.DataPipeline/` , and the DATABASE/FILE
-router definitions under `fabric/` . Only the top-level Orchestrator is a supported external entry point.
+Inspect `fabric/pl_ingest_orchestrator.DataPipeline/`, `pl_ingest_config_paginator.DataPipeline/`,
+`pl_ingest_config_dispatcher.DataPipeline/`, `pl_ingest_object_controller.DataPipeline/`, and the DATABASE/FILE
+router definitions under `fabric/`. Only the top-level Orchestrator is a supported external entry point.
 
 **Check yourself:** Why do explicit requests and source-scoped all-active requests reach the same Dispatcher?
 
@@ -77,8 +77,8 @@ checkpoint with optimistic protection. BACKFILL and no-new-data SKIPPED do not a
 
 **Read:** [Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) and the [retry matrix](../operations/retry-rerun-backfill.md#retry-policy-by-side-effect).
 
-Inspect `nb_cleanup_bronze_batch_rows.Notebook` , `nb_cleanup_landing_batch_files.Notebook` , and
-`pl_ingest_incremental_finalize_recovery.DataPipeline` in `fabric/` . A failed Copy/Notebook or Finalizer activity
+Inspect `nb_cleanup_bronze_batch_rows.Notebook`, `nb_cleanup_landing_batch_files.Notebook`, and
+`pl_ingest_incremental_finalize_recovery.DataPipeline` in `fabric/`. A failed Copy/Notebook or Finalizer activity
 does not prove whether a durable write committed.
 
 **Check yourself:** Why does cleanup match both `_batch_id` and `_pipeline_run_id`, and why is blind cleanup unsafe after a failed success Finalizer?

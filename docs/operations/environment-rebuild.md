@@ -70,17 +70,17 @@ Do not reuse IDs from the previous DEV workspace even if the names match.
 **If rebuilding the demo sources:** provision an adequately sized Ubuntu EC2 host with Docker/Compose and tightly
 scoped security-group access (SSH 22, SQL Server 1433, SFTP 2222 as applicable; no blanket `0.0.0.0/0` ). Follow the
 [source infrastructure runbook](../../infra/source/README.md) for fresh-host setup, the named
-`fabric_sqlserver_data` volume, SFTP host key, private `.env` , Compose commands and fixture uploads. Use new
+`fabric_sqlserver_data` volume, SFTP host key, private `.env`, Compose commands and fixture uploads. Use new
 secrets; do not commit them.
 
 Then follow [RUN_ORDER section C](../../scripts/RUN_ORDER.md#c-optional-dev-demo-source) to create
-`sql_ecommerce_db` , execute the three source SQL scripts with the correct SQL client/`GO` behavior, and check
+`sql_ecommerce_db`, execute the three source SQL scripts with the correct SQL client/`GO` behavior, and check
 expected row counts. Upload the CSV fixtures while preserving `movements/YYYY/MM/` subfolders; FILE incremental
 selection uses the **remote SFTP Last Modified** timestamp, not a filename or CSV event timestamp.
 
 **If retaining an existing EC2 host:** follow the infrastructure README's **Existing DEV instance** procedure. Do
-not replace its `.env` , regenerate the SFTP host key, overwrite existing SQL volumes, or run
-`docker compose down -v` .
+not replace its `.env`, regenerate the SFTP host key, overwrite existing SQL volumes, or run
+`docker compose down -v`.
 
 Before creating Fabric connections, verify source SQL read-only access, row counts, remote SFTP file listing and the SFTP host-key fingerprint.
 
@@ -197,10 +197,10 @@ Use the canonical [architecture graph](../architecture/framework-overview.md#orc
 maintaining another copy of the hierarchy here. The restored workspace should contain **12 pipelines and 3
 notebooks**. Inspect **every** Invoke Pipeline and Notebook target in Fabric: names must resolve in the new
 workspace. Specifically confirm that the SQL Server INCREMENTAL adapter invokes its Loader and that incremental
-success-finalization failure (not FULL) can invoke `pl_ingest_incremental_finalize_recovery` .
+success-finalization failure (not FULL) can invoke `pl_ingest_incremental_finalize_recovery`.
 
-Verify all three Notebook targets: `nb_load_file_landing_to_bronze` , `nb_cleanup_bronze_batch_rows` , and
-`nb_cleanup_landing_batch_files` . Also check Copy Connections, SQL metadata's Lakehouse workspace/item references,
+Verify all three Notebook targets: `nb_load_file_landing_to_bronze`, `nb_cleanup_bronze_batch_rows`, and
+`nb_cleanup_landing_batch_files`. Also check Copy Connections, SQL metadata's Lakehouse workspace/item references,
 and Notebook/Lakehouse attachments. **Rebinding Variable Library values alone is not enough** to fix these targets
 or Power BI's SQL source.
 
@@ -224,7 +224,7 @@ Expect six active E-commerce and two active Logistics configs; FULL has no incre
 IDs, connections and initial state before starting any pipelines. **Never commit private GUID/password
 substitutions.** Re-running demo seeds into a populated environment does **not** restore historic watermarks/audits;
 review its possible configuration updates first. Optional benchmark installation is documented in
-[RUN_ORDER section F](../../scripts/RUN_ORDER.md#f-optional-performance-benchmark-separate) .
+[RUN_ORDER section F](../../scripts/RUN_ORDER.md#f-optional-performance-benchmark-separate).
 
 ## G. Rebind operational Power BI
 

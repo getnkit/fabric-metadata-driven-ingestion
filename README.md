@@ -43,14 +43,14 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 ## Design highlights
 
--  **Metadata-driven, reusable orchestration.** One Control Plane configures source objects, connection references,
+- **Metadata-driven, reusable orchestration.** One Control Plane configures source objects, connection references,
   FULL/INCREMENTAL strategy, and Bronze targets without a pipeline per table.
 - **Safe checkpoint semantics.** Only an eligible successful REGULAR incremental run advances its watermark. BACKFILL and no-new-data SKIPPED leave the checkpoint unchanged.
 - **Explicit failure boundaries.** Failed Bronze writes use execution-scoped compensation; an uncertain SQL finalizer result is reconciled before any cleanup.
 - **Honest operations visibility.** Fabric Monitor shows pipeline execution; SQL audits and Power BI report **recorded terminal ingestion outcomes**, not live master status.
 
 The implemented examples are **SQL Server and SFTP batch ingestion only**. Other database vendors, file readers
-beyond `DELIMITED_TEXT` , CDC, and streaming are not implemented in this repository.
+beyond `DELIMITED_TEXT`, CDC, and streaming are not implemented in this repository.
 
 ## How the framework works
 
@@ -82,7 +82,7 @@ credentials.
 ## Run the example
 
 To reproduce the examples, follow the [workspace setup guide](docs/operations/environment-rebuild.md) and
-[SQL and sample-data setup sequence](scripts/RUN_ORDER.md) . These instructions are intended for a new, empty DEV
+[SQL and sample-data setup sequence](scripts/RUN_ORDER.md). These instructions are intended for a new, empty DEV
 workspace and should not be used to overwrite an existing environment.
 
 Once the sources and Fabric items are configured, run `pl_ingest_orchestrator`. For example, to select the active SFTP source objects:
@@ -98,7 +98,7 @@ recorded results. The [SFTP walkthrough](docs/guides/sftp-file-ingestion.md) sho
 and watermark state.
 
 To set up the optional SQL Server and SFTP demo environment, see the
-[EC2/Docker Compose setup](infra/source/README.md) . This environment is not required to explore the repository;
+[EC2/Docker Compose setup](infra/source/README.md). This environment is not required to explore the repository;
 review its configuration and security notes before deploying it.
 
 ## License

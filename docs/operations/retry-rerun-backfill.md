@@ -2,7 +2,7 @@
 
 This reference separates an execution's `run_type` from its persistent `load_strategy` and documents safe retries
 based on side effects. For a failed or uncertain Bronze/SQL finalization, use
-[Bronze Compensating Cleanup](bronze-compensating-cleanup.md) .
+[Bronze Compensating Cleanup](bronze-compensating-cleanup.md).
 
 ## Decision
 
@@ -61,7 +61,7 @@ A FULL BACKFILL may physically read the same source rows as a REGULAR FULL run. 
 and lineage: the BACKFILL run is performed to repopulate/recover data and is audited as BACKFILL.
 
 The current V1 FULL BACKFILL does not select a historical point-in-time snapshot. If a future source requires a
-historical full snapshot, add an explicit source-appropriate selector such as `data_date` , snapshot ID, source
+historical full snapshot, add an explicit source-appropriate selector such as `data_date`, snapshot ID, source
 version, or timestamp rather than overloading LOW/HIGH.
 
 ## Bronze invariant
@@ -126,7 +126,7 @@ rather than deleting Bronze or repeating the state write blindly.
 
 ## Platform execution recovery
 
-The supported operational entry point remains `pl_ingest_orchestrator` . Direct manual execution/retry of
+The supported operational entry point remains `pl_ingest_orchestrator`. Direct manual execution/retry of
 dispatcher, controller, router, adapter, or loader pipelines is not part of the supported contract.
 
 For deterministic recovery from a failed REGULAR run, prefer a new top-level REGULAR execution unless the operator intentionally needs BACKFILL semantics.

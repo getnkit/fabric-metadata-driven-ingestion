@@ -50,7 +50,7 @@ Only active configurations from `ECOMMERCE` are selected. You can use `LOGISTICS
 Pass this array as `p_run_requests` and leave `p_source_system` empty. The ID is an example from the standard fresh
 DEV seed; query `control.ingestion_config` for the actual ID before running.
 
-For an INCREMENTAL historical BACKFILL, an explicit request also needs `lower_bound` and `upper_bound` . See
+For an INCREMENTAL historical BACKFILL, an explicit request also needs `lower_bound` and `upper_bound`. See
 [Run Request Examples](../operations/run-request-examples.md) for the exact request shapes and boundaries.
 
 A nonempty request array combined with a nonblank `p_source_system` fails with `AMBIGUOUS_RUN_SCOPE`. The framework does not silently pick one of those two scopes.
@@ -99,7 +99,7 @@ The implemented `pl_ingest_config_paginator` pipeline:
 4. Uses `fe_config_pages` to iterate through pages **sequentially**.
 5. Uses `lkp_config_page` to select one page ordered by `ingestion_config_id`, then `inv_ingest_config_dispatcher` to process that page.
 
-The page Lookup returns pairs of `config_id` and `run_type = REGULAR` . It does not copy every source field into the
+The page Lookup returns pairs of `config_id` and `run_type = REGULAR`. It does not copy every source field into the
 request array. The Object Controller performs a separate configuration lookup for each object.
 
 The current design uses sequential pages and bounded object parallelism inside each page. It does not promise that all active objects start at the same moment.
@@ -113,7 +113,7 @@ The current design uses sequential pages and bounded object parallelism inside e
 - The execution intent `p_run_type`.
 - Optional requested LOW/HIGH bounds (normalized to empty strings when omitted).
 
-Do not confuse object parallelism with the master setting. The master Orchestrator currently has `concurrency = 1` ,
+Do not confuse object parallelism with the master setting. The master Orchestrator currently has `concurrency = 1`,
 so two master executions are serialized. Within one master run, the Dispatcher can start up to eight object requests
 in parallel.
 
@@ -134,7 +134,7 @@ The controller then checks:
 
 The `sw_execution_decision` activity handles `INACTIVE`, `INVALID_REQUEST`, `INVALID_TARGET`, `DATABASE`, and `FILE` outcomes, with a default unsupported-route path.
 
-An explicitly requested inactive configuration is finalized as `SKIPPED` . An invalid request or invalid target
+An explicitly requested inactive configuration is finalized as `SKIPPED`. An invalid request or invalid target
 follows a failure path. The controller only invokes a physical router after the metadata and execution request have
 passed the relevant checks.
 
@@ -149,12 +149,12 @@ The DATABASE and FILE Routers keep connector-specific behavior out of the Object
 
 The route key joins the uppercased connection type and load strategy with the pipe character (`|`), using `concat` in the Router activities.
 
-The FILE Router first checks `if_supported_file_format` . At present, the accepted format is `DELIMITED_TEXT` . The
+The FILE Router first checks `if_supported_file_format`. At present, the accepted format is `DELIMITED_TEXT`. The
 SQL Server INCREMENTAL adapter adds a separate Loader pipeline for Copy execution and finalization. Each physical
 adapter is responsible for source-specific extraction, processing boundaries, and failure handling.
 
-See [SQL Server Database Ingestion](sql-server-database-ingestion.md) ,
-[Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary) , and
+See [SQL Server Database Ingestion](sql-server-database-ingestion.md),
+[Connector Responsibilities](../architecture/framework-overview.md#pipeline-roles-and-connector-boundary), and
 [SFTP File Ingestion](sftp-file-ingestion.md) for the next level of detail.
 
 ## 7. Trace a real run without guessing its result
@@ -190,7 +190,7 @@ ORDER BY ingestion_log_id DESC;
 ```
 
 The expected result depends on the remote files and current checkpoint. A FULL snapshot may append a new batch while
-the unchanged INCREMENTAL movement feed finishes `SKIPPED` . You cannot infer the audit status from the parameter
+the unchanged INCREMENTAL movement feed finishes `SKIPPED`. You cannot infer the audit status from the parameter
 values alone.
 
 Use the shared Batch ID to connect the object outcomes, and the object Pipeline Run ID to inspect a specific

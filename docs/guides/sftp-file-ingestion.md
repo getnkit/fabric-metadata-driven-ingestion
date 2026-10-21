@@ -5,7 +5,7 @@ Bronze Delta, and terminal SQL audit. The FULL snapshot and INCREMENTAL movement
 framework.
 
 To understand source configuration and the master pipeline, start with [Control Plane](control-plane.md) and
-[Pipeline Orchestration](pipeline-orchestration.md) . You can read the artifacts below without running Fabric. The
+[Pipeline Orchestration](pipeline-orchestration.md). You can read the artifacts below without running Fabric. The
 optional verification queries require an already configured DEV environment. If you are setting up a new workspace,
 complete the [environment rebuild guide](../operations/environment-rebuild.md) first.
 
@@ -34,7 +34,7 @@ Both are delimited text, but their processing boundaries differ. Each configurat
 not an individual physical file: the `inventory_movement` feed uses its `source_path` and
 `source_options.file_name_pattern` to select potentially multiple movement files in a run.
 
-Read the seed statements in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql) .
+Read the seed statements in [04_seed_ingestion_metadata.sql](../../scripts/control/04_seed_ingestion_metadata.sql).
 Inspect the [snapshot fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv) and the
 [SFTP sample directory](../../scripts/source/sftp/outbound/inventory/) to see the actual source layouts.
 
@@ -65,8 +65,8 @@ Look for three important differences:
 2. `inventory_movement` uses `INCREMENTAL` with `last_modified_time`.
 3. Both objects share the FILE routing path and use a Files-relative `landing_path` that begins with `landing/`, not `Files/landing/`.
 
-The parser options are stored in `source_options` , including `file_name_pattern` , `delimiter` , `has_header` ,
-`encoding` , `quote` , and `escape` . The FILE Router currently supports `DELIMITED_TEXT` only. A schema column may
+The parser options are stored in `source_options`, including `file_name_pattern`, `delimiter`, `has_header`,
+`encoding`, `quote`, and `escape`. The FILE Router currently supports `DELIMITED_TEXT` only. A schema column may
 permit other format names without implying that their readers are implemented.
 
 **Why this matters:** adding another supported file object is principally a metadata and source-onboarding task. It should not require copying the entire orchestration tree.
@@ -84,7 +84,7 @@ An empty request array asks the framework to select active configurations. The n
 narrows that selection. With both parameters empty, the same orchestrator selects all active configurations.
 
 The top-level activities first establish the batch ID, check the required runtime bindings, and reject ambiguous
-scope. The source-system path then invokes `pl_ingest_config_paginator` . The paginator selects active
+scope. The source-system path then invokes `pl_ingest_config_paginator`. The paginator selects active
 configurations before the Dispatcher invokes object controllers.
 
 The relevant routing sequence is:
@@ -100,12 +100,12 @@ pl_ingest_orchestrator
 ```
 
 The FILE Router checks the file format before choosing an adapter. Its `if_supported_file_format` activity evaluates
-the requested format against `DELIMITED_TEXT` ; its `sw_file_route` activity uses connection type and load strategy
+the requested format against `DELIMITED_TEXT`; its `sw_file_route` activity uses connection type and load strategy
 to choose the path.
 
 Read the [request contract](../operations/run-request-examples.md) for explicit `config_id` requests and BACKFILL
 examples. A nonempty `p_run_requests` together with a nonblank `p_source_system` is deliberately rejected as
-`AMBIGUOUS_RUN_SCOPE` .
+`AMBIGUOUS_RUN_SCOPE`.
 
 ## 3. Follow the FULL snapshot through Landing
 
@@ -140,8 +140,8 @@ it does not replace the previous successful batch. See
 ## 4. Compare the INCREMENTAL movement feed
 
 The `inventory_movement` configuration uses the same routing machinery but selects
-`pl_ingest_sftp_incremental_adapter` . Its `last_modified_time` checkpoint is maintained in
-`control.pipeline_watermarks` .
+`pl_ingest_sftp_incremental_adapter`. Its `last_modified_time` checkpoint is maintained in
+`control.pipeline_watermarks`.
 
 Inspect the checkpoint with this read-only query:
 
@@ -182,9 +182,9 @@ flowchart TD
     F -->|Yes| G["set_landing_relative_path"]
 ```
 
-The supported watermark field is `last_modified_time` . The Lookup matches **both** `ingestion_config_id` and
-`watermark_field` . For `REGULAR` , `set_processing_lower_bound` reads the committed checkpoint and
-`set_processing_upper_bound` takes `p_start_time` . For `BACKFILL` , the corresponding values come from the
+The supported watermark field is `last_modified_time`. The Lookup matches **both** `ingestion_config_id` and
+`watermark_field`. For `REGULAR`, `set_processing_lower_bound` reads the committed checkpoint and
+`set_processing_upper_bound` takes `p_start_time`. For `BACKFILL`, the corresponding values come from the
 explicitly requested bounds. **Both run types require `HIGH > LOW` ** for FILE ingestion; a missing checkpoint, an
 unsupported field, or an invalid boundary follows a failure-finalization branch.
 
@@ -212,7 +212,7 @@ flowchart TD
 
 `copy_sftp_to_landing` uses the configured `source_path` and trimmed `source_options.file_name_pattern` (for
 example, `inventory_movement_*.csv` ) with recursive SFTP traversal. The source settings use `modifiedDatetimeStart`
-and `modifiedDatetimeEnd` formatted as UTC `yyyy-MM-ddTHH:mm:ss.fffZ` . The documented SFTP selection window is:
+and `modifiedDatetimeEnd` formatted as UTC `yyyy-MM-ddTHH:mm:ss.fffZ`. The documented SFTP selection window is:
 
 ```text
 LOW <= remote Last Modified < HIGH
@@ -224,16 +224,16 @@ directory. The Notebook parses the landed delimited-text files and appends Bronz
 reports new files.
 
 **File-count consistency is checked before SKIPPED:** `if_landing_file_count_consistent` requires
-`filesRead = filesWritten` . A consistent `0 / 0` proceeds to `if_no_new_data` , which finalizes `SKIPPED` with zero
-counts, skips the Bronze Notebook, and sets `advance_watermark = false` . This applies to both REGULAR and BACKFILL.
+`filesRead = filesWritten`. A consistent `0 / 0` proceeds to `if_no_new_data`, which finalizes `SKIPPED` with zero
+counts, skips the Bronze Notebook, and sets `advance_watermark = false`. This applies to both REGULAR and BACKFILL.
 
-With `filesRead > 0` , a successful Bronze Notebook leads to `sp_finalize_success` . Only `REGULAR` requests can
+With `filesRead > 0`, a successful Bronze Notebook leads to `sp_finalize_success`. Only `REGULAR` requests can
 advance the watermark during successful finalization; BACKFILL leaves the operational checkpoint unchanged. A failed
 Landing Copy or file-count mismatch triggers **Landing cleanup**; a failed Bronze Notebook triggers **Bronze
 cleanup**; and a failed success-finalization activity invokes the shared recovery pipeline instead of deleting
 Bronze blindly. The failure branches' additional Finalize and Fail activities are deliberately not expanded in this
 diagram. See [FILE Ingestion Design](../architecture/file-ingestion-design.md) and
-[Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md) .
+[Bronze Compensating Cleanup](../operations/bronze-compensating-cleanup.md).
 
 **What the diagrams establish:** these are conceptual traces of the checked-in Pipeline activities, not evidence of
 a new DEV execution or a measured file scan. They do not imply support for JSON/Parquet readers or CDC.
@@ -268,8 +268,8 @@ ORDER BY ingestion_log_id DESC;
 ```
 
 Check that each object has its own terminal audit, and use `batch_id` to correlate objects belonging to the same
-orchestrated batch. Do not assume every run will produce `SUCCESS` . An unchanged incremental feed may produce
-`SKIPPED` ; failures must be investigated rather than treated as successful ingestion.
+orchestrated batch. Do not assume every run will produce `SUCCESS`. An unchanged incremental feed may produce
+`SKIPPED`; failures must be investigated rather than treated as successful ingestion.
 
 For an actual success, compare the audit's target, counts, and run identifiers with the corresponding Bronze table
 and technical metadata. The FILE Notebook supplies its processed-row metric after a successful write; that count is

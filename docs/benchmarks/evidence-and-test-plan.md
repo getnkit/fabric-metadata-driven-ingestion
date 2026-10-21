@@ -67,7 +67,7 @@ The architecture diagram in [README](../../README.md) explains the design; it is
 above distinguishes completed DEV observations from incomplete or planned comparisons.
 
 For each new Copy performance result, record the Pipeline/Activity Run ID, input and output counts, elapsed time,
-throughput, `usedParallelCopies` , partition mode, and source/capacity conditions. Compare like-for-like runs and
+throughput, `usedParallelCopies`, partition mode, and source/capacity conditions. Compare like-for-like runs and
 repeat measurements before interpreting a difference as a performance improvement.
 
 A screenshot is useful only when it can be tied to the same observed run and its source/target checks. Before

@@ -98,7 +98,7 @@ If cleanup fails, the run is finalized as FAILED with `BRONZE_CLEANUP_FAILED`, a
 ### Bronze write failure: compensate the affected execution
 
 The following flow summarizes the **post-write failure branch**. Both SQL Server Copy and the SFTP Bronze Loader
-Notebook can reach an activity named `nb_cleanup_bronze_write_failed` ; these are activities in their respective
+Notebook can reach an activity named `nb_cleanup_bronze_write_failed`; these are activities in their respective
 pipelines, not one shared Pipeline invocation.
 
 ```mermaid
@@ -112,7 +112,7 @@ flowchart TD
 
 This path is **not** triggered by pre-write metadata or boundary validation failures. Its Cleanup Notebook targets
 the specific Bronze table and the `(_batch_id, _pipeline_run_id)` pair. A successful cleanup leads to a terminal
-**FAILED** audit for the original write failure; cleanup failure is separately surfaced as `BRONZE_CLEANUP_FAILED` .
+**FAILED** audit for the original write failure; cleanup failure is separately surfaced as `BRONZE_CLEANUP_FAILED`.
 
 FILE ingestion also has **Landing Copy** and file-count consistency failure branches, with their own Landing cleanup
 activities (for example, `nb_cleanup_landing_copy_failed` ). Do not treat those as the Bronze write-failure branch
@@ -124,12 +124,12 @@ for the full, source-specific dependencies.
 ## Audit error-message length contract
 
 The Fabric SQL Database stores `audit.ingestion_log.error_message` and the finalize procedure parameter as
-`NVARCHAR(4000)` . All 15 Finalizers that consume activity error messages use `take()` instead of `substring()` ;
+`NVARCHAR(4000)`. All 15 Finalizers that consume activity error messages use `take()` instead of `substring()`;
 `take()` safely handles shorter messages.
 
 - **One failing activity:** `@take(string(activity('some_activity').error.message),4000)`.
--  **Original failure plus cleanup failure:** use `take(...,1500)` on **each** error, then `concat()` the two
-  labeled segments. The resulting message stays below 4,000 characters without an outer `take()` , and neither
+- **Original failure plus cleanup failure:** use `take(...,1500)` on **each** error, then `concat()` the two
+  labeled segments. The resulting message stays below 4,000 characters without an outer `take()`, and neither
   failure can displace the other.
 - **Landing file-count mismatch plus cleanup failure:** include `filesRead` / `filesWritten` and `take(cleanup_error,3000)`; no outer `take()` is required.
 
@@ -155,9 +155,9 @@ The child pipeline reads a **committed terminal Audit record** matched by
 
 ### Activity-level flow: reconcile the committed outcome
 
-The recovery child reads `audit.ingestion_log` using the exact `ingestion_config_id` , `batch_id` , and object
-`pipeline_run_id` . Its SQL Lookup maps committed `SUCCESS` to `COMMITTED_SUCCESS` , committed
-`FAILED / WATERMARK_CONFLICT` to `CONFIRMED_CONFLICT` , and missing or other outcomes to `OTHER` .
+The recovery child reads `audit.ingestion_log` using the exact `ingestion_config_id`, `batch_id`, and object
+`pipeline_run_id`. Its SQL Lookup maps committed `SUCCESS` to `COMMITTED_SUCCESS`, committed
+`FAILED / WATERMARK_CONFLICT` to `CONFIRMED_CONFLICT`, and missing or other outcomes to `OTHER`.
 
 ```mermaid
 flowchart TD
@@ -174,14 +174,14 @@ flowchart TD
 
 The diagram deliberately stops at the conflict cleanup activities: their **Succeeded/Failed terminal `Fail`
 activities** are listed in the
-[recovery pipeline JSON](../../fabric/pl_ingest_incremental_finalize_recovery.DataPipeline/pipeline-content.json) .
-In the DATABASE conflict branch, successful Bronze cleanup is followed by `fail_confirmed_watermark_conflict` ;
-failed cleanup by `fail_bronze_finalize_cleanup` . In the FILE conflict branch, successful Bronze **and** Landing
-cleanup is followed by `fail_confirmed_watermark_conflict_file` ; failures use `fail_bronze_finalize_cleanup_file`
-or `fail_landing_finalize_cleanup` .
+[recovery pipeline JSON](../../fabric/pl_ingest_incremental_finalize_recovery.DataPipeline/pipeline-content.json).
+In the DATABASE conflict branch, successful Bronze cleanup is followed by `fail_confirmed_watermark_conflict`;
+failed cleanup by `fail_bronze_finalize_cleanup`. In the FILE conflict branch, successful Bronze **and** Landing
+cleanup is followed by `fail_confirmed_watermark_conflict_file`; failures use `fail_bronze_finalize_cleanup_file`
+or `fail_landing_finalize_cleanup`.
 
 **Decision rule:** only the confirmed conflict branches run automatic finalization-failure compensation.
-`COMMITTED_SUCCESS` , `OTHER` , and Audit Lookup failure all preserve data for reconciliation, even though the
+`COMMITTED_SUCCESS`, `OTHER`, and Audit Lookup failure all preserve data for reconciliation, even though the
 Pipeline reports a failure.
 
 | Confirmed audit outcome | Recovery action | Final pipeline status |

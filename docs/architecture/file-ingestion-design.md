@@ -1,8 +1,8 @@
 # File Ingestion Design
 
 This is the design reference for the implemented SFTP-to-Landing-to-Bronze path. For an executable walkthrough,
-start with the [SFTP ingestion guide](../guides/sftp-file-ingestion.md) ; for exact metadata values, use the
-[DEV SQL seed](../../scripts/control/04_seed_ingestion_metadata.sql) .
+start with the [SFTP ingestion guide](../guides/sftp-file-ingestion.md); for exact metadata values, use the
+[DEV SQL seed](../../scripts/control/04_seed_ingestion_metadata.sql).
 
 ## Implemented scope
 
@@ -23,10 +23,10 @@ logical feed name** (for example, `inventory_movement` ), not a physical filenam
 multiple files. Checkpoints and terminal run audits belong to the configuration/run, not to separate per-file
 receipt records.
 
-Routing and execution fields remain in the shared `control.ingestion_config` ; the FILE-specific design hinges on
-`source_path` , `file_format` , `source_options` , and `landing_path` . The full column contract and actual sample
+Routing and execution fields remain in the shared `control.ingestion_config`; the FILE-specific design hinges on
+`source_path`, `file_format`, `source_options`, and `landing_path`. The full column contract and actual sample
 rows belong to the [Control Plane guide](../guides/control-plane.md) and
-[SQL metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql) .
+[SQL metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql).
 
 Path semantics:
 
@@ -45,19 +45,19 @@ identified by `source_schema` + `source_object` and the pipeline writes directly
 to Bronze.
 
 For FILE ingestion, both fields are first-class metadata. The FILE `landing_path` contract is strict: use
-`landing/...` (relative to the Lakehouse **Files** root), never `Files/landing/...` . The adapter concatenates this
+`landing/...` (relative to the Lakehouse **Files** root), never `Files/landing/...`. The adapter concatenates this
 base path with `ingestion_date` and per-object execution segments without `replace()` or automatic path-prefix
-correction. Fabric Copy receives the Files-relative `folderPath` ; Bronze and Landing-cleanup notebooks prepend the
+correction. Fabric Copy receives the Files-relative `folderPath`; Bronze and Landing-cleanup notebooks prepend the
 physical `/Files/` segment once. Historical audit paths and already-landed files are not relocated by this metadata
 change.
 
 `file_format` is first-class FILE routing metadata because it changes how a raw Landing file is parsed into Bronze. The canonical values are `DELIMITED_TEXT`, `PARQUET`, and `JSON`.
 
 `source_options` keeps parser/source-specific options that configure the selected parser but do not choose it. The
-current delimited-text feeds require `file_name_pattern` , `delimiter` , `has_header` , `encoding` , `quote` , and
-`escape` .
+current delimited-text feeds require `file_name_pattern`, `delimiter`, `has_header`, `encoding`, `quote`, and
+`escape`.
 
-Current DATABASE configs use `file_format = NULL` and `source_options = NULL` . `copy_options` is a separate
+Current DATABASE configs use `file_format = NULL` and `source_options = NULL`. `copy_options` is a separate
 optional execution-tuning envelope; current FILE configs leave it NULL, while the SQL Server adapter can use it for
 connector-native partitioned Copy behavior.
 
@@ -77,7 +77,7 @@ Source connection + source_path
 
 The source-to-Landing step is intentionally Binary so the delivered file is preserved byte-for-byte. Parsing starts only after the raw artifact reaches Landing.
 
-The FILE Router now owns a single `if_supported_file_format` gate before `sw_file_route` , with the Personal
+The FILE Router now owns a single `if_supported_file_format` gate before `sw_file_route`, with the Personal
 `p_file_format` contract (`@equals(toUpper(pipeline().parameters.p_file_format), 'DELIMITED_TEXT')`). Unsupported
 formats are audited and failed once with `UNSUPPORTED_FILE_FORMAT` before invoking SFTP FULL or INCREMENTAL; the
 corresponding format gates and failure finalizers were removed from both SFTP adapters. The gate runs before
@@ -208,13 +208,13 @@ cross-source relationship without duplicating the SQL Server source tables.
 ## SFTP FULL sample and configuration
 
 The active `LOGISTICS_VENDOR` FULL example reads `inventory_snapshot.csv` from `/outbound/inventory/` into
-`fulfillment.inventory_snapshots` . It matches the exact source filename rather than sweeping historical movement
+`fulfillment.inventory_snapshots`. It matches the exact source filename rather than sweeping historical movement
 files and has **no watermark**. The raw columns and CSV contents are in the
-[tracked fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv) .
+[tracked fixture](../../scripts/source/sftp/outbound/inventory/inventory_snapshot.csv).
 
 For the complete `source_options` JSON, logical connections, paths, and target settings, inspect the
-[DEV metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql) . To follow the execution through Landing,
-Bronze and audit, use the [SFTP walkthrough](../guides/sftp-file-ingestion.md) . Keeping the sample values in their
+[DEV metadata seed](../../scripts/control/04_seed_ingestion_metadata.sql). To follow the execution through Landing,
+Bronze and audit, use the [SFTP walkthrough](../guides/sftp-file-ingestion.md). Keeping the sample values in their
 source files avoids a second configuration specification here.
 
 ## SFTP account boundary (current DEV)
@@ -432,5 +432,5 @@ different subsets of formats, revisit the Router guard as an explicit route/adap
 assuming one global list fits every adapter.
 
 For reproducible/new movement-file fixtures and upload testing, see the
-[SFTP fixture instructions](../../scripts/source/sftp/README.md) . The generator does not upload files or modify
+[SFTP fixture instructions](../../scripts/source/sftp/README.md). The generator does not upload files or modify
 Fabric state.
