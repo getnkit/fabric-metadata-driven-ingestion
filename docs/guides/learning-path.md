@@ -56,8 +56,8 @@ router definitions under `fabric/`. Only the top-level Orchestrator is a support
 ## 4 — Follow one physical ingestion path
 
 **DATABASE:** [SQL Server Guide](sql-server-database-ingestion.md) explains Query-mode Copy for FULL and timestamp
-INCREMENTAL; [Copy Performance](../architecture/database-copy-performance.md) explains supported `NONE`
-/`DYNAMIC_RANGE` partition settings and benchmark limits.
+INCREMENTAL; [Copy Performance](../architecture/database-copy-performance.md) explains supported `NONE` and
+`DYNAMIC_RANGE` partition settings and benchmark limits.
 
 **FILE:** [SFTP Guide](sftp-file-ingestion.md) traces Binary Copy into execution-scoped Landing and the
 `nb_load_file_landing_to_bronze` Notebook; [FILE Design](../architecture/file-ingestion-design.md) records the

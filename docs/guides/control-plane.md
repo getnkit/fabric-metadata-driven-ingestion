@@ -58,6 +58,7 @@ SELECT
     source_system,
     source_schema,
     source_object,
+    source_path,
     ingestion_pattern,
     load_strategy,
     watermark_field,
@@ -111,7 +112,8 @@ Control SQL, Invoke Pipeline, and Notebook execution. Those Library values are *
 | --- | --- | --- |
 | `ingestion_pattern` | `DATABASE` | `FILE` |
 | `source_schema` | SQL schema such as `crm` | NULL |
-| `source_path` | NULL | Remote SFTP folder |
+| `source_object` | Physical table name, such as `customers` | Logical feed name, such as `inventory_movement` |
+| `source_path` | NULL (source table is resolved through schema/object and connection) | Remote SFTP folder |
 | `file_format` | NULL | `DELIMITED_TEXT` |
 | `source_options` | NULL in current DATABASE seed | JSON parsing and file-selection options |
 | `landing_path` | NULL | Lakehouse Files-relative `landing/...` path |

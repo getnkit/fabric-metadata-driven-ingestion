@@ -48,6 +48,7 @@ SELECT
     ingestion_pattern,
     file_format,
     source_path,
+    source_options,
     landing_path,
     target_schema,
     target_table,
