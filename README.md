@@ -7,7 +7,7 @@
 <p align="center">
   <img alt="Control and Audit Plane: Fabric SQL Database" src="https://img.shields.io/badge/Control%20%26%20Audit-Fabric%20SQL%20Database-4C6487?style=flat-square&amp;labelColor=354D6D" />
   <img alt="Orchestration Plane: Fabric Data Pipelines" src="https://img.shields.io/badge/Orchestration-Fabric%20Data%20Pipelines-5B4B91?style=flat-square&amp;labelColor=40336D" />
-  <img alt="Data Plane: Lakehouse Bronze Delta" src="https://img.shields.io/badge/Data-Lakehouse%20Bronze%20Delta-397E78?style=flat-square&amp;labelColor=265C57" />
+  <img alt="Data Plane: Fabric Lakehouse" src="https://img.shields.io/badge/Data-Fabric%20Lakehouse-397E78?style=flat-square&amp;labelColor=265C57" />
 </p>
 
 <p align="center">
