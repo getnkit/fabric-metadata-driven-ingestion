@@ -43,23 +43,22 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 ## Design highlights
 
-- **Metadata-driven, reusable orchestration.** One Control Plane configures source objects, connection references,
-  FULL/INCREMENTAL strategy, and Bronze targets without a pipeline per table.
-- **Safe checkpoint semantics.** Only an eligible successful REGULAR incremental run advances its watermark. BACKFILL and no-new-data SKIPPED leave the checkpoint unchanged.
-- **Explicit failure boundaries.** Delta commits are atomic, but Bronze writes and Control SQL finalization do not share one transaction. Failed Bronze-write activities use execution-scoped cleanup; incremental success-finalization failures are reconciled before any compensation.
-- **Audit-backed monitoring.** Fabric Monitor tracks pipeline execution; SQL audit records terminal object outcomes, which Power BI summarizes. Neither SQL audit nor the report provides live master-run status.
+- **Reusable, metadata-driven orchestration.** Configure source objects, connections, load strategies, and Bronze targets without building a separate pipeline for each dataset.
+- **Safe incremental checkpoints.** Only eligible successful REGULAR incremental runs advance watermarks; BACKFILL and no-new-data SKIPPED leave them unchanged.
+- **Scoped failure recovery.** Failed Bronze writes trigger cleanup limited to the affected object execution. For incremental runs, uncertain completion results are checked before removing data.
+- **Operational monitoring.** Fabric Monitor tracks pipeline runs; SQL audit tables store object-level results, and a Power BI dashboard makes statuses, counts, and errors easier to review.
 
-The implemented examples cover **SQL Server and SFTP batch ingestion only**. Additional relational database
-connectors, other file formats, and batch API ingestion are outside the current implementation.
+**Implementation scope:** Batch ingestion from SQL Server tables and CSV files delivered over SFTP. Other relational
+database connectors, Parquet/JSON file readers, and API-based batch ingestion are not implemented.
 
 ## How the framework works
 
 | Stage | What happens |
 | --- | --- |
-| **Configure** | Define source objects, logical connections, loading strategy, and Bronze targets in shared metadata; maintain incremental state separately from run history. |
-| **Select and route** | Select active configurations or explicit requests, page larger active selections, then dispatch, validate, and route each object to the appropriate source adapter. |
-| **Load Bronze** | SQL Server copies data directly into Bronze Delta tables; SFTP preserves raw files in Lakehouse Files Landing before a Notebook parses and appends the data to Bronze Delta. |
-| **Finalize and inspect** | Record each object's terminal result and advance eligible incremental watermarks. Use Fabric Monitor for pipeline execution and Power BI for persisted object-run history. |
+| **Configure** | Define source details, connection references, load strategies, and Bronze targets through shared metadata. |
+| **Select and route** | Gather active configurations (optionally filtered by source system) or use an explicit request list. Validate and route each object to the right ingestion path. |
+| **Load Bronze** | Copy SQL Server table data directly into Bronze Delta tables. For SFTP, land the raw files first, then parse and append their records to Bronze Delta tables. |
+| **Finalize and inspect** | Save each object's final status and counts in SQL audit tables, and update eligible incremental checkpoints. Review pipeline execution in Fabric Monitor and audit summaries in Power BI. |
 
 ## Start here
 
