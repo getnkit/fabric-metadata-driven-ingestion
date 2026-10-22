@@ -45,7 +45,7 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 - **Reusable, metadata-driven orchestration.** Configure source objects, connections, load strategies, and Bronze targets without building a separate pipeline for each dataset.
 - **Safe incremental checkpoints.** Only eligible successful REGULAR incremental runs advance watermarks; BACKFILL and no-new-data SKIPPED leave them unchanged.
-- **Scoped failure recovery.** Failed Bronze writes trigger cleanup limited to the affected execution. If an incremental run's final result cannot be confirmed, the framework checks the stored audit before removing data.
+- **Scoped failure recovery.** Failed Bronze writes trigger execution-scoped cleanup. If the final audit step reports an error after an incremental load, the framework checks the saved outcome before removing data.
 - **Operational monitoring.** Fabric Monitor shows pipeline execution; SQL audit tables store object-run outcomes, and a Power BI report presents them in a clear operational view.
 
 ## How the framework works
@@ -66,9 +66,8 @@ You do **not** need a Fabric workspace to review the architecture and code. Choo
 | **Get the design in one pass** | [Architecture & Design Decisions](docs/architecture/framework-overview.md) — orchestration, state, and trade-offs |
 | **Understand how it works in code** | [Technical Learning Path](docs/guides/learning-path.md) — guided SQL Server/SFTP walkthroughs, then deeper references |
 | **Rebuild a working DEV demo** | [Environment Rebuild](docs/operations/environment-rebuild.md) — new-workspace checklist, with the [SQL run order](scripts/RUN_ORDER.md) |
-| **Check what was actually tested** | [DEV Evidence & Benchmark Plan](docs/benchmarks/evidence-and-test-plan.md) — observations versus outstanding validation |
 
-The learning path also indexes the focused guides for Control Plane, pipeline routing, incremental processing, Copy tuning, failure recovery, and monitoring.
+The **Technical Learning Path** also links to focused guides on control metadata, routing, incremental processing, Copy tuning, failure recovery, and monitoring.
 
 **Repository layout:** `fabric/` tracks Fabric Pipeline, Notebook, SQL Database, Lakehouse, Variable Library, and
 Power BI definitions; `scripts/` contains SQL setup and demo fixtures; `infra/` is the optional EC2/Docker Compose

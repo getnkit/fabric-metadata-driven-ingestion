@@ -117,8 +117,9 @@ Do not confuse object parallelism with the master setting. The master Orchestrat
 so two master executions are serialized. Within one master run, the Dispatcher can start up to eight object requests
 in parallel.
 
-This is an implemented DEV setting, not a general performance recommendation. The
-[Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) documents the limited comparison used to choose it.
+This is a DEV setting, not a general tuning recommendation. In a small all-active DEV comparison (2026-10-11),
+`batchCount = 3` took **9m29s** versus **4m44s** with `batchCount = 8`. Both runs recorded eight object audits
+(2 SUCCESS, 6 SKIPPED) and 32 source/target rows. This observation does **not** establish general scaling or cost savings.
 
 ## 5. The Object Controller looks up and validates configuration
 

@@ -1,9 +1,8 @@
 # Database Copy Performance Strategy
 
-This document records the SQL Server Copy settings and measured DEV observations behind the current framework. The
-[SQL Server ingestion guide](../guides/sql-server-database-ingestion.md) follows the corresponding execution path;
-the [evidence plan](../benchmarks/evidence-and-test-plan.md) distinguishes measured results from planned
-comparisons.
+This document records the SQL Server Copy settings and measured DEV observations behind the current framework.
+The [SQL Server ingestion guide](../guides/sql-server-database-ingestion.md) follows the corresponding execution path.
+Observed DEV results are distinguished from planned comparisons below.
 
 ## Implemented scope
 
@@ -70,9 +69,8 @@ Optional explicit override (illustrative, not a benchmark-derived recommendation
 }
 ```
 
-The value `8` above illustrates the configuration syntax; the recorded DEV measurements do not establish it as an
-optimal setting for this workload. See [Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the
-observed results and outstanding comparisons.
+The value `8` illustrates the configuration syntax, not a benchmark-derived recommendation. The DEV observations
+and remaining performance comparisons are described below.
 
 Current SQL Server 2022 Developer on EC2 support (FULL and INCREMENTAL):
 

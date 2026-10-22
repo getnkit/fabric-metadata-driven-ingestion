@@ -220,9 +220,8 @@ An earlier isolated DEV experiment showed that explicitly setting `parallelCopie
 omitting the property. This is why the AUTO branch omits it. Do not treat that observation as a general performance
 benchmark.
 
-See [Database Copy Performance](../architecture/database-copy-performance.md) and
-[Benchmark Evidence](../benchmarks/evidence-and-test-plan.md) for the actual option contract and recorded test
-limitations.
+See [Database Copy Performance](../architecture/database-copy-performance.md) for the Copy option contract,
+recorded DEV observations, and their limitations.
 
 ### Transfer consistency and type-conversion safety
 
