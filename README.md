@@ -30,14 +30,14 @@ files from SFTP. Both paths support FULL and INCREMENTAL loads into **Bronze Del
 
 ## Architecture
 
-![Metadata-driven ingestion architecture in Microsoft Fabric. SQL Database stores source configuration, watermarks,
-and ingestion audit records; the orchestration layer routes requests through Database or File adapters, loading
-Bronze Delta tables.](docs/assets/architecture-overview.svg)
+![Metadata-driven ingestion architecture in Microsoft Fabric. Fabric SQL Database holds source configuration, logical
+connection references, incremental state, and object-run audits; orchestration routes requests to SQL Server and SFTP
+adapters that write to Lakehouse Bronze Delta.](docs/assets/architecture-overview.svg)
 
-Fabric SQL Database stores source configurations, incremental checkpoints (**watermarks**), and run audits. Each
-**source object** represents one logical ingestion unit—for example, a SQL Server table or an SFTP file feed that
-may match multiple physical files. Fabric Data Pipelines use the configurations to select ingestion paths and
-coordinate loading into Bronze Delta tables.
+Fabric SQL Database holds source configurations, logical source/target connection references, incremental state
+(**committed watermarks**), and terminal object-run audits. Each **source object** is a configured ingestion unit:
+a SQL Server table or a logical SFTP file feed that may match multiple physical files. Fabric Data Pipelines use
+this metadata to select ingestion paths and coordinate loading into Bronze Delta tables.
 
 See [Architecture & Design Decisions](docs/architecture/framework-overview.md) for the pipeline structure and design trade-offs.
 
@@ -46,20 +46,20 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 - **Metadata-driven, reusable orchestration.** One Control Plane configures source objects, connection references,
   FULL/INCREMENTAL strategy, and Bronze targets without a pipeline per table.
 - **Safe checkpoint semantics.** Only an eligible successful REGULAR incremental run advances its watermark. BACKFILL and no-new-data SKIPPED leave the checkpoint unchanged.
-- **Explicit failure boundaries.** Failed Bronze writes use execution-scoped compensation; an uncertain SQL finalizer result is reconciled before any cleanup.
-- **Honest operations visibility.** Fabric Monitor shows pipeline execution; SQL audits and Power BI report **recorded terminal ingestion outcomes**, not live master status.
+- **Explicit failure boundaries.** Delta commits are atomic, but Bronze writes and Control SQL finalization do not share one transaction. Failed Bronze-write activities use execution-scoped cleanup; incremental success-finalization failures are reconciled before any compensation.
+- **Audit-backed monitoring.** Fabric Monitor tracks pipeline execution; SQL audit records terminal object outcomes, which Power BI summarizes. Neither SQL audit nor the report provides live master-run status.
 
-The implemented examples are **SQL Server and SFTP batch ingestion only**. Other database vendors, file readers
-beyond `DELIMITED_TEXT`, CDC, and streaming are not implemented in this repository.
+The implemented examples cover **SQL Server and SFTP batch ingestion only**. Additional relational database
+connectors, other file formats, and batch API ingestion are outside the current implementation.
 
 ## How the framework works
 
 | Stage | What happens |
 | --- | --- |
-| **Configure** | Fabric SQL Database holds `control.ingestion_config`, logical connections, incremental watermarks, and terminal object audits. |
-| **Select and route** | `pl_ingest_orchestrator` accepts explicit requests or chooses active configurations (optionally source-scoped); a paginator, dispatcher, controller, and routers select the appropriate adapter. |
-| **Load Bronze** | SQL Server uses query-mode Copy directly to Delta; SFTP uses Binary Copy into execution-scoped Lakehouse Files Landing, then a Notebook parses and appends Delta rows. |
-| **Finalize and inspect** | The framework audits each object run and conditionally advances its watermark. Fabric Monitor shows execution; the SQL-backed Power BI report summarizes completed object audits. |
+| **Configure** | Define source objects, logical connections, loading strategy, and Bronze targets in shared metadata; maintain incremental state separately from run history. |
+| **Select and route** | Select active configurations or explicit requests, page larger active selections, then dispatch, validate, and route each object to the appropriate source adapter. |
+| **Load Bronze** | SQL Server copies data directly into Bronze Delta tables; SFTP preserves raw files in Lakehouse Files Landing before a Notebook parses and appends the data to Bronze Delta. |
+| **Finalize and inspect** | Record each object's terminal result and advance eligible incremental watermarks. Use Fabric Monitor for pipeline execution and Power BI for persisted object-run history. |
 
 ## Start here
 
