@@ -25,14 +25,14 @@ separate pipelines for individual source objects, the framework uses configurati
 how to process it, and where to write the results. Reusable orchestration routes each object through the appropriate
 ingestion path, with consistent watermark management and run auditing.
 
-The repository demonstrates the framework with end-to-end **batch ingestion examples** for SQL Server tables and CSV
-files from SFTP. Both paths support FULL and INCREMENTAL loads into **Bronze Delta tables in a Fabric Lakehouse**.
+The repository demonstrates end-to-end **batch ingestion** from SQL Server tables and CSV files delivered over SFTP.
+Both paths support FULL and INCREMENTAL loads into **Bronze Delta tables in a Fabric Lakehouse**.
 
 ## Architecture
 
 ![Metadata-driven ingestion architecture in Microsoft Fabric. Fabric SQL Database holds source configuration, logical
 connection references, incremental state, and object-run audits; orchestration routes requests to SQL Server and SFTP
-adapters that write to Lakehouse Bronze Delta.](docs/assets/architecture-overview.svg)
+adapters that write to Bronze Delta tables in a Fabric Lakehouse.](docs/assets/architecture-overview.svg)
 
 Fabric SQL Database holds source configurations, logical source/target connection references, incremental state
 (**committed watermarks**), and terminal object-run audits. Each **source object** is a configured ingestion unit:
@@ -45,11 +45,8 @@ See [Architecture & Design Decisions](docs/architecture/framework-overview.md) f
 
 - **Reusable, metadata-driven orchestration.** Configure source objects, connections, load strategies, and Bronze targets without building a separate pipeline for each dataset.
 - **Safe incremental checkpoints.** Only eligible successful REGULAR incremental runs advance watermarks; BACKFILL and no-new-data SKIPPED leave them unchanged.
-- **Scoped failure recovery.** Failed Bronze writes trigger cleanup limited to the affected object execution. For incremental runs, uncertain completion results are checked before removing data.
-- **Operational monitoring.** Fabric Monitor tracks pipeline runs; SQL audit tables store object-level results, and a Power BI dashboard makes statuses, counts, and errors easier to review.
-
-**Implementation scope:** Batch ingestion from SQL Server tables and CSV files delivered over SFTP. Other relational
-database connectors, Parquet/JSON file readers, and API-based batch ingestion are not implemented.
+- **Scoped failure recovery.** Failed Bronze writes trigger cleanup limited to the affected execution. If an incremental run's final result cannot be confirmed, the framework checks the stored audit before removing data.
+- **Operational monitoring.** Fabric Monitor shows pipeline execution; SQL audit tables store object-run outcomes, and a Power BI report presents them in a clear operational view.
 
 ## How the framework works
 
