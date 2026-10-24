@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1326" viewBox="0 0 1840 1326" role="img" aria-labelledby="svg-title svg-desc">
+<title id="svg-title">Control &amp; Audit Data Model — Microsoft Fabric SQL Database</title>
+<desc id="svg-desc">Editable Fabric SQL Database control and audit ER diagram. Relationships: connection settings to ingestion config (two enforced one-to-many FKs); ingestion config to pipeline watermarks (enforced one-to-zero-or-one); ingestion config to ingestion log (optional logical zero-to-many, not FK-enforced). Crow foot symbols convey cardinality without numeric labels.</desc>
+<defs><filter id="soft-shadow" x="-15%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="7" stdDeviation="15" flood-color="#243653" flood-opacity="0.085"/></filter></defs>
+<style>
+  text { font-family: Inter, 'Segoe UI', Arial, sans-serif; }
+  .mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; }
+  .field { letter-spacing: -0.1px; }
+</style>
+<rect width="1840" height="1326" fill="#F7F9FC"/>
+<path d="M0 0 H1840" stroke="#DDE5EF"/>
+
+<text x="94" y="115" font-size="45" font-weight="720" fill="#122641">Control &amp; Audit Data Model</text>
+<text x="94" y="158" font-size="19" font-weight="400" fill="#5F718A">Microsoft Fabric SQL Database</text>
+<path d="M539 359 H616 V422.5 H660" fill="none" stroke="#357C91" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M539 377 H582 V465.5 H660" fill="none" stroke="#357C91" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M1220 336.5 H1290 V281 H1336" fill="none" stroke="#357C91" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M1220 350.5 H1255 V733.5 H1336" fill="none" stroke="#8A769A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="9 8"/><g id="table-control-connection_settings" filter="url(#soft-shadow)">
+<rect x="94" y="262" width="445" height="268" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1"/>
+<rect x="94" y="262" width="5" height="84" rx="2" fill="#247E94" stroke="none" stroke-width="1"/>
+<text x="120" y="295" font-size="20" font-weight="700" fill="#172B48">control.connection_settings</text>
+<text x="121" y="320" font-size="12" font-weight="500" fill="#74859A" letter-spacing="0.55">CONNECTION REGISTRY</text>
+<path d="M94 346 L539 346" fill="none" stroke="#E4EAF2" stroke-width="1"/>
+<text x="119" y="373.0" font-size="15.6" font-weight="600" fill="#263C57" class="field">connection_ref</text>
+<rect x="478" y="354.0" width="42" height="26" rx="6" fill="#E9F1FA" stroke="none" stroke-width="1"/>
+<text x="499.0" y="372.0" font-size="11.5" font-weight="650" fill="#33648E" text-anchor="middle" letter-spacing="0.6">PK</text>
+<text x="462" y="372.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(100)</text>
+<rect x="95" y="390" width="443" height="44" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M111 390 L522 390" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="119" y="417.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">connection_type</text>
+<text x="518" y="416.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">VARCHAR(50)</text>
+<path d="M111 434 L522 434" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="119" y="461.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">connection_settings</text>
+<text x="518" y="460.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(MAX)</text>
+<path d="M111 478 L522 478" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+<text x="118" y="510" font-size="12.2" font-weight="500" fill="#657E92">Reusable references for source and target connections</text>
+</g>
+<g id="table-control-ingestion_config" filter="url(#soft-shadow)">
+<rect x="660" y="231" width="560" height="738" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1"/>
+<rect x="660" y="231" width="5" height="84" rx="2" fill="#2B5E8C" stroke="none" stroke-width="1"/>
+<text x="686" y="264" font-size="20" font-weight="700" fill="#172B48">control.ingestion_config</text>
+<text x="687" y="289" font-size="12" font-weight="500" fill="#74859A" letter-spacing="0.55">INGESTION DEFINITION</text>
+<path d="M660 315 L1220 315" fill="none" stroke="#E4EAF2" stroke-width="1"/>
+<text x="685" y="341.5" font-size="15.6" font-weight="600" fill="#263C57" class="field">ingestion_config_id</text>
+<rect x="1159" y="322.5" width="42" height="26" rx="6" fill="#E9F1FA" stroke="none" stroke-width="1"/>
+<text x="1180.0" y="340.5" font-size="11.5" font-weight="650" fill="#33648E" text-anchor="middle" letter-spacing="0.6">PK</text>
+<text x="1143" y="341.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">INT</text>
+<rect x="661" y="358" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 358 L1203 358" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="384.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">source_system</text>
+<text x="1199" y="384.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(100)</text>
+<path d="M677 401 L1203 401" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="427.5" font-size="15.6" font-weight="600" fill="#263C57" class="field">source_conn_ref</text>
+<rect x="1159" y="408.5" width="42" height="26" rx="6" fill="#E6F4F0" stroke="none" stroke-width="1"/>
+<text x="1180.0" y="426.5" font-size="11.5" font-weight="650" fill="#236F65" text-anchor="middle" letter-spacing="0.6">FK</text>
+<text x="1143" y="427.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(100)</text>
+<rect x="661" y="444" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 444 L1203 444" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="470.5" font-size="15.6" font-weight="600" fill="#263C57" class="field">target_conn_ref</text>
+<rect x="1159" y="451.5" width="42" height="26" rx="6" fill="#E6F4F0" stroke="none" stroke-width="1"/>
+<text x="1180.0" y="469.5" font-size="11.5" font-weight="650" fill="#236F65" text-anchor="middle" letter-spacing="0.6">FK</text>
+<text x="1143" y="470.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(100)</text>
+<path d="M677 487 L1203 487" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="513.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">source_schema</text>
+<text x="1199" y="513.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<rect x="661" y="530" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 530 L1203 530" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="556.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">source_object</text>
+<text x="1199" y="556.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<path d="M677 573 L1203 573" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="599.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">ingestion_pattern</text>
+<text x="1199" y="599.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">VARCHAR(20)</text>
+<rect x="661" y="616" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 616 L1203 616" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="642.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">load_strategy</text>
+<text x="1199" y="642.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">VARCHAR(20)</text>
+<path d="M677 659 L1203 659" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="685.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">watermark_field</text>
+<text x="1199" y="685.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<rect x="661" y="702" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 702 L1203 702" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="728.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">target_schema</text>
+<text x="1199" y="728.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<path d="M677 745 L1203 745" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="771.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">target_table</text>
+<text x="1199" y="771.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<rect x="661" y="788" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 788 L1203 788" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="814.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">is_active</text>
+<text x="1199" y="814.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">BIT</text>
+<path d="M677 831 L1203 831" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="857.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">source_options</text>
+<text x="1199" y="857.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(MAX)</text>
+<rect x="661" y="874" width="558" height="43" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M677 874 L1203 874" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="685" y="900.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">copy_options</text>
+<text x="1199" y="900.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(MAX)</text>
+<path d="M678 917 L1202 917" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+<text x="684" y="948" font-size="12.2" font-weight="500" fill="#657E92">Defines source, target, and load behavior</text>
+</g>
+<g id="table-control-pipeline_watermarks" filter="url(#soft-shadow)" transform="translate(0,-85)">
+<rect x="1336" y="263" width="420" height="375" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1"/>
+<rect x="1336" y="263" width="5" height="83" rx="2" fill="#247E94" stroke="none" stroke-width="1"/>
+<text x="1362" y="296" font-size="20" font-weight="700" fill="#172B48">control.pipeline_watermarks</text>
+<text x="1363" y="321" font-size="12" font-weight="500" fill="#74859A" letter-spacing="0.55">OPERATIONAL CHECKPOINT</text>
+<path d="M1336 346 L1756 346" fill="none" stroke="#E4EAF2" stroke-width="1"/>
+<text x="1361" y="371.0" font-size="15.6" font-weight="600" fill="#263C57" class="field">ingestion_config_id</text>
+<text x="1627" y="370.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">INT</text>
+<rect x="1337" y="386" width="418" height="40" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 386 L1739 386" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="411.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">watermark_field</text>
+<text x="1735" y="410.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(128)</text>
+<path d="M1353 426 L1739 426" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="451.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">last_watermark_value</text>
+<text x="1735" y="450.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(1000)</text>
+<rect x="1337" y="466" width="418" height="40" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 466 L1739 466" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="491.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">last_successful_batch_id</text>
+<path d="M1353 506 L1739 506" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="531.0" font-size="14.1" font-weight="450" fill="#263C57" class="field">last_successful_pipeline_run_id</text>
+<rect x="1337" y="546" width="418" height="40" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 546 L1739 546" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="571.0" font-size="15.6" font-weight="450" fill="#263C57" class="field">watermark_updated_at</text>
+<text x="1735" y="570.5" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">DATETIME2(3)</text>
+<path d="M1354 586 L1738 586" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+<text x="1360" y="617" font-size="12.2" font-weight="500" fill="#657E92">Tracks the latest incremental processing position</text>
+<rect x="1643" y="352.0" width="42" height="26" rx="6" fill="#E9F1FA"/><text x="1664" y="370.0" font-size="11.5" font-weight="650" fill="#33648E" text-anchor="middle" letter-spacing="0.6">PK</text><rect x="1693" y="352.0" width="42" height="26" rx="6" fill="#E6F4F0"/><text x="1714" y="370.0" font-size="11.5" font-weight="650" fill="#236F65" text-anchor="middle" letter-spacing="0.6">FK</text></g>
+<g id="table-audit-ingestion_log" filter="url(#soft-shadow)" transform="translate(0,-50)">
+<rect x="1336" y="649" width="420" height="449" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1"/>
+<rect x="1336" y="649" width="5" height="82" rx="2" fill="#80679A" stroke="none" stroke-width="1"/>
+<text x="1362" y="682" font-size="20" font-weight="700" fill="#172B48">audit.ingestion_log</text>
+<text x="1363" y="707" font-size="12" font-weight="500" fill="#74859A" letter-spacing="0.55">OBJECT RUN HISTORY</text>
+<path d="M1336 731 L1756 731" fill="none" stroke="#E4EAF2" stroke-width="1"/>
+<text x="1361" y="753.5" font-size="15.6" font-weight="600" fill="#263C57" class="field">ingestion_log_id</text>
+<rect x="1695" y="734.5" width="42" height="26" rx="6" fill="#E9F1FA" stroke="none" stroke-width="1"/>
+<text x="1716.0" y="752.5" font-size="11.5" font-weight="650" fill="#33648E" text-anchor="middle" letter-spacing="0.6">PK</text>
+<text x="1679" y="753.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">BIGINT</text>
+<rect x="1337" y="766" width="418" height="35" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 766 L1739 766" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="788.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">ingestion_config_id</text>
+<text x="1735" y="788.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">INT</text>
+<path d="M1353 801 L1739 801" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="823.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">batch_id</text>
+<text x="1735" y="823.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">UNIQUEIDENTIFIER</text>
+<rect x="1337" y="836" width="418" height="35" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 836 L1739 836" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="858.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">pipeline_run_id</text>
+<text x="1735" y="858.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">NVARCHAR(100)</text>
+<path d="M1353 871 L1739 871" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="893.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">run_type</text>
+<text x="1735" y="893.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">VARCHAR(20)</text>
+<rect x="1337" y="906" width="418" height="35" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 906 L1739 906" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="928.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">status</text>
+<text x="1735" y="928.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">VARCHAR(20)</text>
+<path d="M1353 941 L1739 941" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="963.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">source_row_count</text>
+<text x="1735" y="963.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">BIGINT</text>
+<rect x="1337" y="976" width="418" height="35" rx="0" fill="#FBFCFE" stroke="none" stroke-width="1"/>
+<path d="M1353 976 L1739 976" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="998.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">target_row_count</text>
+<text x="1735" y="998.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">BIGINT</text>
+<path d="M1353 1011 L1739 1011" fill="none" stroke="#EDF1F6" stroke-width="0.8"/>
+<text x="1361" y="1033.5" font-size="15.6" font-weight="450" fill="#263C57" class="field">end_time</text>
+<text x="1735" y="1033.0" font-size="12" font-weight="400" fill="#8A9AB0" class="mono" text-anchor="end">DATETIME2(3)</text>
+<path d="M1354 1046 L1738 1046" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+<text x="1360" y="1077" font-size="12.2" font-weight="500" fill="#657E92">Stores terminal status and execution metrics</text>
+</g>
+<rect x="94" y="710" width="445" height="340" rx="13" fill="#EFF4F9" stroke="#DDE7F1" stroke-width="1"/>
+<text x="120" y="750" font-size="13" font-weight="700" fill="#4D647D" letter-spacing="1.1">DESIGN NOTES</text>
+<path d="M120 767 L513 767" fill="none" stroke="#CFDBE7" stroke-width="1"/>
+<rect x="121" y="796" width="30" height="30" rx="7" fill="#E4EEF7" stroke="none" stroke-width="1"/>
+<text x="136" y="817" font-size="12" font-weight="700" fill="#315C7F" text-anchor="middle">01</text>
+<text x="163" y="799" font-size="16" font-weight="700" fill="#233A55">Two connection roles</text>
+<text x="163" y="823" font-size="13" font-weight="400" fill="#6D7F94">Source and target both resolve through</text>
+<text x="163" y="843" font-size="13" font-weight="400" fill="#6D7F94">control.connection_settings.</text>
+<rect x="121" y="876" width="30" height="30" rx="7" fill="#E4EEF7" stroke="none" stroke-width="1"/>
+<text x="136" y="897" font-size="12" font-weight="700" fill="#315C7F" text-anchor="middle">02</text>
+<text x="163" y="881" font-size="16" font-weight="700" fill="#233A55">One checkpoint per config</text>
+<text x="163" y="905" font-size="13" font-weight="400" fill="#6D7F94">Each config can have at most one record</text>
+<text x="163" y="925" font-size="13" font-weight="400" fill="#6D7F94">in control.pipeline_watermarks.</text>
+<rect x="121" y="960" width="30" height="30" rx="7" fill="#EEE9F4" stroke="none" stroke-width="1"/>
+<text x="136" y="981" font-size="12" font-weight="700" fill="#755D8F" text-anchor="middle">03</text>
+<text x="163" y="965" font-size="16" font-weight="700" fill="#233A55">Audit preserves run context</text>
+<text x="163" y="989" font-size="13" font-weight="400" fill="#6D7F94">Run details are stored separately</text>
+<text x="163" y="1009" font-size="13" font-weight="400" fill="#6D7F94">from configuration metadata.</text>
+<g id="crowfoot-cardinality-symbols"><path d="M550.0 351.0 V367.0" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M559.0 351.0 V367.0" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="627" cy="422.5" r="5.2" fill="#F7F9FC" stroke="#357C91" stroke-width="2.4"/><path d="M642 422.5 L660 413.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M642 422.5 L660 422.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M642 422.5 L660 431.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M568.0 369.0 V385.0" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M577.0 369.0 V385.0" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="627" cy="465.5" r="5.2" fill="#F7F9FC" stroke="#357C91" stroke-width="2.4"/><path d="M642 465.5 L660 456.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M642 465.5 L660 465.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M642 465.5 L660 474.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1272.0 328.5 V344.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1281.0 328.5 V344.5" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="1309" cy="281" r="5.2" fill="#F7F9FC" stroke="#357C91" stroke-width="2.4"/><path d="M1324 272 V290" fill="none" stroke="#357C91" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="1231" cy="350.5" r="5.2" fill="#F7F9FC" stroke="#8A769A" stroke-width="2.4"/><path d="M1241 342.5 V358.5" fill="none" stroke="#8A769A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="1303" cy="733.5" r="5.2" fill="#F7F9FC" stroke="#8A769A" stroke-width="2.4"/><path d="M1318 733.5 L1336 724.5" fill="none" stroke="#8A769A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1318 733.5 L1336 733.5" fill="none" stroke="#8A769A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1318 733.5 L1336 742.5" fill="none" stroke="#8A769A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+<!-- Grouped, horizontally balanced legend cards. Content and symbols remain individually editable. -->
+<path d="M94 1099 H1756" fill="none" stroke="#DDE6F0" stroke-width="1.2"/>
+
+<g id="legend-cardinality">
+  <rect x="94" y="1129" width="806" height="150" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1.2"/>
+  <text x="120" y="1163" font-size="18" font-weight="700" fill="#172B48">Cardinality</text>
+  <path d="M120 1178 H874" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+
+  <g id="legend-exactly-one" transform="translate(121,1207)">
+    <path d="M0 19 H30 M13 10 V28 M21 10 V28" fill="none" stroke="#385C78" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="42" y="24" font-size="14" font-weight="550" fill="#344F69">Exactly one (mandatory)</text>
+  </g>
+  <g id="legend-zero-or-one" transform="translate(385,1207)">
+    <path d="M12 19 H34 M34 10 V28" fill="none" stroke="#385C78" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="7" cy="19" r="5.2" fill="#FFFFFF" stroke="#385C78" stroke-width="2.4"/>
+    <text x="46" y="24" font-size="14" font-weight="550" fill="#344F69">Zero or one</text>
+  </g>
+  <g id="legend-zero-or-many" transform="translate(619,1207)">
+    <path d="M12 19 H23 M23 19 L37 9 M23 19 H37 M23 19 L37 29" fill="none" stroke="#385C78" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="7" cy="19" r="5.2" fill="#FFFFFF" stroke="#385C78" stroke-width="2.4"/>
+    <text x="49" y="24" font-size="14" font-weight="550" fill="#344F69">Zero or many</text>
+  </g>
+</g>
+
+<g id="legend-enforcement">
+  <rect x="930" y="1129" width="826" height="150" rx="13" fill="#FFFFFF" stroke="#DCE5EF" stroke-width="1.2"/>
+  <text x="956" y="1163" font-size="18" font-weight="700" fill="#172B48">Foreign Key Enforcement</text>
+  <path d="M956 1178 H1730" fill="none" stroke="#E7EDF5" stroke-width="1"/>
+
+  <g id="legend-enforced-fk">
+    <path d="M956 1207 H1009" fill="none" stroke="#357C91" stroke-width="3" stroke-linecap="round"/>
+    <text x="1023" y="1213" font-size="14" font-weight="650" fill="#34516A">Enforced foreign key</text>
+    <text x="956" y="1250" font-size="12.6" font-weight="450" fill="#71869A">References must match an existing parent row</text>
+  </g>
+  <g id="legend-logical-association">
+    <path d="M1345 1207 H1398" fill="none" stroke="#8A769A" stroke-width="3" stroke-dasharray="9 8" stroke-linecap="round"/>
+    <text x="1412" y="1213" font-size="14" font-weight="650" fill="#655775">Logical association</text>
+    <text x="1345" y="1250" font-size="12.6" font-weight="450" fill="#71869A">Audit references may be null or unmatched</text>
+  </g>
+</g>
+</svg>
